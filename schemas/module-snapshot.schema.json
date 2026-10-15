@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cornelius ModuleSnapshot v1",
+  "description": "Enveloppe de donnees normalisees. L'enveloppe appartient au coeur, le contenu de data au module et a son dataSchema. Un module ne peut ni s'attribuer un autre proprietaire, ni prolonger sa propre validite.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "snapshotId",
+    "cacheKey",
+    "revision",
+    "moduleId",
+    "dataVersion",
+    "scope",
+    "source",
+    "fetchedAt",
+    "observedAt",
+    "validUntil",
+    "status",
+    "data"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "snapshotId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "cacheKey": {
+      "description": "Module, version des donnees, parametres normalises et portee d'acces. Ne contient jamais de secret.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "moduleId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "dataVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "userId"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "household",
+            "user"
+          ]
+        },
+        "userId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "source": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "sourceId"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "sourceId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      },
+      "description": "Source du dernier succès. Null si aucun succès n'a encore fourni de référence."
+    },
+    "fetchedAt": {
+      "description": "Fixé par le cœur après une collecte réussie et validée. Null avant tout succès.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "observedAt": {
+      "description": "Date de mesure fournie par la source. Null si la source n'en fournit pas. Une mesure ancienne reste ancienne.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "validUntil": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "Expiration calculée par le cœur pour tout succès, y compris vide. Null uniquement en absence de dernier succès."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ready",
+        "empty",
+        "stale",
+        "error"
+      ]
+    },
+    "data": {
+      "description": "Valide contre le dataSchema du module. Null en absence de dernier succes ; le detail de l'erreur vit dans module_errors.",
+      "type": [
+        "object",
+        "null"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "scope": {
+            "properties": {
+              "kind": {
+                "const": "household"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "scope": {
+            "properties": {
+              "userId": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "scope": {
+            "properties": {
+              "kind": {
+                "const": "user"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "scope": {
+            "properties": {
+              "userId": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "data": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "revision": {
+            "const": 0
+          },
+          "fetchedAt": {
+            "type": "null"
+          },
+          "observedAt": {
+            "type": "null"
+          },
+          "validUntil": {
+            "type": "null"
+          },
+          "source": {
+            "type": "null"
+          },
+          "status": {
+            "const": "error"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "revision": {
+            "minimum": 1
+          },
+          "fetchedAt": {
+            "type": "string"
+          },
+          "validUntil": {
+            "type": "string"
+          },
+          "source": {
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "empty",
+              "stale"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

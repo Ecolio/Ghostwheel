@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "cardType": "module",
+  "addonId": "transit",
+  "instanceRef": "maison",
+  "title": "Mes bus",
+  "primaryValue": "5 min",
+  "subtitle": "Ligne 12 → Mairie",
+  "description": null,
+  "items": [
+    { "label": "Prochain", "value": "5 min" },
+    { "label": "Suivant", "value": "14 min" }
+  ],
+  "sources": ["transit:maison"],
+  "snapshotId": "transit-maison-r42",
+  "stale": false
+}

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ClockConfig v1",
+  "description": "Heure du serveur dans un fuseau IANA, par exemple Europe/Paris ou UTC. Aucun réseau ni secret.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["timeZone", "showDate", "showSeconds"],
+  "properties": {
+    "timeZone": {
+      "title": "Fuseau horaire",
+      "description": "Heure annoncée et affichée pour ce fuseau.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "examples": ["Europe/Paris"]
+    },
+    "showDate": {
+      "title": "Afficher la date",
+      "type": "boolean"
+    },
+    "showSeconds": {
+      "title": "Afficher les secondes",
+      "type": "boolean"
+    }
+  }
+}

@@ -1,0 +1,35 @@
+/* Coquille de l’administration : compléments à admin-theme.css propres à Admin.tsx. */
+
+/* Le titre reçoit le focus après un changement de rubrique, sans contour : ce n’est pas
+   un contrôle. */
+.admin-heading h1:focus {
+  outline: none;
+}
+
+/* Sélecteur de rubrique : seulement sur téléphone, à la place de la bande de rubriques. */
+.admin-section-picker {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .admin-navigation {
+    display: none;
+  }
+  .admin-section-picker {
+    display: block;
+  }
+  /* Zones tactiles d’au moins 44 px sur téléphone. */
+  .admin-shell .admin-header-actions [data-slot='button'] {
+    min-height: 44px;
+  }
+  /* Le déclencheur Radix remplace data-slot="button" : il reprend ici le style des boutons. */
+  .admin-shell .admin-picker-trigger {
+    min-height: 44px;
+    height: auto;
+    padding-block: 10px;
+    border-radius: 10px;
+    border-color: #eaf1ef24;
+    background: #eaf1ef07;
+    font-size: 14px;
+  }
+}

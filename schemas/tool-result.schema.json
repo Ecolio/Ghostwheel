@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cornelius ToolResult v1",
+  "description": "Enveloppe normalisee des resultats d'outils renvoyes a Luna. Une action reussie n'expose que des valeurs confirmees par l'executeur. unknown signifie resultat incertain, pas echec assure.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "status", "result", "snapshotId", "actionRunId", "summary", "error"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "status": {
+      "type": "string",
+      "enum": ["succeeded", "empty", "stale", "failed", "pending_confirmation", "unknown", "cancelled"]
+    },
+    "result": { "type": ["object", "null"] },
+    "snapshotId": { "type": ["string", "null"], "minLength": 1, "maxLength": 128 },
+    "actionRunId": { "type": ["string", "null"], "minLength": 1, "maxLength": 128 },
+    "summary": {
+      "description": "Faits courts destines a la parole. Ne contient aucun champ de controle du rendu.",
+      "type": "string", "minLength": 1, "maxLength": 500
+    },
+    "error": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["code", "message", "retryable"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": ["config_invalid", "auth", "quota", "timeout", "upstream", "malformed", "unavailable", "forbidden", "not_found", "invalid_params"]
+        },
+        "message": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "retryable": {
+          "description": "Evalue par le serveur. Ne permet jamais de rejouer aveuglement une ecriture.",
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

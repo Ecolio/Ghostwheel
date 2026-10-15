@@ -1,0 +1,43 @@
+Modèle du mot d’appel « Cornelius » (cornelius.onnx)
+====================================================
+
+Modèle openWakeWord qui reconnaît le mot « Cornelius » prononcé en français.
+Entraîné pour Cornelius par Les Frères Poulain avec wakeword-generator
+(https://github.com/lfpoulain/wakeword-generator), sans aucun enregistrement
+de voix réelle.
+
+SHA-256 : 9c8adc857126b786fa8db31ed82d1518181e549c08d51ca823e8bdd8942b29cd
+
+Licence
+-------
+
+Ce modèle est distribué sous la licence Creative Commons
+Attribution - Pas d’Utilisation Commerciale - Partage dans les Mêmes Conditions
+4.0 International (CC BY-NC-SA 4.0) :
+https://creativecommons.org/licenses/by-nc-sa/4.0/deed.fr
+
+Cette licence est choisie par prudence : elle reprend les conditions les plus
+strictes des données d’entraînement ci-dessous. Elle ne s’applique qu’à ce
+fichier, pas au code de Cornelius (PolyForm Noncommercial 1.0.0, voir LICENSE).
+
+Attributions
+------------
+
+- openWakeWord, David Scripka : architecture et script d’entraînement,
+  Apache 2.0. https://github.com/dscripka/openWakeWord
+- openwakeword_features, David Scripka : caractéristiques négatives,
+  CC BY-NC-SA 4.0. https://huggingface.co/datasets/davidscripka/openwakeword_features
+- MIT environmental impulse responses : réverbération simulée, licence non
+  précisée par la source.
+  https://huggingface.co/datasets/davidscripka/MIT_environmental_impulse_responses
+- Voix de synthèse Piper (exemples positifs et négatifs générés) :
+  - fr_FR siwis medium, CC BY 4.0
+    https://huggingface.co/rhasspy/piper-voices/blob/main/fr/fr_FR/siwis/medium/MODEL_CARD
+  - fr_FR upmc medium, CC BY-SA 4.0
+    https://huggingface.co/rhasspy/piper-voices/blob/main/fr/fr_FR/upmc/medium/MODEL_CARD
+  - fr_FR tom medium, AGPL v3
+    https://huggingface.co/rhasspy/piper-voices/blob/main/fr/fr_FR/tom/medium/MODEL_CARD
+
+Toute copie de ce modèle doit garder ce fichier, ou les mêmes attributions.
+Son usage commercial est exclu ; il demanderait de réentraîner le modèle avec
+des données aux droits explicites.

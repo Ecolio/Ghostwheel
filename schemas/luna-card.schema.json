@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cornelius LunaCardRequest v1",
+  "description": "Contrat local des arguments de la fonction ui__show_luna_card. La projection vers le mode strict du fournisseur est generee et testee ; le serveur revalide toujours contre ce schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "cardType", "title", "primaryValue", "subtitle", "description", "items", "sources"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "cardType": { "type": "string", "const": "luna" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "primaryValue": { "type": ["string", "null"], "minLength": 1, "maxLength": 120 },
+    "subtitle": { "type": ["string", "null"], "minLength": 1, "maxLength": 120 },
+    "description": { "type": ["string", "null"], "minLength": 1, "maxLength": 500 },
+    "items": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "value"],
+        "properties": {
+          "label": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "value": { "type": "string", "minLength": 1, "maxLength": 160 }
+        }
+      }
+    },
+    "sources": {
+      "description": "Identifiants de sources reellement connues du serveur. Le serveur resout titre et URL ; une URL proposee par le modele n'est jamais une preuve.",
+      "type": "array",
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 128 }
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cornelius AmbientPresentation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["layout", "title", "value", "subtitle", "items"],
+  "properties": {
+    "showCollectedAt": { "type": "boolean" },
+    "layout": {
+      "enum": ["metric", "list"]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "value": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "subtitle": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "value"],
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          }
+        }
+      }
+    }
+  }
+}

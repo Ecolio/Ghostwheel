@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "engagementId": "eng-2026-09-15-0031",
+  "state": "identified",
+  "since": "2026-09-15T06:10:02Z",
+  "detection": {
+    "source": "face",
+    "dwellMs": 2400
+  },
+  "faceCount": 1,
+  "primaryFace": {
+    "sizeRatio": 0.28,
+    "yaw": -4.5,
+    "pitch": 2.1,
+    "stableForMs": 900,
+    "trackId": "track-demo-1"
+  },
+  "match": {
+    "userId": "person-demo-1",
+    "score": 0.71,
+    "stableForMs": 600
+  },
+  "speaking": false,
+  "reason": "identified",
+  "interactionId": "interaction-demo-31",
+  "producerBootId": "perception-boot-demo",
+  "sequence": 31,
+  "observedAt": "2026-09-15T06:10:02Z",
+  "health": "ok"
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "cardType": "luna",
+  "title": "Exemple de carte générale",
+  "primaryValue": "42",
+  "subtitle": "Valeur d’exemple",
+  "description": "Cette carte illustre les emplacements disponibles.",
+  "items": [
+    { "label": "Détail", "value": "Texte complémentaire" }
+  ],
+  "sources": []
+}

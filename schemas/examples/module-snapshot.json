@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "transit-home-r42",
+  "cacheKey": "public:demo-stop:demo-direction",
+  "revision": 42,
+  "moduleId": "idfm-transit",
+  "dataVersion": 1,
+  "scope": { "kind": "household", "userId": null },
+  "source": { "provider": "demo", "sourceId": "demo-transit" },
+  "fetchedAt": "2026-09-15T06:10:00Z",
+  "observedAt": "2026-09-15T06:09:50Z",
+  "validUntil": "2026-09-15T06:12:00Z",
+  "status": "ready",
+  "data": {
+    "stopId": "demo-stop",
+    "lineLabel": "Ligne démo",
+    "direction": "Destination démo",
+    "departures": [
+      {
+        "id": "departure-1",
+        "scheduledAt": "2026-09-15T06:14:00Z",
+        "expectedAt": "2026-09-15T06:15:00Z",
+        "realtime": true,
+        "cancelled": false
+      }
+    ]
+  }
+}

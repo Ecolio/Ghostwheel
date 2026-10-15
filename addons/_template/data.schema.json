@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ParkingData v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "available"],
+  "properties": {
+    "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "available": { "type": "integer", "minimum": 0, "maximum": 100000 }
+  }
+}

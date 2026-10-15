@@ -1,0 +1,25 @@
+node_modules/
+dist/
+data/
+# Modèles téléchargés : hors Git, sauf le mot d’appel « Cornelius », entraîné pour le projet.
+models/*
+!models/cornelius.onnx
+!models/cornelius.onnx.LICENSE
+.env
+.env.*
+!.env.example
+*.log
+coverage/
+__pycache__/
+.venv/
+.venv-image/
+.DS_Store
+.local/
+
+*.sqlite
+*.sqlite-*
+playwright-report/
+.claude/
+.kilo/
+.pytest_cache/
+.venv-*/

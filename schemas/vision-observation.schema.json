@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cornelius VisionObservation v1 candidate",
+  "description": "Description événementielle locale. Utilisable seulement si ready, engagement/piste/profil actuels, capteur disponible et ancienneté sous validUntil. Expirer ne relance pas une capture.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "observationId",
+    "engagementId",
+    "trigger",
+    "capturedAt",
+    "processedAt",
+    "status",
+    "description",
+    "peopleCount",
+    "visibleObjects",
+    "limitations",
+    "speakerAssociation",
+    "validUntil",
+    "captureId",
+    "trackId",
+    "profileEpoch"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "observationId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "engagementId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "trigger": {
+      "type": "string",
+      "enum": [
+        "scene",
+        "tool"
+      ]
+    },
+    "capturedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "processedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ready",
+        "pending",
+        "failed",
+        "invalidated"
+      ]
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "peopleCount": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "visibleObjects": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 80
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 160
+      }
+    },
+    "speakerAssociation": {
+      "description": "La personne decrite n'est pas necessairement celle qui parle. unknown est la valeur par defaut et reste la valeur normale.",
+      "type": "string",
+      "enum": [
+        "unknown",
+        "likely",
+        "none"
+      ]
+    },
+    "validUntil": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Échéance calculée par le serveur depuis capturedAt et l'ancienneté maximale configurée."
+    },
+    "captureId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "trackId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "profileEpoch": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "ready"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "processedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "pending"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "description": {
+            "type": "null"
+          },
+          "processedAt": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
+}

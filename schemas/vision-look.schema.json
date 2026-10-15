@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "question"
+  ],
+  "properties": {
+    "question": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "pattern": "\\S",
+      "description": "Question visuelle actuelle de l’utilisateur, en français, 500 caractères maximum. Reprends fidèlement sa demande ; précise seulement les références nécessaires (objet, couleur, texte à lire), sans inventer de détail visible. Pour un regard général : Que vois-tu devant le miroir ?"
+    }
+  }
+}

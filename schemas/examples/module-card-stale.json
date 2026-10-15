@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "cardType": "module",
+  "addonId": "weather",
+  "instanceRef": "foyer",
+  "title": "Météo",
+  "primaryValue": "18 °C",
+  "subtitle": "Ciel dégagé",
+  "description": "Dernier relevé connu.",
+  "items": [{ "label": "Vent", "value": "12 km/h" }],
+  "sources": ["weather:foyer"],
+  "snapshotId": "weather-foyer-r7",
+  "stale": true
+}

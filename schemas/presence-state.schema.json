@@ -1,0 +1,313 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cornelius PresenceState v1 candidate",
+  "description": "Résumé de perception arbitré par le serveur. Les commandes micro/cloud sont calculées séparément par le SessionController. Contrat candidat avant gel v1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "engagementId",
+    "state",
+    "since",
+    "detection",
+    "faceCount",
+    "primaryFace",
+    "match",
+    "speaking",
+    "reason",
+    "interactionId",
+    "producerBootId",
+    "sequence",
+    "observedAt",
+    "health"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "engagementId": {
+      "description": "Période continue d'engagement visuel ; null hors engagement. La conversation utilise interactionId.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128,
+      "minLength": 1
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "absent",
+        "present",
+        "engaged",
+        "identified"
+      ]
+    },
+    "since": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "detection": {
+      "description": "Detecteur soutenant la presence courante ; dwellMs mesure sa duree continue pour la stabilisation. L'ouverture de la session depend de l'engagement selon le controleur serveur.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "dwellMs"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": [
+            "none",
+            "motion",
+            "face",
+            "person"
+          ]
+        },
+        "dwellMs": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "faceCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "primaryFace": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "sizeRatio",
+        "yaw",
+        "pitch",
+        "stableForMs",
+        "trackId"
+      ],
+      "properties": {
+        "sizeRatio": {
+          "description": "Hauteur du visage rapportee a la hauteur de l'image. Definit implicitement une distance d'engagement.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "yaw": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90,
+          "description": "Angle estimé et calibré par l'adaptateur, pas une sortie directe de YuNet."
+        },
+        "pitch": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90,
+          "description": "Angle estimé et calibré par l'adaptateur."
+        },
+        "stableForMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "trackId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "match": {
+      "description": "Correspondance de signature faciale. score est une similarite, pas une probabilite d'identite ; il n'est ni affiche ni transmis aux modeles.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "userId",
+        "score",
+        "stableForMs"
+      ],
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "score": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
+        },
+        "stableForMs": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "speaking": {
+      "type": "boolean"
+    },
+    "reason": {
+      "description": "Motif de la derniere transition, pour le diagnostic et l'ecran de reglage.",
+      "type": "string",
+      "enum": [
+        "no_motion",
+        "motion_only",
+        "dwell_pending",
+        "present_confirmed",
+        "no_face",
+        "face_too_small",
+        "face_turned",
+        "unstable",
+        "cooldown",
+        "engaged",
+        "identified",
+        "identity_lost",
+        "left_frame",
+        "roi_excluded",
+        "speech_detected",
+        "no_speech",
+        "interpellation_sent",
+        "sensor_unavailable",
+        "camera_stalled"
+      ]
+    },
+    "interactionId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Identifiant de l'interaction courante, attribue par le serveur ; null en l'absence d'interaction."
+    },
+    "producerBootId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "observedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "health": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "unavailable"
+      ],
+      "description": "unavailable interdit d'utiliser le dernier état pour autoriser capture/cloud."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "enum": [
+              "engaged",
+              "identified"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "engagementId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "primaryFace": {
+            "type": "object"
+          },
+          "faceCount": {
+            "minimum": 1
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "engagementId": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "identified"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "match": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "absent"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "faceCount": {
+            "const": 0
+          },
+          "primaryFace": {
+            "type": "null"
+          },
+          "match": {
+            "type": "null"
+          },
+          "speaking": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "enum": [
+              "present",
+              "engaged",
+              "identified"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "detection": {
+            "properties": {
+              "source": {
+                "enum": [
+                  "face",
+                  "person"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

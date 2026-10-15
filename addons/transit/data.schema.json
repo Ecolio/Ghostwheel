@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TransitData v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["stopId", "lineLabel", "direction", "departures"],
+  "properties": {
+    "stopId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "lineLabel": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "direction": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "departures": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "scheduledAt", "expectedAt", "realtime", "cancelled"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "scheduledAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "expectedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "realtime": {
+            "type": "boolean"
+          },
+          "cancelled": {
+            "type": "boolean"
+          },
+          "lineLabel": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "direction": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        }
+      }
+    }
+  }
+}

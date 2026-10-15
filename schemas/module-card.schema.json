@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cornelius ModuleCard v1",
+  "description": "Carte specialisee remplie par le serveur depuis un ModuleSnapshot valide. Le module ne fournit que le contenu ; identifiant de snapshot, fraicheur et proprietaire appartiennent au coeur.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "cardType",
+    "addonId",
+    "instanceRef",
+    "title",
+    "primaryValue",
+    "subtitle",
+    "description",
+    "items",
+    "sources",
+    "snapshotId",
+    "stale"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "cardType": { "type": "string", "const": "module" },
+    "addonId": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "instanceRef": { "type": ["string", "null"], "minLength": 1, "maxLength": 64 },
+    "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "primaryValue": { "type": ["string", "null"], "minLength": 1, "maxLength": 120 },
+    "subtitle": { "type": ["string", "null"], "minLength": 1, "maxLength": 120 },
+    "description": { "type": ["string", "null"], "minLength": 1, "maxLength": 500 },
+    "items": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "value"],
+        "properties": {
+          "label": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "value": { "type": "string", "minLength": 1, "maxLength": 160 }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 128 }
+    },
+    "snapshotId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "stale": {
+      "description": "Vrai quand la carte montre le dernier succes connu, expire mais non remplace.",
+      "type": "boolean"
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WeatherConfig v1",
+  "description": "Configuration d'une instance météo. Un code INSEE ou des coordonnées sont requis ; le jeton est un secret hors base.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["insee", "lat", "lon", "days"],
+  "properties": {
+    "insee": {
+      "title": "Code INSEE",
+      "description": "Code de la commune à 5 chiffres (Paris : 75056). Sinon, indiquez la latitude et la longitude.",
+      "type": ["string", "null"],
+      "pattern": "^([0-9]{5}|2[AB][0-9]{3})$",
+      "examples": ["75056"]
+    },
+    "lat": {
+      "title": "Latitude",
+      "description": "Facultative si le code INSEE est renseigné.",
+      "type": ["number", "null"],
+      "minimum": -90,
+      "maximum": 90,
+      "examples": [48.8566]
+    },
+    "lon": {
+      "title": "Longitude",
+      "description": "Facultative si le code INSEE est renseigné.",
+      "type": ["number", "null"],
+      "minimum": -180,
+      "maximum": 180,
+      "examples": [2.3522]
+    },
+    "days": {
+      "title": "Jours de prévision",
+      "description": "De 1 à 7 jours.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 7,
+      "examples": [3]
+    }
+  },
+  "anyOf": [
+    {
+      "properties": {
+        "insee": {
+          "type": "string"
+        }
+      }
+    },
+    {
+      "properties": {
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        }
+      }
+    }
+  ]
+}

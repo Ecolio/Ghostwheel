@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TransitConfig v1",
+  "description": "Configuration d'une instance bus. L'arrêt et la direction sont choisis par recherche assistée dans l'administration ; le jeton PRIM est un secret hors base.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["stopAreaId", "stopAreaLabel", "routeId", "routeLabel"],
+  "properties": {
+    "stopAreaId": {
+      "title": "Arrêt",
+      "type": "string",
+      "maxLength": 160
+    },
+    "stopAreaLabel": {
+      "title": "Nom de l’arrêt",
+      "type": "string",
+      "maxLength": 160
+    },
+    "routeId": {
+      "title": "Direction",
+      "type": ["string", "null"],
+      "maxLength": 160
+    },
+    "routeLabel": {
+      "title": "Nom de la direction",
+      "type": ["string", "null"],
+      "maxLength": 160
+    }
+  }
+}

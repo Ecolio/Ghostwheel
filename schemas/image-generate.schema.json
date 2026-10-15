@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["prompt", "seed"],
+  "properties": {
+    "prompt": { "type": "string", "minLength": 3, "maxLength": 1000 },
+    "seed": { "type": ["integer", "null"], "minimum": 0, "maximum": 2147483647 }
+  }
+}

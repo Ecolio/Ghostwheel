@@ -1,0 +1,7 @@
+# Imports required by openWakeWord 0.6.0 even for ONNX-only inference.
+# Install this file, then openwakeword==0.6.0 with --no-deps to avoid its
+# unused tflite-runtime dependency, which has no Python 3.12 Linux wheel.
+scipy==1.16.2
+scikit-learn==1.7.2
+tqdm==4.67.1
+requests==2.32.5

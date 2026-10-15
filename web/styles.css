@@ -1,0 +1,1050 @@
+@import './admin-theme.css';
+
+:root {
+  font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  color: #eceee9;
+  background: #050706;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+.loading-screen,
+.toast {
+  --muted: #9baba2;
+  --accent: #dbe9c9;
+}
+
+:where(.mirror-page, .loading-screen, .toast) p,
+:where(.mirror-page, .loading-screen, .toast) h1,
+:where(.mirror-page, .loading-screen, .toast) h2 {
+  margin: 0;
+}
+:where(.mirror-page, .loading-screen, .toast) h1,
+:where(.mirror-page, .loading-screen, .toast) h2 {
+  font-weight: 400;
+}
+:where(.loading-screen, .toast) button,
+:where(.loading-screen, .toast) input {
+  font: inherit;
+}
+:where(.loading-screen, .toast) button,
+:where(.loading-screen, .toast) a,
+:where(.loading-screen, .toast) input {
+  -webkit-tap-highlight-color: transparent;
+  outline-offset: 5px;
+}
+:where(.loading-screen, .toast) button,
+:where(.loading-screen, .toast) a {
+  touch-action: manipulation;
+  transition:
+    background-color 0.18s,
+    color 0.18s;
+}
+:where(.loading-screen, .toast) button {
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+:where(.loading-screen, .toast) button:disabled,
+:where(.loading-screen, .toast) input:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+:where(.loading-screen, .toast) :focus-visible {
+  outline: 2px solid var(--accent);
+}
+:where(.loading-screen, .toast) a {
+  color: inherit;
+  text-decoration: none;
+}
+.loading-screen .brand {
+  font-size: 25px;
+  font-weight: 500;
+  letter-spacing: -0.9px;
+  white-space: nowrap;
+}
+.loading-screen .brand > span {
+  color: #bfd2b0;
+  font-weight: 300;
+  padding-left: 4px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/*
+ * Miroir. L’orbe reste au centre exact de l’écran ; une grille place autour d’elle le nom,
+ * les informations permanentes, les cartes et le pied de page, sans chevauchement.
+ * Paysage : informations en haut, carte principale à gauche, cartes complémentaires à droite.
+ * Portrait : pile verticale (informations, orbe, carte principale, cartes complémentaires).
+ * --mirror-scale suit la plus petite dimension de l’écran pour rester lisible à distance :
+ * aucun texte sous 14 px, aucune étiquette sous 12 px. DM Sans n’existe qu’en 400 et 500.
+ */
+.mirror-page {
+  --mirror-scale: clamp(1px, calc(100vmin / 760), 3px);
+  --mirror-text-label: calc(12 * var(--mirror-scale));
+  --mirror-text: calc(14 * var(--mirror-scale));
+  --mirror-text-lead: calc(16 * var(--mirror-scale));
+  --mirror-edge: max(20px, 4.5vmin);
+  --mirror-gap: calc(20 * var(--mirror-scale));
+  --mirror-amber: #e0c28c;
+  --orb-size: calc(var(--orb-user-scale, 1) * clamp(260px, 55vmin, 1600px));
+  /* Largeur réservée à l’orbe visible (environ 63 % de son ancre) et à son halo. */
+  --orb-clear: calc(var(--orb-size) * 0.74);
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--orb-clear) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'top top top'
+    'main . side'
+    'foot foot foot';
+  gap: var(--mirror-gap);
+  padding: var(--mirror-edge);
+  background: #000;
+  color: #edf1ec;
+  font-family: 'DM Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-size: var(--mirror-text);
+  line-height: 1.4;
+}
+/* Au-dessus du canevas de l’orbe, qui couvre toute la page. */
+.mirror-top,
+.mirror-card-rail,
+.mirror-footer {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  min-height: 0;
+}
+.mirror-top {
+  grid-area: top;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--mirror-gap) calc(2 * var(--mirror-gap));
+  pointer-events: none;
+}
+/* Les cartes et le pied de page sont placés directement dans la grille en paysage. */
+.mirror-stack {
+  display: contents;
+}
+.mirror-header {
+  flex: 0 1 auto;
+  max-width: min(100%, 26em);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: calc(8 * var(--mirror-scale));
+  text-align: right;
+}
+.mirror-wordmark {
+  font-size: calc(18 * var(--mirror-scale));
+  line-height: 1.2;
+  letter-spacing: -0.04em;
+  color: #a8b4a9;
+  white-space: nowrap;
+}
+.mirror-wordmark > span {
+  color: #75877a;
+}
+/* Ligne d’état sous le nom du miroir : ce qui empêche Cornelius de répondre, sinon rien. */
+.mirror-line {
+  font-size: var(--mirror-text);
+  line-height: 1.4;
+  color: var(--mirror-amber);
+}
+.mirror-line:empty {
+  display: none;
+}
+.mirror-line-address {
+  white-space: nowrap;
+  color: #f0e2c4;
+}
+
+/*
+ * Informations permanentes : typographie sur le reflet, sans surface de carte. Un quart plus
+ * petites que le reste du miroir sur grand écran (1920 x 1080 et au-delà), jamais sous la taille
+ * d’un téléphone.
+ */
+.mirror-ambient {
+  --ambient-scale: max(1px, calc(var(--mirror-scale) * 0.75));
+  font-size: calc(14 * var(--ambient-scale));
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--mirror-gap) calc(2 * var(--mirror-gap));
+}
+.ambient-module {
+  flex: 0 1 calc(250 * var(--ambient-scale));
+  min-width: 0;
+}
+/* Trois informations au plus en paysage : pas de défilement interne sur un miroir. */
+.ambient-module:nth-child(n + 4) {
+  display: none;
+}
+.mirror-page .ambient-heading {
+  overflow: hidden;
+  font-size: calc(12 * var(--ambient-scale));
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0.12em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #b7c7bc;
+}
+.mirror-page .ambient-value {
+  margin-top: calc(6 * var(--ambient-scale));
+  font-size: calc(34 * var(--ambient-scale));
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.mirror-page .ambient-subtitle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin-top: calc(6 * var(--ambient-scale));
+  color: #bfccc3;
+}
+.ambient-items {
+  margin: calc(8 * var(--ambient-scale)) 0 0;
+  display: grid;
+  gap: calc(4 * var(--ambient-scale));
+}
+.ambient-items > div {
+  display: flex;
+  justify-content: space-between;
+  gap: calc(14 * var(--ambient-scale));
+}
+.ambient-items > div:nth-child(n + 4) {
+  display: none;
+}
+.ambient-items dt {
+  color: #93a699;
+}
+.ambient-items dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.ambient-value,
+.ambient-subtitle,
+.ambient-items dt,
+.ambient-items dd {
+  overflow-wrap: anywhere;
+}
+.mirror-page .ambient-status {
+  margin-top: calc(6 * var(--ambient-scale));
+  font-size: calc(12 * var(--ambient-scale));
+  color: var(--mirror-amber);
+}
+.ambient-time {
+  display: block;
+  margin-top: calc(4 * var(--ambient-scale));
+  font-size: calc(12 * var(--ambient-scale));
+  color: #8a9e91;
+}
+.ambient-module[data-status='stale'] .ambient-value {
+  color: var(--mirror-amber);
+}
+
+/* Pied de page : invite d’action au centre, personnes détectées à gauche. */
+.mirror-footer {
+  grid-area: foot;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: var(--mirror-gap);
+}
+.mirror-footer > .mirror-hint {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  /* Sans pourcentage : la colonne centrale suit cette largeur, pas le texte sur une ligne. */
+  max-width: 26em;
+}
+.mirror-footer > .mirror-status {
+  grid-column: 1;
+  grid-row: 1;
+}
+.mirror-hint {
+  max-width: min(100%, 26em);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(12 * var(--mirror-scale));
+  text-align: center;
+  letter-spacing: 0.02em;
+  color: #a9b9ad;
+}
+.mirror-activate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: max(44px, calc(46 * var(--mirror-scale)));
+  padding: calc(10 * var(--mirror-scale)) calc(22 * var(--mirror-scale));
+  border: 1px solid #54675b;
+  border-radius: 999px;
+  background: #142019;
+  color: #dce9df;
+  font: inherit;
+  font-size: var(--mirror-text-lead);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+.mirror-activate:focus-visible {
+  outline: 2px solid #a0c8ad;
+  outline-offset: 4px;
+}
+.mirror-activate:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+/* Échec de l’activation : en ambre, avec une icône, au-dessus du bouton. */
+.mirror-hint-error {
+  order: -1;
+  color: var(--mirror-amber);
+}
+.mirror-hint-icon {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  margin-right: 0.45em;
+  vertical-align: -0.2em;
+}
+.mirror-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(8 * var(--mirror-scale));
+  pointer-events: none;
+}
+.mirror-presence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(8 * var(--mirror-scale));
+}
+/* Encart discret, au format des personnes : une image se crée, ce n’est pas une réponse. */
+.mirror-activity {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(6 * var(--mirror-scale));
+  padding: calc(3 * var(--mirror-scale)) calc(10 * var(--mirror-scale));
+  border: 1px solid rgba(196, 167, 255, 0.5);
+  border-radius: 999px;
+  font-size: var(--mirror-text-label);
+  letter-spacing: 0.05em;
+  color: #c4a7ff;
+}
+.mirror-activity-dot {
+  width: calc(6 * var(--mirror-scale));
+  height: calc(6 * var(--mirror-scale));
+  border-radius: 999px;
+  background: currentColor;
+  animation: mirror-activity-pulse 1.4s ease-in-out infinite;
+}
+@keyframes mirror-activity-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.mirror-person {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(6 * var(--mirror-scale));
+  padding: calc(3 * var(--mirror-scale)) calc(10 * var(--mirror-scale));
+  border: 1px solid rgba(159, 176, 163, 0.28);
+  border-radius: 999px;
+  font-size: var(--mirror-text-label);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  color: #9fb0a3;
+  opacity: 0.85;
+  /* Fondu : le passage vert / gris ne clignote pas. */
+  transition:
+    color 0.6s ease,
+    border-color 0.6s ease,
+    opacity 0.6s ease;
+}
+.mirror-person-dot {
+  width: calc(6 * var(--mirror-scale));
+  height: calc(6 * var(--mirror-scale));
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.6;
+  transition:
+    background-color 0.6s ease,
+    opacity 0.6s ease;
+}
+.mirror-person.is-active {
+  opacity: 1;
+}
+.mirror-person.is-engaged {
+  border-color: #4ade80;
+  color: #4ade80;
+  opacity: 1;
+}
+.mirror-person.is-engaged .mirror-person-dot {
+  background: #4ade80;
+  opacity: 1;
+}
+
+/*
+ * Ce que fait Cornelius pendant la conversation, en une ligne sous l’orbe visible et sous le
+ * trait du micro que la scène WebGL dessine à 1,25 / 3,2 de la taille de l’orbe.
+ */
+.mirror-voice-state {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + var(--orb-size) * 0.39 + 8 * var(--mirror-scale));
+  z-index: 1;
+  max-width: calc(100% - 2 * var(--mirror-edge));
+  overflow: hidden;
+  transform: translateX(-50%);
+  font-size: var(--mirror-text);
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #b9c8bd;
+  pointer-events: none;
+  animation: mirror-voice-state-in 0.4s ease-out both;
+}
+@keyframes mirror-voice-state-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Orbe : ancre au centre de l’écran, lue par la scène WebGL qui couvre toute la page. */
+.mirror-orb-anchor {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--orb-size);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: width 0.6s ease;
+}
+.orb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+}
+.orb canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.orb-fullscreen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  pointer-events: none;
+}
+.orb[data-renderer='fallback'] canvas {
+  visibility: hidden;
+}
+.orb-fallback {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--orb-size, 380px) * 0.62);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #adc6ff, #274a89 60%, #5a4e9f);
+  box-shadow: 0 0 45px #738aff55;
+}
+.orb[data-voice-phase='listening'] .orb-fallback {
+  background: radial-gradient(circle at 35% 30%, #a0fff2, #087f8d 60%, #2157a0);
+  box-shadow: 0 0 52px #43e5da88;
+}
+.orb[data-voice-phase='speaking'] .orb-fallback {
+  background: radial-gradient(circle at 35% 30%, #ffe9aa, #d76a22 60%, #aa4251);
+  box-shadow: 0 0 52px #ff9a4b88;
+}
+/* Veille : rien n’est envoyé à OpenAI, l’orbe est grise. */
+.orb[data-phase='idle'] .orb-fallback {
+  background: radial-gradient(circle at 35% 30%, #d4d7dc, #50555e 60%, #3d4048);
+  box-shadow: 0 0 45px #9aa0aa44;
+}
+.orb[data-presence='sleeping'] .orb-fallback {
+  width: 14px;
+}
+.orb[data-web-search='active'] .orb-fallback {
+  box-shadow:
+    0 0 0 3px #ff304a,
+    0 0 30px #ff304a99;
+}
+
+/* Cartes : la rangée de la grille fixe la hauteur disponible, la carte s’y centre. */
+/*
+ * Cartes un cinquième plus petites que le reste du miroir sur grand écran (1920 x 1080 et
+ * au-delà), jamais sous la taille d’un téléphone. L’échelle est recalculée ici : une variable
+ * ne peut pas se redéfinir à partir d’elle-même.
+ */
+.mirror-card-rail {
+  --mirror-scale: max(1px, calc(clamp(1px, calc(100vmin / 760), 3px) * 0.8));
+  --mirror-text-label: calc(12 * var(--mirror-scale));
+  --mirror-text: calc(14 * var(--mirror-scale));
+  --mirror-text-lead: calc(16 * var(--mirror-scale));
+  --mirror-gap: calc(20 * var(--mirror-scale));
+  font-size: var(--mirror-text);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--mirror-gap);
+  width: min(100%, calc(420 * var(--mirror-scale)));
+}
+.mirror-card-rail-main {
+  grid-area: main;
+  justify-self: start;
+}
+.mirror-card-rail-secondary {
+  grid-area: side;
+  justify-self: end;
+  width: min(100%, calc(360 * var(--mirror-scale)));
+}
+.mirror-card-slot {
+  flex: 0 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+}
+.display-card {
+  --card-padding: calc(24 * var(--mirror-scale));
+  --card-tint: #b39dff;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  border-radius: calc(32 * var(--mirror-scale));
+  overflow-wrap: anywhere;
+  animation: glass-float 19s ease-in-out infinite;
+}
+.card-surface {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+  padding: var(--card-padding);
+  border-radius: inherit;
+  overflow: hidden;
+  /* Le verre naît de l’orbe (WebGL) ; le texte se dépose quand la goutte s’est étirée. */
+  animation: card-content-arrive 0.9s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+/* Teinte de la famille : pastille de l’en-tête, reprise par le verre de la scène. */
+.display-card[data-kind='bus'] {
+  --card-tint: #ffb35c;
+}
+.display-card[data-kind='weather'] {
+  --card-tint: #7cc4ff;
+}
+.display-card[data-kind='clock'] {
+  --card-tint: #dfe6ee;
+}
+.display-card[data-kind='web'] {
+  --card-tint: #ff8f7a;
+}
+.display-card[data-kind='module'] {
+  --card-tint: #9fe0c0;
+}
+.mirror-page:has(.orb[data-renderer='fallback']) .card-surface {
+  background: #0a1015ed;
+  border: 1px solid #8bb4cb77;
+}
+.card-heading {
+  flex: 0 0 auto;
+  position: relative;
+}
+.card-kicker {
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--mirror-scale));
+  margin-bottom: calc(10 * var(--mirror-scale));
+  font-size: var(--mirror-text-label);
+  line-height: 1.3;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #9db1a6;
+}
+.card-kicker::before {
+  content: '';
+  flex: 0 0 auto;
+  width: calc(6 * var(--mirror-scale));
+  height: calc(6 * var(--mirror-scale));
+  border-radius: 999px;
+  background: var(--card-tint);
+  box-shadow: 0 0 10px var(--card-tint);
+}
+.display-card h2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  font-size: calc(19 * var(--mirror-scale));
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  color: #e5eee6;
+  text-wrap: balance;
+}
+.card-body {
+  min-height: 0;
+  overflow: hidden;
+}
+.display-card-image .card-surface {
+  overflow: hidden;
+}
+.card-generated-image {
+  display: block;
+  width: 100%;
+  max-height: min(54dvh, calc(520 * var(--mirror-scale)));
+  object-fit: contain;
+  border-radius: calc(20 * var(--mirror-scale));
+  background: rgba(0, 0, 0, 0.35);
+}
+.display-card-secondary .card-generated-image {
+  max-height: min(24dvh, calc(220 * var(--mirror-scale)));
+}
+.mirror-page .card-value {
+  margin-top: calc(10 * var(--mirror-scale));
+  font-size: calc(36 * var(--mirror-scale));
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  color: #edf5e9;
+  font-variant-numeric: tabular-nums;
+}
+.mirror-page .card-subtitle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin-top: calc(8 * var(--mirror-scale));
+  font-size: calc(15 * var(--mirror-scale));
+  line-height: 1.45;
+  color: #c0d0c5;
+}
+.mirror-page .card-description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+  margin-top: calc(10 * var(--mirror-scale));
+  line-height: 1.55;
+  color: #b2c4b9;
+}
+.card-items {
+  margin: calc(14 * var(--mirror-scale)) 0 0;
+}
+.card-items > div {
+  display: flex;
+  justify-content: space-between;
+  gap: calc(14 * var(--mirror-scale));
+  border-top: 1px solid #d4efdf14;
+  padding: calc(8 * var(--mirror-scale)) 0;
+  line-height: 1.4;
+}
+.card-items > div:nth-child(n + 4) {
+  display: none;
+}
+.card-items dt {
+  color: #a0b5a9;
+}
+.card-items dd {
+  margin: 0;
+  color: #d4e4d8;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.card-source {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(10 * var(--mirror-scale));
+  min-width: 0;
+  margin-top: calc(14 * var(--mirror-scale));
+  padding-top: calc(10 * var(--mirror-scale));
+  border-top: 1px solid #d4efdf17;
+  font-size: var(--mirror-text-label);
+  line-height: 1.4;
+  color: #93a99c;
+}
+.card-source > span:first-child {
+  overflow-wrap: anywhere;
+}
+.card-source a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.card-source-mark {
+  color: #adcdbb;
+  font-size: calc(17 * var(--mirror-scale));
+  line-height: 1;
+}
+.display-card-secondary {
+  --card-padding: calc(20 * var(--mirror-scale));
+  border-radius: calc(28 * var(--mirror-scale));
+  animation-duration: 23s;
+  animation-delay: -7s;
+}
+.mirror-card-slot:nth-child(2) .display-card {
+  animation-duration: 26s;
+  animation-delay: -13s;
+}
+.display-card-secondary h2 {
+  -webkit-line-clamp: 2;
+  font-size: var(--mirror-text-lead);
+}
+.mirror-page .display-card-secondary .card-value {
+  font-size: calc(28 * var(--mirror-scale));
+}
+.mirror-page .display-card-secondary .card-description {
+  -webkit-line-clamp: 2;
+}
+.display-card-secondary .card-items {
+  display: none;
+}
+
+/* L'arrivée seule est animée : aucun maintien de contenu après son retrait. */
+@keyframes card-content-arrive {
+  0%,
+  35% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+@keyframes glass-float {
+  0%,
+  100% {
+    transform: translate3d(-5px, 7px, 0);
+  }
+  35% {
+    transform: translate3d(6px, -12px, 0);
+  }
+  70% {
+    transform: translate3d(8px, 9px, 0);
+  }
+}
+@keyframes glass-float-compact {
+  0%,
+  100% {
+    transform: translate3d(-2px, 3px, 0);
+  }
+  50% {
+    transform: translate3d(2px, -4px, 0);
+  }
+}
+
+/* Grand écran paysage : une quatrième information permanente trouve sa place. */
+@media (orientation: landscape) and (min-width: 1700px) {
+  .ambient-module:nth-child(4) {
+    display: block;
+  }
+}
+
+/* Paysage peu haut (téléphone couché) : informations réduites à leur valeur. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .ambient-module:nth-child(n + 3) {
+    display: none;
+  }
+  .mirror-page .ambient-subtitle,
+  .ambient-items > div:nth-child(n + 2),
+  .ambient-time {
+    display: none;
+  }
+  .mirror-page .ambient-value {
+    font-size: calc(26 * var(--ambient-scale));
+  }
+  .display-card {
+    --card-padding: calc(16 * var(--mirror-scale));
+    animation-name: glass-float-compact;
+  }
+  .card-kicker {
+    margin-bottom: calc(6 * var(--mirror-scale));
+  }
+  .display-card h2 {
+    -webkit-line-clamp: 2;
+    font-size: var(--mirror-text-lead);
+  }
+  .mirror-page .card-value {
+    margin-top: calc(6 * var(--mirror-scale));
+    font-size: calc(28 * var(--mirror-scale));
+  }
+  .mirror-page .card-subtitle {
+    -webkit-line-clamp: 1;
+    font-size: var(--mirror-text);
+  }
+  .mirror-page .card-description {
+    -webkit-line-clamp: 2;
+    margin-top: calc(6 * var(--mirror-scale));
+  }
+  /* Un seul texte sous la valeur : le sous-titre, sinon la description. */
+  .mirror-page .card-subtitle + .card-description {
+    display: none;
+  }
+  .card-items,
+  .display-card-secondary .card-kicker,
+  .mirror-page .display-card-secondary .card-subtitle,
+  .mirror-page .display-card-secondary .card-description,
+  .display-card-secondary .card-source {
+    display: none;
+  }
+  .mirror-page .display-card-secondary .card-value {
+    font-size: calc(24 * var(--mirror-scale));
+  }
+}
+
+/*
+ * Portrait, quelle que soit la largeur : deux moitiés égales autour de l’orbe. En haut le nom
+ * et les informations permanentes ; en bas la carte principale, les cartes complémentaires
+ * en format compact et le pied de page, dont la place est réservée.
+ */
+@media (orientation: portrait) {
+  .mirror-page {
+    --orb-size: calc(var(--orb-user-scale, 1) * clamp(220px, 70vmin, 1600px));
+    grid-template-columns: minmax(0, 1fr);
+    /* La rangée de l’orbe garde aussi la place du libellé de la voix, de part et d’autre ;
+       le libellé peut empiéter sur l’espacement de la grille, pas sur la carte. */
+    --orb-row: calc(var(--orb-size) * 0.8 + 24 * var(--mirror-scale));
+    grid-template-rows: minmax(0, 1fr) var(--orb-row) minmax(0, 1fr);
+    grid-template-areas:
+      'top'
+      '.'
+      'stack';
+  }
+  .mirror-page:has(.mirror-ambient, .mirror-card-rail) {
+    --orb-size: calc(var(--orb-user-scale, 1) * clamp(200px, 50vmin, 1600px));
+  }
+  .mirror-top {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    overflow: hidden;
+  }
+  .mirror-header {
+    align-self: flex-end;
+  }
+  .mirror-ambient {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--mirror-gap) calc(1.5 * var(--mirror-gap));
+  }
+  .ambient-module:nth-child(n + 3) {
+    display: none;
+  }
+  .mirror-stack {
+    grid-area: stack;
+    display: flex;
+    flex-direction: column;
+    gap: calc(14 * var(--mirror-scale));
+    min-height: 0;
+  }
+  .mirror-card-rail,
+  .mirror-card-rail-secondary {
+    width: 100%;
+  }
+  .mirror-card-rail-main {
+    flex: 0 1 auto;
+    justify-content: flex-start;
+  }
+  .mirror-card-rail-secondary {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: calc(12 * var(--mirror-scale));
+  }
+  .mirror-card-rail-secondary[data-count='1'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mirror-card-slot {
+    align-items: stretch;
+  }
+  .display-card {
+    animation-name: glass-float-compact;
+  }
+  .card-items {
+    display: none;
+  }
+  .mirror-page .card-description {
+    -webkit-line-clamp: 3;
+  }
+  .display-card-secondary {
+    --card-padding: calc(14 * var(--mirror-scale)) calc(16 * var(--mirror-scale));
+  }
+  .display-card-secondary .card-kicker {
+    margin-bottom: calc(6 * var(--mirror-scale));
+  }
+  .mirror-page .display-card-secondary .card-value {
+    margin-top: calc(4 * var(--mirror-scale));
+    font-size: calc(24 * var(--mirror-scale));
+  }
+  .mirror-page .display-card-secondary .card-subtitle,
+  .mirror-page .display-card-secondary .card-description,
+  .display-card-secondary .card-source {
+    display: none;
+  }
+  /* Le pied de page garde sa place : une pastille qui apparaît ne recouvre pas la carte. */
+  .mirror-footer {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: calc(12 * var(--mirror-scale));
+    min-height: calc(28 * var(--mirror-scale));
+  }
+  .mirror-footer > .mirror-hint {
+    align-self: center;
+    max-width: min(100%, 26em);
+  }
+}
+
+/* Portrait haut (écran vertical, tablette) : deux rangées d’informations permanentes. */
+@media (orientation: portrait) and (min-height: 1000px) {
+  .ambient-module:nth-child(-n + 4) {
+    display: block;
+  }
+  .mirror-page:has(.mirror-ambient, .mirror-card-rail) {
+    --orb-size: calc(var(--orb-user-scale, 1) * clamp(200px, 52vmin, 1600px));
+  }
+}
+
+/*
+ * Portrait de hauteur moyenne (tablette) : un seul texte sous la valeur, le sous-titre, sinon
+ * une description plus courte, pour que la carte tienne sans ligne coupée à mi-hauteur.
+ */
+@media (orientation: portrait) and (max-height: 1400px) {
+  .mirror-page .card-description {
+    -webkit-line-clamp: 2;
+  }
+  .mirror-page .card-subtitle + .card-description {
+    display: none;
+  }
+}
+
+/* Portrait peu haut (téléphone) : carte principale resserrée. */
+@media (orientation: portrait) and (max-height: 900px) {
+  .display-card {
+    --card-padding: calc(16 * var(--mirror-scale)) calc(18 * var(--mirror-scale));
+  }
+  .card-kicker {
+    margin-bottom: calc(6 * var(--mirror-scale));
+  }
+  .display-card h2 {
+    -webkit-line-clamp: 2;
+  }
+  .mirror-page .card-value {
+    margin-top: calc(6 * var(--mirror-scale));
+    font-size: calc(30 * var(--mirror-scale));
+  }
+  .mirror-page .card-subtitle {
+    -webkit-line-clamp: 1;
+    margin-top: calc(4 * var(--mirror-scale));
+  }
+  .mirror-page .card-description {
+    -webkit-line-clamp: 2;
+    margin-top: calc(6 * var(--mirror-scale));
+  }
+  .card-source {
+    margin-top: calc(8 * var(--mirror-scale));
+    padding-top: calc(6 * var(--mirror-scale));
+  }
+  .display-card-secondary .card-kicker {
+    display: none;
+  }
+  /* Une action attendue (activer la voix) passe avant les cartes complémentaires. */
+  .mirror-stack:has(.mirror-hint) .mirror-card-rail-secondary {
+    display: none;
+  }
+}
+
+/* Connexion locale, conservée séparément de l'affichage passif du miroir. */
+.loading-screen {
+  display: flex;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 25px;
+}
+.loading-screen p {
+  font-size: 13px;
+  color: var(--muted);
+}
+.toast {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #34281d;
+  color: #f1cfb5;
+  border: 1px solid #674633;
+  padding: 15px 20px;
+  border-radius: 8px;
+  max-width: 90vw;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 13px;
+  z-index: 5;
+}
+.toast button {
+  font-size: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

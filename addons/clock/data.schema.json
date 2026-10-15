@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ClockData v1",
+  "description": "Paramètres de l'horloge vérifiés. L'heure elle-même est calculée avec ctx.now() à chaque présentation, pas figée dans le cache.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["timeZone", "showDate", "showSeconds"],
+  "properties": {
+    "timeZone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "showDate": {
+      "type": "boolean"
+    },
+    "showSeconds": {
+      "type": "boolean"
+    }
+  }
+}

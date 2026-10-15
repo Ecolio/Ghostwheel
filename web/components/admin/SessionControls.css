@@ -1,0 +1,126 @@
+/* Panneau de session : compléments propres à SessionControls (thème dans admin-theme.css). */
+
+/* Configuration à terminer : halo ambre plutôt que vert. */
+.admin-session[data-tone='warning'] {
+  border-color: #6b5a3c;
+  background: linear-gradient(115deg, #2a2519, #16201f 75%);
+}
+.admin-session-halo[data-tone='warning'] {
+  background: #e8bc88;
+  box-shadow:
+    0 0 0 7px #e8bc8812,
+    0 0 18px #e8bc8826;
+}
+.admin-session-start-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--primary);
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.admin-session-start-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.admin-session-start-link svg {
+  width: 14px;
+  height: 14px;
+}
+.admin-presence > .admin-presence-wide {
+  grid-column: span 3;
+}
+
+/* Version compacte : une ligne, état, motif et un seul bouton. */
+.admin-session[data-compact='true'] .admin-session-top {
+  flex-wrap: nowrap;
+  gap: 16px;
+  padding: 12px 14px 12px 20px;
+}
+.admin-session[data-compact='true'] .admin-session-halo {
+  width: 12px;
+  height: 12px;
+  box-shadow: 0 0 0 5px #53635e10;
+}
+.admin-session[data-compact='true'] .admin-session-halo[data-active='true'] {
+  box-shadow: 0 0 0 5px #38b4a014;
+}
+.admin-session[data-compact='true'] .admin-session-halo[data-tone='warning'] {
+  box-shadow: 0 0 0 5px #e8bc8814;
+}
+.admin-session-line {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: baseline;
+  gap: 6px 14px;
+  min-width: 0;
+}
+/* Un paragraphe, pas un titre : le bandeau se répète sur chaque rubrique, sous son h1. */
+.admin-session-line .admin-session-heading {
+  flex: 0 0 auto;
+  margin: 0;
+  font:
+    600 15px/1.4 'Epilogue',
+    'Segoe UI',
+    sans-serif;
+  letter-spacing: -0.02em;
+}
+.admin-session-line .admin-session-motif {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+.admin-session-line .admin-session-start-link {
+  font-size: 13px;
+}
+.admin-session[data-compact='true'] .admin-session-actions {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 760px) {
+  .admin-presence > :is(.admin-presence-wide, .admin-presence-sentence) {
+    grid-column: 1 / -1;
+  }
+  /* Zones tactiles d’au moins 44 px. */
+  .admin-shell .admin-session [data-slot='button'] {
+    min-height: 44px;
+  }
+  .admin-session[data-compact='true'] .admin-session-top {
+    flex-wrap: wrap;
+    padding: 14px 16px;
+  }
+  .admin-session[data-compact='true'] .admin-session-halo {
+    margin-top: 0;
+  }
+  .admin-session-line {
+    flex-wrap: wrap;
+    flex-basis: calc(100% - 40px);
+  }
+  /* Sur sa propre ligne, le motif se lit en entier (trois lignes au plus) : la consigne
+     de la clé OpenAI ne doit pas s’arrêter au milieu d’un mot. */
+  .admin-session-line .admin-session-motif {
+    flex-basis: 100%;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .admin-session[data-compact='true'] .admin-session-actions {
+    width: 100%;
+  }
+  .admin-session[data-compact='true'] .admin-session-actions > button {
+    flex: 1 1 auto;
+  }
+  .admin-session-start-link {
+    min-height: 44px;
+  }
+}

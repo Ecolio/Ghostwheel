@@ -1,0 +1,19 @@
+# Accélération GPU de la vision locale (LFM2.5-VL-450M).
+#
+# Ces paquets remplacent onnxruntime : n'en installer qu'un seul, à la place de
+# onnxruntime==1.30.0 de requirements.txt. Le worker détecte le fournisseur GPU
+# tout seul, puis charge les graphes fp16 (python perception/download_models.py --device auto).
+#
+# NVIDIA (bibliothèques CUDA/cuDNN compatibles fournies par les extras pip) :
+onnxruntime-gpu[cuda,cudnn]==1.30.0
+#
+# Windows, GPU AMD ou Intel via DirectX 12 :
+# onnxruntime-directml==1.24.4
+#
+# AMD sous Linux : utiliser le paquet MIGraphX publié par AMD pour la version ROCm
+# installée. ROCMExecutionProvider a été retiré depuis ORT 1.23. Pour ROCm 7.2.1 :
+#   pip install onnxruntime-migraphx -f https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.1/
+# (scripts/install-linux.sh --gpu amd). AMD ne prend en charge ONNX Runtime/MIGraphX que
+# sur les Radeon dédiées : sur un Ryzen AI (Radeon 890M), garder la vision sur le CPU.
+# https://onnxruntime.ai/docs/execution-providers/MIGraphX-ExecutionProvider.html
+# onnxruntime-migraphx

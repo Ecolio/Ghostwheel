@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "observationId": "vision-r18",
+  "engagementId": "eng-2026-09-15-0031",
+  "trigger": "scene",
+  "capturedAt": "2026-09-15T06:10:04Z",
+  "processedAt": "2026-09-15T06:10:07Z",
+  "status": "ready",
+  "description": "Une personne au premier plan porte un haut bleu.",
+  "peopleCount": 1,
+  "visibleObjects": [],
+  "limitations": [
+    "Le bas de la tenue est hors champ."
+  ],
+  "speakerAssociation": "unknown",
+  "validUntil": "2026-09-15T06:10:14.000Z",
+  "captureId": "frame-demo-31",
+  "trackId": "track-demo-1",
+  "profileEpoch": 1
+}

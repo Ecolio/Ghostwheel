@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "transit-home-unavailable",
+  "cacheKey": "demo:initial-failure",
+  "revision": 0,
+  "moduleId": "idfm-transit",
+  "dataVersion": 1,
+  "scope": {
+    "kind": "household",
+    "userId": null
+  },
+  "source": null,
+  "fetchedAt": null,
+  "observedAt": null,
+  "validUntil": null,
+  "status": "error",
+  "data": null
+}

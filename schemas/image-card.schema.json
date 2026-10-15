@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cornelius ImageCard v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "cardType", "title", "prompt", "imageUrl", "model", "width", "height", "primaryValue", "subtitle", "description", "items", "sources"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "cardType": { "type": "string", "const": "image" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "prompt": { "type": "string", "minLength": 1, "maxLength": 1000 },
+    "imageUrl": { "type": "string", "pattern": "^/api/generated-images/[a-f0-9-]{36}\\.webp$", "maxLength": 96 },
+    "model": {
+      "enum": [
+        "sdxl-turbo",
+        "sana-sprint-0.6b",
+        "flux2-klein-4b",
+        "z-image-turbo",
+        "gpt-image-2.5-flare",
+        "gpt-image-2.5-sunburst",
+        "gpt-image-1-mini"
+      ]
+    },
+    "width": { "type": "integer", "enum": [512, 1024] },
+    "height": { "type": "integer", "enum": [512, 1024] },
+    "primaryValue": { "type": "null" },
+    "subtitle": { "type": "null" },
+    "description": { "type": "null" },
+    "items": { "type": "array", "maxItems": 0 },
+    "sources": { "type": "array", "maxItems": 0 }
+  }
+}

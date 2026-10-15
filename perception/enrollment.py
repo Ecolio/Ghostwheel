@@ -1,0 +1,131 @@
+"""Guided local enrollment: five distinct poses, quality and identity checks."""
+from dataclasses import dataclass, field
+import numpy as np
+
+
+@dataclass
+class FaceSample:
+    feature: np.ndarray
+    pose: float
+    issue: str | None = None
+    # Position du nez entre les yeux et la bouche (baisse quand la tête se lève).
+    pitch: float = 0.0
+    # Informations de reconnaissance, utilisées par le test en direct de l’administration.
+    usable: bool = True
+    identity: str | None = None
+    scores: list = field(default_factory=list)
+    required: float | None = None
+
+
+FRONT = "Regardez la caméra de face."
+SIDE = "Tournez légèrement la tête vers un côté."
+OTHER_SIDE = "Tournez légèrement la tête vers l’autre côté."
+UP = "Levez légèrement le menton."
+DOWN = "Baissez légèrement le menton."
+STAGES = 5
+# Écart d’inclinaison verticale par rapport à la position de face.
+PITCH_MIN = 0.06
+PITCH_MAX = 0.35
+
+
+class Enrollment:
+    # Six images par position, espacées dans le temps, résumées en deux vues : on garde de
+    # la variété (expression, micro-mouvements) sans conserver d’image.
+    required = 6
+    per_template = 3
+    interval = 0.25
+
+    def __init__(self, request, existing=None):
+        self.request = request
+        # Mode « compléter » : les nouvelles vues doivent ressembler au visage déjà mémorisé.
+        self.existing = None if existing is None or len(existing) == 0 else np.asarray(existing)
+        self.templates = []
+        self.samples = []
+        self.pitches = []
+        self.baseline = None
+        self.stage = 0
+        self.direction = None
+        self.vertical = None
+        self.last_sample_at = -1
+        self.message = FRONT
+
+    def prompt(self):
+        if self.stage == 3:
+            return UP
+        if self.stage == 4:
+            # Dernière étape : le sens opposé à celui de l’étape précédente.
+            return DOWN if self.vertical is None or self.vertical < 0 else UP
+        return (FRONT, SIDE, OTHER_SIDE)[min(self.stage, 2)]
+
+    def progress(self):
+        return {"step": min(self.stage, STAGES - 1), "collected": len(self.samples),
+                "total": self.required, "message": self.message}
+
+    def matches(self, sample):
+        stage = self.stage
+        if stage == 0:
+            return abs(sample.pose) <= 0.13
+        if stage in (1, 2):
+            direction = 1 if sample.pose > 0 else -1
+            return 0.18 <= abs(sample.pose) <= 0.42 and (stage == 1 or direction != self.direction)
+        offset = sample.pitch - self.baseline
+        if abs(sample.pose) > 0.2 or not PITCH_MIN <= abs(offset) <= PITCH_MAX:
+            return False
+        return stage == 3 or (offset > 0) != (self.vertical > 0)
+
+    def add(self, samples, now):
+        if len(samples) != 1:
+            self.samples.clear()
+            self.message = "Placez une seule personne devant la caméra."
+            return None
+        sample = samples[0]
+        if sample.issue:
+            self.samples.clear()
+            self.message = sample.issue
+            return None
+        if self.existing is not None and float(np.max(self.existing @ sample.feature)) < 0.35:
+            self.samples.clear()
+            self.message = "Ce visage ne correspond pas à celui déjà mémorisé pour ce profil."
+            return None
+        anchor = self.templates[0] if self.templates else (self.samples[0] if self.samples else None)
+        if anchor is not None and float(np.dot(anchor, sample.feature)) < 0.35:
+            self.samples.clear()
+            self.message = "Visage différent ou angle trop fort : revenez de face."
+            return None
+        self.message = self.prompt()
+        if not self.matches(sample):
+            self.samples.clear()
+            if self.stage == 0:
+                self.pitches.clear()
+            return None
+        if self.stage == 1:
+            direction = 1 if sample.pose > 0 else -1
+            if self.direction is not None and direction != self.direction:
+                self.samples.clear()
+            self.direction = direction
+        if self.stage == 3:
+            vertical = 1 if sample.pitch > self.baseline else -1
+            if self.vertical is not None and vertical != self.vertical:
+                self.samples.clear()
+            self.vertical = vertical
+        if now - self.last_sample_at < self.interval:
+            return None
+        self.last_sample_at = now
+        self.samples.append(sample.feature)
+        if self.stage == 0:
+            self.pitches.append(sample.pitch)
+        if len(self.samples) < self.required:
+            return None
+        for start in range(0, self.required, self.per_template):
+            vector = np.mean(self.samples[start:start + self.per_template], axis=0)
+            vector /= max(float(np.linalg.norm(vector)), 1e-9)
+            self.templates.append(vector)
+        self.samples.clear()
+        if self.stage == 0:
+            # Repère personnel pour le haut et le bas : l’inclinaison mesurée de face.
+            self.baseline = float(np.median(self.pitches))
+        self.stage += 1
+        if self.stage == STAGES:
+            return [vector.tolist() for vector in self.templates]
+        self.message = self.prompt()
+        return None

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ParkingConfig v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["parkingId"],
+  "properties": {
+    "parkingId": {
+      "title": "Parking",
+      "description": "Identifiant du parking chez le fournisseur.",
+      "type": "string",
+      "pattern": "^[a-z0-9_-]{1,64}$",
+      "examples": ["demo"]
+    }
+  }
+}

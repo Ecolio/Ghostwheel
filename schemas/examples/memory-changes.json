@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "changes": [
+    {
+      "operation": "add",
+      "memoryId": null,
+      "topic": "communication",
+      "fact": "Préfère recevoir des réponses courtes.",
+      "evidenceTurnIds": ["demo-user-turn-3"],
+      "scope": "durable",
+      "expiresAt": null
+    }
+  ]
+}

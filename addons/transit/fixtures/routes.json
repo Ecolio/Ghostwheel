@@ -1,0 +1,14 @@
+{
+  "routes": [
+    {
+      "id": "route:IDFM:C01072-inbound",
+      "line": { "id": "line:IDFM:C01072", "code": "72", "name": "72" },
+      "direction": { "name": "Gare de Lyon (Paris)" }
+    },
+    {
+      "id": "route:IDFM:C01072-outbound",
+      "line": { "id": "line:IDFM:C01072", "code": "72", "name": "72" },
+      "direction": { "name": "Parc de Saint-Cloud (Saint-Cloud)" }
+    }
+  ]
+}

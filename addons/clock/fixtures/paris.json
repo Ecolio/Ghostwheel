@@ -1,0 +1,12 @@
+{
+  "now": "2026-09-22T10:34:56.000Z",
+  "config": {
+    "timeZone": "Europe/Paris",
+    "showDate": true,
+    "showSeconds": false
+  },
+  "expected": {
+    "time": "12:34",
+    "date": "mardi 22 septembre"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "city": { "name": "Paris", "insee": "75056" },
+  "forecast": [
+    {
+      "datetime": "2026-09-17",
+      "tmin": 12,
+      "tmax": 21,
+      "weather": 1,
+      "probarain": 10,
+      "wind10m": 14
+    },
+    {
+      "datetime": "2026-09-18",
+      "tmin": 13,
+      "tmax": 19,
+      "weather": 32,
+      "probarain": 70,
+      "wind10m": 22
+    },
+    {
+      "datetime": "2026-09-19",
+      "tmin": 11,
+      "tmax": 18,
+      "weather": 5,
+      "probarain": 40,
+      "wind10m": 18
+    }
+  ]
+}
