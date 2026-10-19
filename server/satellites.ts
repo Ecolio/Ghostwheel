@@ -25,6 +25,8 @@ interface Connection {
   satellite: Satellite;
   streamId: string;
   firmware: string | null;
+  /** Annulation d’écho annoncée par le satellite : pas de semi-duplex. */
+  echoCancelled: boolean;
   muted: boolean;
   listening: boolean | null;
   alive: boolean;
@@ -64,7 +66,9 @@ export class SatelliteHub {
       controller: SessionController;
       logs: DiagnosticLog;
       /** Micro du satellite vers la session Live de sa conversation. */
-      live: { satelliteAudio(satelliteId: string, pcm: Buffer): void } | null;
+      live: {
+        satelliteAudio(satelliteId: string, pcm: Buffer, echoCancelled: boolean): void;
+      } | null;
       /** Faux dans les tests : pas de ping périodique. */
       heartbeat?: boolean;
     },
@@ -90,6 +94,7 @@ export class SatelliteHub {
       satellite,
       streamId: randomUUID(),
       firmware: null,
+      echoCancelled: false,
       muted: false,
       listening: null,
       alive: true,
@@ -143,7 +148,11 @@ export class SatelliteHub {
   /** Nom ou réglages changés : la connexion en cours les reprend. */
   refresh(satellite: Satellite): void {
     const connection = this.connections.get(satellite.id);
-    if (connection) connection.satellite = satellite;
+    if (!connection) return;
+    const volumeChanged = connection.satellite.volume !== satellite.volume;
+    connection.satellite = satellite;
+    if (volumeChanged && connection.firmware)
+      this.send(connection, { type: 'volume', volume: satellite.volume });
   }
 
   dispose(): void {
@@ -162,7 +171,8 @@ export class SatelliteHub {
       message.protocol !== SATELLITE_PROTOCOL ||
       typeof message.firmware !== 'string' ||
       message.firmware.length < 1 ||
-      message.firmware.length > 32
+      message.firmware.length > 32 ||
+      (message.aec !== undefined && typeof message.aec !== 'boolean')
     )
       return socket.close(
         1008,
@@ -177,10 +187,12 @@ export class SatelliteHub {
     );
     if (!started) return socket.close(1008, 'Écoute du mot d’appel saturée.');
     connection.firmware = message.firmware;
+    connection.echoCancelled = message.aec === true;
     this.deps.store.seen(satellite.id);
     this.deps.logs.write('info', 'local', 'Satellite connecté', {
       satellite: satellite.name,
       firmware: message.firmware,
+      aec: connection.echoCancelled,
     });
     this.send(connection, {
       type: 'welcome',
@@ -212,7 +224,7 @@ export class SatelliteHub {
 
   /** Conversation prête : le micro part vers Live et vers la détection de voix (silence). */
   private converse(connection: Connection, pcm: Buffer) {
-    this.deps.live?.satelliteAudio(connection.satellite.id, pcm);
+    this.deps.live?.satelliteAudio(connection.satellite.id, pcm, connection.echoCancelled);
     if (!connection.interactionId) return;
     let audio = Buffer.concat([connection.vadRemainder, pcm]);
     while (audio.length >= VAD_BYTES) {
@@ -232,6 +244,7 @@ export class SatelliteHub {
     const accepted = this.deps.controller.satelliteWake({
       id: connection.satellite.id,
       name: connection.satellite.name,
+      profileId: connection.satellite.profileId,
     });
     this.deps.logs.write('info', 'local', 'Mot d’appel entendu par un satellite', {
       satellite: connection.satellite.name,

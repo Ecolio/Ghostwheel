@@ -89,7 +89,8 @@ export class PersonalMemory {
     if (
       this.controller.isOpenAIBlocked() ||
       !['connecting', 'ready'].includes(this.controller.sessionState().phase) ||
-      !this.controller.isBrowserConnected() ||
+      // Un satellite porte lui-même le son : il remplace le navigateur du miroir.
+      !(this.controller.sessionState().satellite || this.controller.isBrowserConnected()) ||
       scope.interactionId !== current.interactionId ||
       scope.profileEpoch !== current.profileEpoch ||
       scope.contextVersion !== current.contextVersion
@@ -134,9 +135,11 @@ export class PersonalMemory {
     if (!capture || capture.overflow) return;
     const identity = this.identity(capture.scope);
     const last = capture.spans.at(-1);
-    const validUntil = identity
-      ? (this.controller.memoryObservedAt() ?? this.now()) + 2000
-      : Infinity;
+    // Satellite rattaché : l’identité ne tient à aucune image, elle vaut toute la conversation.
+    const validUntil =
+      identity && !this.controller.sessionState().satellite
+        ? (this.controller.memoryObservedAt() ?? this.now()) + 2000
+        : Infinity;
     if (last && same(last.identity, identity) && last.validUntil >= this.now()) {
       last.until = this.now();
       last.validUntil = validUntil;

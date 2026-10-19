@@ -169,6 +169,8 @@ export class SessionController {
     return this.rawObservation?.observedAt ?? null;
   }
   memoryProfileId(): string | null {
+    // Satellite : le profil rattaché à sa pièce (choisi dans l’administration), ou personne.
+    if (this.satelliteSession()) return this.profile?.id ?? null;
     const input = this.rawObservation;
     if (
       !input ||
@@ -1115,12 +1117,14 @@ export class SessionController {
 
   /**
    * « Cornelius » entendu par un satellite : la conversation s’ouvre dans sa pièce, sans
-   * navigateur ni caméra, anonyme. Faux si une conversation est déjà en cours ou si
-   * l’ouverture est réservée aux membres reconnus du foyer (un satellite ne voit personne).
+   * navigateur ni caméra, au nom du profil rattaché au satellite, ou anonyme. Faux si une
+   * conversation est déjà en cours, ou si l’ouverture est réservée aux membres du foyer et que
+   * le satellite n’est rattaché à personne (il ne voit personne).
    */
-  satelliteWake(satellite: { id: string; name: string }): boolean {
+  satelliteWake(satellite: { id: string; name: string; profileId?: string | null }): boolean {
     if (!this.isWakeListening()) return false;
-    if (this.session.mode === 2 || this.knownPeopleOnly) {
+    const profile = satellite.profileId ? this.profiles.get(satellite.profileId) : null;
+    if ((this.session.mode === 2 || this.knownPeopleOnly) && !profile) {
       this.diagnostic = satelliteMembersDiagnostic;
       this.publish();
       return false;
@@ -1135,8 +1139,11 @@ export class SessionController {
     }
     if (this.diagnostic === satelliteMembersDiagnostic) this.diagnostic = null;
     this.startupWakeAt = this.now();
-    this.changeProfile(null, 'household', false);
-    this.admit('satellite', 'satellite:' + satellite.id, { ...satellite });
+    this.changeProfile(profile, profile ? 'explicit' : 'household', false);
+    this.admit('satellite', 'satellite:' + satellite.id, {
+      id: satellite.id,
+      name: satellite.name,
+    });
     this.publish();
     return this.session.phase === 'connecting';
   }
@@ -1389,7 +1396,11 @@ export class SessionController {
     this.reopenAfterClose = null;
     // Mode voix : sans caméra en veille, rien ne prouve que la personne est encore là, sauf
     // quand la même conversation reprend avec un contexte à jour.
-    if (this.session.mode === 4 && this.selection === 'automatic' && reopen !== 'resume')
+    // Le profil d’un satellite rattaché ne vaut que pour sa conversation.
+    if (
+      released ||
+      (this.session.mode === 4 && this.selection === 'automatic' && reopen !== 'resume')
+    )
       this.changeProfile(null, 'household', false);
     if (reopen) {
       this.consumedTrigger = null;

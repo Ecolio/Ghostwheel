@@ -40,6 +40,7 @@ import type { AgentAdminView, AgentConnectionInput, AgentTaskView } from '../sha
 import type { ToolResult } from '../shared/addons';
 import type { MemoryView, MemoryEdit } from '../shared/memory';
 import type { PersonalityView } from '../shared/personality';
+import type { SatelliteView } from '../shared/satellites';
 
 export type Role = 'admin' | 'kiosk';
 
@@ -357,6 +358,23 @@ export const api = {
   changePassword: (current: string, next: string) =>
     post<{ ok: boolean }>('/api/admin/password', { current, next }),
   restartServer: () => post<{ ok: boolean }>('/api/admin/restart', {}),
+  satellites: () => request<{ satellites: SatelliteView[] }>('/api/admin/satellites'),
+  createSatellite: (name: string) =>
+    post<{ satellite: SatelliteView; token: string }>('/api/admin/satellites', { name }),
+  updateSatellite: (
+    id: string,
+    patch: { name?: string; profileId?: string | null; volume?: number },
+  ) =>
+    request<{ satellite: SatelliteView }>('/api/admin/satellites/' + encodeURIComponent(id), {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+  renewSatelliteToken: (id: string) =>
+    post<{ token: string }>('/api/admin/satellites/' + encodeURIComponent(id) + '/token', {}),
+  removeSatellite: (id: string) =>
+    request<{ ok: boolean }>('/api/admin/satellites/' + encodeURIComponent(id), {
+      method: 'DELETE',
+    }),
   forgetTrustedDevices: () =>
     request<{ ok: boolean }>('/api/admin/trusted-devices', { method: 'DELETE' }),
   forgetFace: (id: string) =>

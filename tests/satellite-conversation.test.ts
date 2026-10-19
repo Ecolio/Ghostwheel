@@ -290,3 +290,32 @@ test('concentrateur : son d’avant le mot rejoué, voix vers le satellite, dét
   socket.close();
   assert.equal(f.controller.sessionState().reason, 'Satellite déconnecté.');
 });
+
+test('satellite rattaché : au nom du profil, même réservé aux membres, puis anonyme', (t) => {
+  const f = fixture(t);
+  const lea = f.profiles.create('Léa');
+  f.controller.setOpening({ trigger: 'voice', audience: 'members', recognizeVoice: false });
+  assert.equal(f.controller.satelliteWake({ ...bureau, profileId: lea.id }), true);
+  assert.equal(f.controller.snapshot().state.activeProfile?.id, lea.id);
+  assert.equal(f.controller.memoryProfileId(), lea.id);
+  f.emit({ type: 'session.started', event_id: 'e1', session: { id: 'live_sat' } });
+  // Le prénom rejoint la session comme une donnée, sans salutation.
+  const identity = f.sent.find(
+    (event) =>
+      event.type === 'session.instructions.append' && event.content.includes('Conversation au nom'),
+  );
+  assert.ok(identity);
+  f.controller.close('Fin de test.');
+  f.emit({ type: 'session.closed', event_id: 'e2', usage: {} });
+  assert.equal(f.controller.snapshot().state.activeProfile, null);
+  assert.equal(f.controller.memoryProfileId(), null);
+});
+
+test('satellite avec annulation d’écho : le micro reste ouvert pendant que Cornelius parle', (t) => {
+  const f = fixture(t);
+  f.controller.satelliteWake(bureau);
+  f.emit({ type: 'session.started', event_id: 'e1', session: { id: 'live_sat' } });
+  f.emit(delta(tone(8000)));
+  f.live.satelliteAudio(bureau.id, tone(3000), true);
+  assert.equal(f.audio.at(-1)!.readInt16LE(0), -3000);
+});

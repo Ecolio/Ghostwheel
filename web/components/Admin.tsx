@@ -25,6 +25,7 @@ import { VoiceSettings } from './admin/VoiceSettings';
 import { OrbScaleSettings } from './admin/OrbScaleSettings';
 import { Secrets } from './admin/Secrets';
 import { NetworkAccess } from './admin/NetworkAccess';
+import { Satellites } from './admin/Satellites';
 import { GettingStarted, remainingSteps } from './admin/GettingStarted';
 import { SessionControls } from './admin/SessionControls';
 import { activateMirror } from './admin/activate-mirror';
@@ -78,6 +79,12 @@ const sections = [
     group: 'Premiers réglages',
     label: 'Quand il écoute',
     description: 'Ce qui ouvre la conversation, qui peut l’ouvrir et quand elle se termine.',
+  },
+  {
+    id: 'satellites',
+    group: 'Premiers réglages',
+    label: 'Satellites audio',
+    description: 'Les micros et haut-parleurs des autres pièces, qui répondent à « Cornelius ».',
   },
   {
     id: 'personality',
@@ -612,6 +619,9 @@ export function Admin({
                       status={devices}
                       openCommands={moduleView === 'commands'}
                     />
+                  )}
+                  {section === 'satellites' && (
+                    <Satellites profiles={state.profiles} network={devices?.network} run={run} />
                   )}
                   {section === 'memory' && <Memory profiles={state.profiles} run={run} />}
                   {section === 'agents' && <Agents profiles={state.profiles} run={run} />}

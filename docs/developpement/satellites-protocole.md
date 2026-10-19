@@ -10,8 +10,9 @@ Cette page décrit le dialogue entre Cornelius et un satellite audio (micro et h
 - En veille, le satellite envoie le son de son micro ; l’ordinateur y cherche « Cornelius » avec le même modèle que le miroir. Le son n’est envoyé que lorsque le serveur le demande (message `listen`).
 - Une seule conversation à la fois dans toute la maison : miroir ou un satellite.
 - Quand le miroir et un satellite entendent « Cornelius » en même temps, l’appareil au meilleur score l’emporte.
-- Une conversation de satellite est **anonyme et en voix seule** : ni carte, ni image, ni caméra, ni mémoire personnelle. Elle se termine après un silence (réglage **Fin de parole**, 20 s par défaut), ou quand le satellite se déconnecte.
-- L’ouverture réservée aux membres du foyer exclut les satellites : ils ne voient personne. Le satellite reçoit alors `busy`.
+- Une conversation de satellite est **en voix seule** : ni carte, ni image, ni caméra. Elle se termine après un silence (réglage **Fin de parole**, 20 s par défaut), ou quand le satellite se déconnecte.
+- Par défaut, elle est **anonyme** : ni mémoire personnelle ni outils propres à une personne. Dans **Administration → Satellites audio**, un satellite peut être rattaché à un profil : ses conversations se tiennent alors au nom de cette personne, mémoire comprise, quelle que soit la personne qui parle dans la pièce.
+- L’ouverture réservée aux membres du foyer n’accepte que les satellites rattachés à un profil : les autres ne voient personne et reçoivent `busy`.
 
 ## Connexion
 
@@ -36,7 +37,7 @@ Le son circule en messages binaires, toujours au même format : PCM 16 bits sign
 
 Une trame montante d’une autre taille ferme la connexion. La voix de Cornelius arrive au rythme où elle doit être jouée : un tampon de lecture de 200 à 300 ms suffit. Quand Cornelius est interrompu ou se tait, le flux continue avec du silence ; il n’y a pas de message pour vider le tampon.
 
-**Semi-duplex.** Sans annulation d’écho, le serveur remplace par du silence le son du micro tant que Cornelius parle, et 600 ms après. Le satellite continue d’envoyer ses trames normalement.
+**Semi-duplex.** Sans annulation d’écho, le serveur remplace par du silence le son du micro tant que Cornelius parle, et 600 ms après. Le satellite continue d’envoyer ses trames normalement. Un satellite qui annonce `"aec": true` (annulation d’écho faite sur la carte, avec la voie de référence du haut-parleur) garde son micro ouvert : on peut alors couper la parole à Cornelius.
 
 ## Messages
 
@@ -46,17 +47,18 @@ Les autres messages sont des objets JSON en texte, avec un champ `type`. Un mess
 
 | Message | Quand | Effet |
 |---|---|---|
-| `{"type":"hello","protocol":1,"firmware":"0.1.0"}` | premier message, dans les 5 s | le serveur répond `welcome`, ou ferme si le protocole n’est pas pris en charge |
+| `{"type":"hello","protocol":1,"firmware":"0.1.0","aec":false}` | premier message, dans les 5 s | le serveur répond `welcome`, ou ferme si le protocole n’est pas pris en charge |
 | binaire, 2 560 octets | tant que `listen` vaut `true` | veille : cherché pour « Cornelius » ; conversation : envoyé à Live |
 | `{"type":"mic","muted":true}` | bouton de vie privée | le serveur ignore le son tant que le micro est coupé |
 
-`firmware` est une chaîne de 1 à 32 caractères.
+`firmware` est une chaîne de 1 à 32 caractères ; `aec`, facultatif (faux par défaut), annonce l’annulation d’écho.
 
 ### Serveur → satellite
 
 | Message | Sens |
 |---|---|
 | `{"type":"welcome","protocol":1,"id":"…","name":"Chambre","volume":70}` | connexion acceptée ; `volume` de 0 à 100 |
+| `{"type":"volume","volume":40}` | volume changé dans l’administration |
 | `{"type":"listen","enabled":true}` | envoyer (`true`) ou cesser d’envoyer (`false`) le son du micro ; envoyé après `welcome` puis à chaque changement |
 | `{"type":"wake","score":0.93}` | « Cornelius » a été entendu par ce satellite (signal lumineux) |
 | `{"type":"busy"}` | la conversation ne s’ouvre pas ici : une autre est en cours, ou l’ouverture est réservée aux membres |
@@ -84,7 +86,7 @@ Après une fermeture, le satellite se reconnecte avec un délai croissant (1 s, 
 
 ## Essayer sans matériel
 
-Créer un satellite et afficher son jeton :
+Créer un satellite et afficher son jeton, dans **Administration → Satellites audio**, ou en ligne de commande :
 
 ```sh
 npx tsx --env-file-if-exists=.env scripts/satellite-ajouter.ts "Bureau"
@@ -102,4 +104,4 @@ Le simulateur envoie du silence, puis l’enregistrement, au rythme réel, affic
 
 - Annulation d’écho sur le satellite, pour pouvoir couper la parole à Cornelius.
 - Mot d’appel détecté sur le satellite (`wake` envoyé par le satellite avec le son qui précède), vérifié par le serveur.
-- Satellite rattaché à un profil (mémoire personnelle), bouton d’action, volume, mise à jour du firmware.
+- Bouton d’action, mise à jour du firmware.

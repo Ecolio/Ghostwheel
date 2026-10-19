@@ -16,7 +16,7 @@ export const satellitesMigration = `CREATE TABLE IF NOT EXISTS satellites (
   last_seen_at INTEGER
 ) STRICT;`;
 
-export const SATELLITE_NAME_MAX = 40;
+export { SATELLITE_NAME_MAX } from '../shared/satellites.js';
 
 export interface Satellite {
   id: string;
