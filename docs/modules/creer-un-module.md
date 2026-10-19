@@ -4,6 +4,8 @@ Ce tutoriel construit pas à pas un module d’informations à partir du gabarit
 
 Un module d’informations lit une source, garde des données propres et fournit la réponse orale et la carte. Pour déclencher une action (ouvrir un portail), utilisez plutôt une [commande HTTP](README.md#les-commandes-http) : aucun code n’est nécessaire.
 
+Ce tutoriel construit une lecture ordinaire, la même à chaque appel et gardée en cache. Pour un module qui répond à une question libre (chercher dans des documents, interroger un service), suivez les mêmes étapes, puis déclarez un [outil à la demande](reference.md#loutil-à-la-demande) : `collect` reçoit alors la question dans `context.query`. Le module [Ragator](../../addons/ragator/index.ts) en est l’exemple.
+
 ## 1. Copier le gabarit
 
 Le dossier `addons/_template` contient un module complet relié à un fournisseur fictif, avec ses schémas, une réponse d’exemple et ses tests. Son nom commence par `_` : Cornelius ne le charge pas. Depuis la racine du dépôt, copiez-le dans un dossier qui n’existe pas encore.

@@ -317,18 +317,19 @@ Une nouvelle `dataVersion` force une collecte, et l’ancien relevé n’est plu
 Crée un module Cornelius pour [besoin], identifiant [id] (minuscules, chiffres, « _ »).
 Lis docs/modules/reference.md, docs/modules/creer-un-module.md, shared/addons.ts,
 server/addons/runtime.ts, server/addons/registry.ts et le module fourni le plus proche
-(addons/clock, addons/weather ou addons/transit).
+(addons/clock, addons/weather ou addons/transit ; addons/ragator pour une question libre).
 Pars d'une copie de addons/_template, sans garder son fournisseur fictif.
 
 Source réelle : [documentation de l'API, adresses autorisées, format des réponses].
 Réglages : [champs, titres, descriptions, valeurs par défaut].
-Jeton : [nom de la variable .env, jamais sa valeur].
+Jeton : [nom de la variable .env, jamais sa valeur ; la déclaration dans secrets suffit].
+Lecture : [ordinaire avec read, ou outil à la demande avec query et sa longueur maximale].
 Fraîcheur : [durée, et traitement d'une donnée déjà ancienne].
 Carte et oral : [faits prioritaires, comportement sans donnée].
 Affichage permanent : [oui ou non ; metric ou list ; valeur et lignes].
 
-Respecte le contrat v1 et ses limites. N'invente ni adresse, ni traitement par outil,
-ni branchement automatique de jeton. Si le besoin dépasse le contrat, décris l'évolution
+Respecte le contrat v1 et ses limites. N'invente ni adresse, ni traitement par outil hors
+de l'outil à la demande. Si le besoin dépasse le contrat, décris l'évolution
 nécessaire avant de l'écrire. Ne modifie le cœur que pour un branchement indispensable
 et explique-le. Livre la définition, les schémas, des réponses fictives, des tests lancés
 par npm test et la fiche addons/[id]/README.md. Vérifie npm run check et npm test.
