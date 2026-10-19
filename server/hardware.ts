@@ -15,6 +15,7 @@ import { compile } from '../shared/validation.js';
 import type { SessionController } from './controller.js';
 import type { LiveTransport } from './live/transport.js';
 import type { PerceptionBridge } from './perception.js';
+import type { WakeArbiter } from './wake-arbiter.js';
 import type { ModelDownloads } from './model-downloads.js';
 import type { VisionBridge } from './vision.js';
 
@@ -48,6 +49,8 @@ export function registerHardware(
     live: LiveTransport | null;
     controller: SessionController;
     perception: PerceptionBridge;
+    /** Départage le miroir et les satellites qui entendent le même « Cornelius ». */
+    wakeArbiter: WakeArbiter;
     vision: VisionBridge;
     downloads: ModelDownloads;
     authorize(role: 'admin' | 'kiosk'): (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
@@ -291,21 +294,23 @@ export function registerHardware(
     },
     (socket) => perception.connect(socket),
   );
-  // Un arrêt manuel n’éteint pas la veille : « Cornelius » le lève, comme « Démarrer ».
-  const wakeListening = () => {
-    const session = controller.sessionState();
-    const wakeWord = controller.wakeWordState();
-    return wakeWord.enabled && wakeWord.ready && ['idle', 'blocked'].includes(session.phase);
-  };
   app.get('/wake-audio', { websocket: true, preValidation: kiosk }, (socket, req) => {
-    if (!wakeListening()) return socket.close(1008, 'Écoute du mot d’appel indisponible.');
+    if (!controller.isWakeListening())
+      return socket.close(1008, 'Écoute du mot d’appel indisponible.');
     const streamId = randomUUID();
-    perception.startWakeStream(streamId, () => {
-      if (socket.readyState === 1 && controller.isAdvancedAudioBuffer())
-        socket.send(JSON.stringify({ type: 'wake_detected' }));
-    });
+    const started = perception.startWakeStream(streamId, (score) =>
+      services.wakeArbiter.detected({
+        score,
+        accept: () =>
+          controller.wakeDetected(() => {
+            if (socket.readyState === 1 && controller.isAdvancedAudioBuffer())
+              socket.send(JSON.stringify({ type: 'wake_detected' }));
+          }),
+      }),
+    );
+    if (!started) return socket.close(1008, 'Écoute du mot d’appel saturée.');
     socket.on('message', (data, binary) => {
-      if (!binary || !services.currentKiosk(req) || !wakeListening())
+      if (!binary || !services.currentKiosk(req) || !controller.isWakeListening())
         return socket.close(1008, 'Écoute du mot d’appel périmée.');
       const pcm = Buffer.isBuffer(data) ? data : Buffer.from(data as ArrayBuffer);
       if (pcm.length !== 2560) return socket.close(1008, 'Trame de veille invalide.');

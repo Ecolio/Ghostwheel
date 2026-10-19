@@ -23,36 +23,44 @@ class WakeDetector:
             self.threshold = 0.5
         self.model = None
         self.detail = None
-        self.last_detection = 0.0
+        self.mel = FEATURES / "melspectrogram.onnx"
+        self.embedding = FEATURES / "embedding_model.onnx"
         if not self.path.is_file():
             self.detail = "Modèle absent : placez Cornelius dans models/cornelius.onnx."
             return
-        mel = FEATURES / "melspectrogram.onnx"
-        embedding = FEATURES / "embedding_model.onnx"
-        if not mel.is_file() or not embedding.is_file():
+        if not self.mel.is_file() or not self.embedding.is_file():
             self.detail = "Prétraitement openWakeWord absent : installez les modèles de caractéristiques."
             return
         try:
-            from openwakeword.model import Model
-            self.model = Model(
-                wakeword_models=[str(self.path)],
-                inference_framework="onnx",
-                melspec_model_path=str(mel),
-                embedding_model_path=str(embedding),
-            )
+            self.model = self.load()
         except Exception as error:
             self.detail = "Modèle Cornelius illisible (" + type(error).__name__ + ")."
+
+    def load(self):
+        from openwakeword.model import Model
+        return Model(
+            wakeword_models=[str(self.path)],
+            inference_framework="onnx",
+            melspec_model_path=str(self.mel),
+            embedding_model_path=str(self.embedding),
+        )
 
     def status(self):
         return {"type": "wake_status", "ready": self.model is not None, "detail": self.detail}
 
-    def reset(self):
+    def stream(self):
+        """A listening stream (the mirror or a satellite) with its own audio features."""
+        return WakeStream(self.load(), self.threshold)
+
+
+class WakeStream:
+    def __init__(self, model, threshold):
+        self.model = model
+        self.threshold = threshold
         self.last_detection = 0.0
-        if self.model is not None:
-            self.model.reset()
 
     def process(self, pcm):
-        if self.model is None or len(pcm) != 2560:
+        if len(pcm) != 2560:
             return None
         scores = self.model.predict(np.frombuffer(pcm, dtype="<i2"))
         score = float(next(iter(scores.values())))

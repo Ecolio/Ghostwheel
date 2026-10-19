@@ -93,6 +93,8 @@ Scripts du dossier `scripts/` :
 
 Les scripts Linux écrivent leurs fichiers de suivi et leurs journaux dans `data/run/` et `data/run/logs/`. `scripts/setup.ts`, `scripts/recette.ts`, `scripts/recette-lib.ts`, `scripts/mesures.ts` et `scripts/wait-server.mjs` (attente du serveur) servent les commandes npm et les scripts de lancement.
 
+Les satellites audio (en développement) ont trois outils, lancés avec `npx tsx` : `scripts/satellite-ajouter.ts` crée un satellite et affiche son jeton, `scripts/satellite-sim.ts` simule un satellite sans matériel, `scripts/satellite-sonde.ts` vérifie une session Live en PCM 16 kHz. Le dialogue avec le firmware est décrit dans [le protocole des satellites](satellites-protocole.md).
+
 ## Organisation du dépôt
 
 ```text

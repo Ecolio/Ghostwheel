@@ -355,6 +355,13 @@ export class SessionController {
     };
   }
 
+  /** La veille écoute « Cornelius » : un arrêt manuel ne l’éteint pas, le mot le lève. */
+  isWakeListening(): boolean {
+    return (
+      this.wakeWordEnabled && this.wakeWordReady && ['idle', 'blocked'].includes(this.session.phase)
+    );
+  }
+
   /** Santé caméra et cycle de regard tels que publiés, sans projection complète de l’état. */
   presenceScope(): { healthy: boolean; engagementId: string | null } {
     // Mode voix : la caméra n’est saine que pendant une conversation qui l’a allumée.

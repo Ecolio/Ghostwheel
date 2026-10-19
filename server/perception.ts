@@ -21,6 +21,8 @@ const ENROLLMENT_MS = 90_000;
 /** Durée pendant laquelle l’administration retrouve la fin du dernier enregistrement. */
 const ENROLLMENT_RESULT_MS = 10 * 60_000;
 const RETRY = 'Recommencez seul, face à la caméra, bien éclairé.';
+// Flux de veille simultanés : le miroir et les satellites (un octet d’emplacement par trame).
+const MAX_WAKE_STREAMS = 16;
 export const ENROLLMENT_MESSAGES = {
   saved: 'Visage mémorisé.',
   cancelled: 'Enregistrement annulé.',
@@ -91,8 +93,7 @@ export class PerceptionBridge {
   private lookalikes: NonNullable<DevicesStatus['perception']['lookalikes']> = [];
   private progress: DevicesStatus['perception']['enrollmentProgress'] = null;
   private audioInteraction: string | null = null;
-  private wakeStream: string | null = null;
-  private wakeDetectedCallback: (() => void) | null = null;
+  private wakeStreams = new Map<string, { slot: number; detected: (score: number) => void }>();
   private wakeReady = false;
   private lastVadAt = 0;
   private diagnostic: string | null = null;
@@ -203,8 +204,6 @@ export class PerceptionBridge {
     this.cameraApplied = cameraEnabled;
     if (!cameraEnabled) this.camera.suspend();
     this.audioInteraction = null;
-    this.wakeStream = null;
-    this.wakeDetectedCallback = null;
     this.wakeReady = false;
     this.controller.setSetup({ perception: true });
     this.controller.setWakeWordAvailability(false, 'Chargement du modèle Cornelius.');
@@ -215,6 +214,9 @@ export class PerceptionBridge {
     this.refreshProfiles();
     this.vision?.attach((value) => this.send(value));
     this.vision?.onWorkerConnected();
+    // Les flux de veille survivent à une perception relancée : elle les reprend tels quels.
+    for (const [streamId, { slot }] of this.wakeStreams)
+      this.send({ type: 'wake_start', streamId, slot });
     socket.on('message', (data, binary) => {
       if (this.worker !== socket) return;
       if (binary) {
@@ -270,12 +272,12 @@ export class PerceptionBridge {
           event.type === 'wake_detected' &&
           this.wakeReady &&
           typeof event.streamId === 'string' &&
-          event.streamId === this.wakeStream &&
+          this.wakeStreams.has(event.streamId) &&
           typeof event.score === 'number' &&
           event.score >= 0 &&
           event.score <= 1
         ) {
-          this.controller.wakeDetected(this.wakeDetectedCallback ?? undefined);
+          this.wakeStreams.get(event.streamId)!.detected(event.score);
         } else if (event.type === 'recognition_live') this.receiveLive(event);
         else if (event.type === 'enrolled') this.completeEnrollment(event);
         else if (event.type === 'camera_status') this.camera.receive(event);
@@ -292,8 +294,6 @@ export class PerceptionBridge {
       if (this.worker !== socket) return;
       this.worker = null;
       this.cameraApplied = null;
-      this.wakeStream = null;
-      this.wakeDetectedCallback = null;
       this.wakeReady = false;
       this.controller.setSetup({ perception: false });
       this.controller.setWakeWordAvailability(false, 'Perception locale déconnectée.');
@@ -329,31 +329,39 @@ export class PerceptionBridge {
       : { type: 'camera_enabled', enabled };
   }
 
-  startWakeStream(streamId: string, onDetected?: () => void): void {
-    this.wakeStream = streamId;
-    this.wakeDetectedCallback = onDetected ?? null;
-    this.send({ type: 'wake_start', streamId });
+  /**
+   * Un flux de veille (le miroir ou un satellite) : chacun a son emplacement, son propre état
+   * openWakeWord dans la perception, et reçoit ses propres détections. Faux si tout est pris.
+   */
+  startWakeStream(streamId: string, detected: (score: number) => void): boolean {
+    if (this.wakeStreams.has(streamId)) return true;
+    const used = new Set([...this.wakeStreams.values()].map((stream) => stream.slot));
+    let slot = 0;
+    while (used.has(slot)) slot++;
+    if (slot >= MAX_WAKE_STREAMS) return false;
+    this.wakeStreams.set(streamId, { slot, detected });
+    this.send({ type: 'wake_start', streamId, slot });
+    return true;
   }
 
   wakeAudio(streamId: string, pcm: Buffer): void {
-    if (
-      streamId !== this.wakeStream ||
-      !this.wakeReady ||
-      this.worker?.readyState !== 1 ||
-      pcm.length !== 2560
-    )
-      return;
-    const frame = Buffer.allocUnsafe(2561);
+    const stream = this.wakeStreams.get(streamId);
+    if (!stream || !this.wakeReady || this.worker?.readyState !== 1 || pcm.length !== 2560) return;
+    const frame = Buffer.allocUnsafe(2562);
     frame[0] = 0x57;
-    pcm.copy(frame, 1);
-    if (this.worker.bufferedAmount < 16_384) this.worker.send(frame);
+    frame[1] = stream.slot;
+    pcm.copy(frame, 2);
+    if (this.worker.bufferedAmount < 16_384 * this.wakeStreams.size) this.worker.send(frame);
   }
 
   endWakeStream(streamId: string): void {
-    if (streamId !== this.wakeStream) return;
-    this.wakeStream = null;
-    this.wakeDetectedCallback = null;
+    if (!this.wakeStreams.delete(streamId)) return;
     this.send({ type: 'wake_end', streamId });
+  }
+
+  /** Flux de veille ouverts : plus d’un, et l’arbitrage départage les appareils. */
+  wakeStreamCount(): number {
+    return this.wakeStreams.size;
   }
 
   private send(value: unknown) {

@@ -48,6 +48,10 @@ import { PerceptionBridge } from './perception.js';
 import { ModelDownloads, type ModelLauncher } from './model-downloads.js';
 import { VisionBridge } from './vision.js';
 import { registerHardware } from './hardware.js';
+import { WakeArbiter } from './wake-arbiter.js';
+import { SatelliteStore } from './satellites-store.js';
+import { SatelliteHub } from './satellites.js';
+import { registerSatellites } from './satellites-api.js';
 import { AmbientModules } from './addons/ambient.js';
 import { AddonRuntime } from './addons/runtime.js';
 import { loadAddons } from './addons/registry.js';
@@ -340,6 +344,17 @@ export async function createApp(
     },
     now,
   );
+  // Miroir et satellites entendent parfois le même « Cornelius » : le meilleur score l’emporte.
+  const wakeArbiter = new WakeArbiter(() => perception.wakeStreamCount());
+  const satelliteStore = new SatelliteStore(db, now);
+  const satellites = new SatelliteHub({
+    store: satelliteStore,
+    perception,
+    arbiter: wakeArbiter,
+    controller,
+    logs,
+    heartbeat: options.timers !== false,
+  });
   const devices = () => {
     const local = perception.snapshot();
     return {
@@ -603,6 +618,7 @@ export async function createApp(
     live,
     controller,
     perception,
+    wakeArbiter,
     vision,
     downloads,
     authorize: (role) => (role === 'admin' ? requireAdmin : async () => {}),
@@ -617,6 +633,7 @@ export async function createApp(
 
   registerHomeAssistant(app, homeAssistant, requireAdmin, () => controller.homeAssistantChanged());
   registerAgents(app, agents, requireAdmin);
+  registerSatellites(app, { store: satelliteStore, hub: satellites, profiles, requireAdmin });
   registerAddons(app, {
     runtime: addonRuntime,
     actions: actionExecutor,
@@ -1388,6 +1405,8 @@ export async function createApp(
     await live.shutdown();
     await agents.dispose();
     downloads.dispose();
+    satellites.dispose();
+    wakeArbiter.dispose();
     perception.dispose();
     db.close();
   });

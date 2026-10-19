@@ -31,7 +31,8 @@ class Worker:
         self.vision = None
         self.vad = Vad(ROOT / "models" / "silero.onnx")
         self.wake = WakeDetector()
-        self.wake_stream = None
+        # Flux de veille par emplacement : (identifiant du flux, état openWakeWord propre).
+        self.wake_streams = {}
         self.camera = Camera(camera, enabled=False)
         self.camera_enabled = False
         self.sequence = 0
@@ -223,19 +224,22 @@ class Worker:
     async def commands(self, socket):
         async for message in socket:
             if isinstance(message, bytes):
-                if len(message) == 2561 and message[0] == 0x57:
-                    if self.wake_stream is None or self.wake.model is None:
+                if len(message) == 2562 and message[0] == 0x57:
+                    entry = self.wake_streams.get(message[1])
+                    if entry is None or self.wake.model is None:
                         continue
+                    stream_id, stream = entry
                     try:
-                        score = await asyncio.to_thread(self.wake.process, message[1:])
+                        score = await asyncio.to_thread(stream.process, message[2:])
                     except Exception as error:
                         self.wake.model = None
+                        self.wake_streams = {}
                         self.wake.detail = "Inférence du mot d’appel indisponible (" + type(error).__name__ + ")."
                         await socket.send(json.dumps(self.wake.status()))
                         continue
                     if score is not None:
                         await socket.send(json.dumps({
-                            "type": "wake_detected", "streamId": self.wake_stream, "score": score
+                            "type": "wake_detected", "streamId": stream_id, "score": score
                         }))
                     continue
                 if len(message) != 1024 or self.interaction is None:
@@ -299,12 +303,21 @@ class Worker:
             elif event["type"] == "audio":
                 self.interaction = event["interactionId"]
                 self.vad.reset()
-            elif event["type"] == "wake_start" and isinstance(event.get("streamId"), str):
-                self.wake_stream = event["streamId"]
+            elif (event["type"] == "wake_start" and isinstance(event.get("streamId"), str)
+                  and isinstance(event.get("slot"), int) and 0 <= event["slot"] < 256):
                 if self.wake.model is not None:
-                    await asyncio.to_thread(self.wake.reset)
-            elif event["type"] == "wake_end" and event.get("streamId") == self.wake_stream:
-                self.wake_stream = None
+                    try:
+                        stream = await asyncio.to_thread(self.wake.stream)
+                    except Exception as error:
+                        self.wake.model = None
+                        self.wake_streams = {}
+                        self.wake.detail = "Modèle Cornelius illisible (" + type(error).__name__ + ")."
+                        await socket.send(json.dumps(self.wake.status()))
+                    else:
+                        self.wake_streams[event["slot"]] = (event["streamId"], stream)
+            elif event["type"] == "wake_end":
+                self.wake_streams = {slot: entry for slot, entry in self.wake_streams.items()
+                                     if entry[0] != event.get("streamId")}
 
     async def camera_command(self, socket, event):
         if event["type"] == "camera_enabled":
@@ -351,7 +364,7 @@ class Worker:
                                    additional_headers={"Authorization": "Bearer " + token},
                                    max_size=256_000, max_queue=4, open_timeout=5) as socket:
                     self.enrollment, self.last_progress, self.interaction = None, None, None
-                    self.wake_stream = None
+                    self.wake_streams = {}
                     self.vad.reset()
                     self.loop = asyncio.get_running_loop()
                     self.vision_queue = asyncio.Queue(maxsize=16)

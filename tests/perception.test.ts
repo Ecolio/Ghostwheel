@@ -321,29 +321,50 @@ test('l’engagement se règle indépendamment de l’identité et est transmis 
   assert.deepEqual(f.worker.last().engagement, settings);
 });
 
-test('veille : trames bornées et détections périmées ignorées', (t) => {
+test('veille : un emplacement par flux, trames bornées et détections périmées ignorées', (t) => {
   const f = fixture(t);
-  f.controller.setSessionMode(1);
-  f.controller.setWakeWordEnabled(true);
   f.worker.message({ type: 'wake_status', ready: true, detail: null });
-  f.observe();
-  f.advance(900);
-  f.observe();
-  assert.equal(f.controller.snapshot().state.session.phase, 'idle');
-  const order: string[] = [];
-  f.controller.subscribe(() => order.push('state'));
-  f.bridge.startWakeStream('stream-current', () => order.push('wake'));
-  f.bridge.wakeAudio('stream-current', Buffer.alloc(12));
+  const heard: string[] = [];
+  const starts = (worker: Worker) =>
+    worker.sent
+      .filter((value): value is string => typeof value === 'string')
+      .map((value) => JSON.parse(value))
+      .filter((event) => event.type === 'wake_start')
+      .map((event) => [event.streamId, event.slot]);
+  assert.equal(
+    f.bridge.startWakeStream('mirror', (score) => heard.push('mirror ' + score)),
+    true,
+  );
+  assert.equal(
+    f.bridge.startWakeStream('satellite', (score) => heard.push('satellite ' + score)),
+    true,
+  );
+  assert.deepEqual(starts(f.worker), [
+    ['mirror', 0],
+    ['satellite', 1],
+  ]);
+  f.bridge.wakeAudio('satellite', Buffer.alloc(12));
+  f.bridge.wakeAudio('unknown', Buffer.alloc(2560));
   assert.equal(f.worker.sent.filter(Buffer.isBuffer).length, 0);
-  f.bridge.wakeAudio('stream-current', Buffer.alloc(2560));
-  assert.equal(f.worker.sent.filter(Buffer.isBuffer).length, 1);
+  f.bridge.wakeAudio('satellite', Buffer.alloc(2560));
+  const frames = f.worker.sent.filter(Buffer.isBuffer);
+  assert.equal(frames.length, 1);
+  assert.deepEqual([frames[0]!.length, frames[0]![0], frames[0]![1]], [2562, 0x57, 1]);
   f.worker.message({ type: 'wake_detected', streamId: 'old', score: 0.9 });
-  assert.equal(f.controller.snapshot().state.session.phase, 'idle');
-  assert.deepEqual(order, []);
-  f.worker.message({ type: 'wake_detected', streamId: 'stream-current', score: 0.9 });
-  assert.equal(f.controller.snapshot().state.session.phase, 'connecting');
-  assert.deepEqual(order.slice(0, 2), ['wake', 'state']);
-  f.bridge.endWakeStream('stream-current');
+  assert.deepEqual(heard, []);
+  f.worker.message({ type: 'wake_detected', streamId: 'satellite', score: 0.9 });
+  assert.deepEqual(heard, ['satellite 0.9']);
+  // Un emplacement libéré est repris ; une perception relancée retrouve les flux ouverts.
+  f.bridge.endWakeStream('mirror');
+  f.bridge.startWakeStream('mirror-next', () => {});
+  assert.deepEqual(starts(f.worker).at(-1), ['mirror-next', 0]);
+  assert.equal(f.bridge.wakeStreamCount(), 2);
+  const restarted = new Worker();
+  f.bridge.connect(restarted as unknown as WebSocket);
+  assert.deepEqual(starts(restarted), [
+    ['satellite', 1],
+    ['mirror-next', 0],
+  ]);
 });
 
 const unit = (index: number) => Array.from({ length: 128 }, (_, i) => (i === index ? 1 : 0));
