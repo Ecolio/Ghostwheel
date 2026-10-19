@@ -22,6 +22,7 @@ La rubrique **Modules** range les modules en trois groupes.
 | Au quotidien | Heure | Heure et date dans un fuseau horaire | [Fiche Heure](../../addons/clock/README.md) |
 | Au quotidien | Météo | Prévisions d’une commune (jeton Météo Concept) | [Fiche Météo](../../addons/weather/README.md) |
 | Au quotidien | Transports | Prochains passages en Île-de-France (jeton PRIM) | [Fiche Transports](../../addons/transit/README.md) |
+| Au quotidien | Ragator | Réponses citées tirées des vidéos des Frères Poulain (serveur Ragator) | [Fiche Ragator](../../addons/ragator/README.md) |
 | Maison | Home Assistant | Appareils et capteurs de la maison | [Home Assistant](../fonctionnalites/home-assistant.md) |
 | Maison | Commandes HTTP | Les commandes HTTP, à créer, tester et valider dans le module lui-même | [plus bas](#les-commandes-http) |
 | Capacités de Cornelius | Cartes | Nombre de cartes à l’écran, durée d’affichage, cartes raccourcies au second plan | [Le miroir](../utilisation/miroir.md) |
@@ -29,7 +30,7 @@ La rubrique **Modules** range les modules en trois groupes.
 | Capacités de Cornelius | Vision | Description de ce que voit la caméra, calculée sur place | [La vision locale](../fonctionnalites/vision-locale.md) |
 | Capacités de Cornelius | Génération d’image | Images créées sur cet ordinateur ou avec OpenAI | [La génération d’images](../fonctionnalites/generation-d-images.md) |
 
-Seuls Heure, Météo et Transports reçoivent des sources. Les autres se règlent une fois pour tout le miroir.
+Seuls Heure, Météo, Transports et Ragator reçoivent des sources. Les autres se règlent une fois pour tout le miroir.
 
 En haut de l’onglet, « Sources de » montre les sources de tout le monde, du foyer ou d’une personne. « Rechercher un module ou une source » filtre la liste. Une étoile place un module en tête de son groupe, dans ce navigateur.
 

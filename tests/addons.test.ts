@@ -449,7 +449,11 @@ test('les outils exposés portent le préfixe du module et l’instanceRef requi
     for (const name of ['clock__read', 'transit__read', 'weather__read'])
       assert.ok(names.includes(name), name);
     for (const tool of tools) {
-      assert.deepEqual(tool.parameters.required, ['instanceRef']);
+      // Un outil à la demande (ragator__ask) exige aussi sa question.
+      assert.deepEqual(
+        tool.parameters.required,
+        tool.name === 'ragator__ask' ? ['instanceRef', 'query'] : ['instanceRef'],
+      );
     }
     assert.deepEqual(f.runtime.parseTool('transit__read'), {
       addonId: 'transit',

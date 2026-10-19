@@ -9,6 +9,7 @@ Cette page fixe le contrat `apiVersion: 1` que doit respecter un module d’info
 | Besoin | Mécanisme |
 | --- | --- |
 | Lire une information : météo, horaires, disponibilités, agenda | Un module dans `addons/<id>/`, décrit ici |
+| Répondre à une question libre à partir d’un service | Un module avec un [outil à la demande](#loutil-à-la-demande) |
 | Déclencher un effet : allumer une lampe, ouvrir un portail | Une [commande HTTP](README.md#les-commandes-http), réglée dans l’administration, sans code |
 | Piloter les appareils de Home Assistant | L’intégration [Home Assistant](../fonctionnalites/home-assistant.md) |
 | Confier une tâche longue à un agent personnel | Les [agents Hermes](../fonctionnalites/agents-hermes.md) |
@@ -57,7 +58,7 @@ Le fichier `index.ts` DOIT exporter par défaut un objet `AddonDefinition<TConfi
 | `dataVersion` | Entier ≥ 1, à incrémenter quand les anciennes données ne sont plus lisibles |
 | `dataSchema` | JSON Schema des données normalisées (pas de l’enveloppe du relevé) |
 | `freshMs` | Durée de validité d’un succès, en millisecondes, entier > 0 |
-| `tools` | Liste des outils vocaux ; fournir au moins `read` (le chargeur accepte une liste vide, mais la voix ne pourrait alors pas lire la source) |
+| `tools` | Liste des outils vocaux ; fournir au moins `read`, ou un [outil à la demande](#loutil-à-la-demande) (le chargeur accepte une liste vide, mais la voix ne pourrait alors pas lire la source) |
 | `search` | Facultatif : recherche assistée dans le formulaire |
 | `ambient` | Facultatif : `{ present(snapshot, context) }` pour l’affichage permanent |
 | `collect` | `async (context) => AddonCollection<TData>` |
@@ -79,6 +80,7 @@ Le chargeur lit `addons/` **au démarrage seulement** : redémarrer après tout 
 | `context.signal` | DOIT être transmis à chaque requête et respecté par tout travail long |
 | `context.now()` | L’horloge en millisecondes, remplaçable en test ; à préférer à `Date.now()` |
 | `context.secret(name)` | Un jeton déclaré et branché, ou `undefined` |
+| `context.query` | La question d’un [outil à la demande](#loutil-à-la-demande), sinon `undefined` |
 
 `present` et `ambient.present` reçoivent `{ instance, now() }`. `search.find` reçoit `{ http, signal, secret }`, sans source ni horloge.
 
@@ -205,7 +207,36 @@ Chaque outil local (`read`) devient `<id>__<nom>`. Les noms DOIVENT suivre `^[a-
 
 La description DEVRAIT dire en français ce que l’outil lit, donner deux ou trois formulations typiques et nommer la carte. Le cœur y ajoute la liste des sources autorisées : ne la codez pas en dur. Lire une source affiche d’office sa carte.
 
-**Limite de la v1 : il n’y a pas de traitement par outil.** Tout outil déclaré déclenche la même lecture ; `collect` ne reçoit ni le nom de l’outil ni ses arguments. Ajouter un paramètre `date` ou `query` ne suffit donc pas. Le cœur contrôle `instanceRef`, les droits et la session, mais ne valide pas chaque appel contre `parameters`. Pour une lecture paramétrée, prévoyez un réglage de source ou une évolution du cœur.
+**Limite de la v1 : il n’y a pas de traitement par outil.** Tout outil déclaré déclenche la même lecture ; `collect` ne reçoit ni le nom de l’outil ni ses arguments. Ajouter un paramètre `date` ne suffit donc pas. Le cœur contrôle `instanceRef`, les droits et la session, mais ne valide pas chaque appel contre `parameters`. Pour une lecture paramétrée, prévoyez un réglage de source, un outil à la demande (ci-dessous) ou une évolution du cœur.
+
+### L’outil à la demande
+
+Extension compatible v1, pour un module qui répond à une question libre (une recherche dans des documents, par exemple). L’outil déclare `query: { maxLength }` (entier de 1 à 2 000) et un paramètre `query` de type chaîne dans `parameters` :
+
+```ts
+{
+  name: 'ask',
+  description: '… query : la question complète, sans pronom.',
+  parameters: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['instanceRef', 'query'],
+    properties: { instanceRef: { type: ['string', 'null'] }, query: { type: 'string' } },
+  },
+  query: { maxLength: 1000 },
+}
+```
+
+| Règle | Effet |
+| --- | --- |
+| Question absente, vide ou trop longue | Refusée par le cœur en `invalid_params`, sans appeler `collect` |
+| `context.query` | La question, sans espaces autour ; absente pour une lecture ordinaire (**Tester**, outil sans `query`, affichage permanent) |
+| Cache et regroupement | Aucun : chaque appel lance sa collecte |
+| Relevé | Gardé en mémoire le temps de la réponse, jamais enregistré ; le dernier relevé de la source n’est pas touché |
+| Échec | Pas de repli : la réponse à une autre question n’est jamais resservie ; le message du module est dit (« Source indisponible : … ») |
+| Journal | La durée et le statut, jamais la question |
+
+`collect` DOIT donc traiter les deux cas : avec `query`, la réponse ; sans, une vérification utile à **Tester** (le module [Ragator](../../addons/ragator/index.ts) lit l’état du corpus). `dataSchema` couvre les deux formes, et `present` aussi. Le délai `timeoutMs` reste celui du module : un service lent DEVRAIT le relever et le dire dans la description de l’outil, pour que Cornelius prévienne avant d’appeler.
 
 ## Les secrets
 

@@ -37,6 +37,7 @@ const labelExamples: Record<string, { label: string; ref: string }> = {
   clock: { label: 'Heure de Paris', ref: 'paris' },
   weather: { label: 'Météo à la maison', ref: 'maison' },
   transit: { label: 'Bus pour le travail', ref: 'travail' },
+  ragator: { label: 'Vidéos des Frères Poulain', ref: 'freres-poulain' },
 };
 
 function baseType(field: AddonConfigField): string {

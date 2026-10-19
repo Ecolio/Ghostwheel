@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["baseUrl", "collection", "detailed"],
+  "properties": {
+    "baseUrl": {
+      "title": "Adresse de Ragator",
+      "description": "Adresse de l’interface web de Ragator, sans chemin. Hors de cet ordinateur, ajoutez l’hôte à RAGATOR_HOSTS côté Ragator.",
+      "type": "string",
+      "maxLength": 200,
+      "pattern": "^https?://[^/?#@\\s]+$",
+      "examples": ["http://127.0.0.1:3210"]
+    },
+    "collection": {
+      "title": "Collection",
+      "description": "Clé ou nom d’une chaîne du corpus (npm run collections). Vide : toutes les chaînes.",
+      "type": ["string", "null"],
+      "maxLength": 100,
+      "pattern": "^\\S",
+      "examples": ["les-freres-poulain"]
+    },
+    "detailed": {
+      "title": "Réponses détaillées",
+      "description": "Réponses plus longues et plus lentes. Désactivé : réponses courtes, mieux adaptées à la voix.",
+      "type": "boolean"
+    }
+  }
+}

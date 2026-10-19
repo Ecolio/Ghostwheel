@@ -14,6 +14,7 @@ import {
   ExternalLink,
   TriangleAlert,
   Webhook,
+  Clapperboard,
 } from 'lucide-react';
 import type { DevicesStatus, MirrorState, Profile } from '../../../shared/types';
 import { api, errorMessage } from '../../api';
@@ -63,6 +64,8 @@ function preview(instance: AddonInstanceView): string | null {
   const departures = data.departures as unknown[] | undefined;
   if (departures)
     return `${String(data.lineLabel ?? '')} → ${String(data.direction ?? '')} · ${plural(departures.length, 'passage')}`;
+  if (data.kind === 'status' && typeof data.videos === 'number')
+    return `${String(data.collection ?? 'Tout le corpus')} · ${plural(data.videos, 'vidéo')}`;
   return null;
 }
 
@@ -88,6 +91,12 @@ const moduleLabels: Record<
     icon: Bus,
     keywords: 'transports bus train rer métro tram passages arrêt ligne',
   },
+  ragator: {
+    name: 'Ragator',
+    description: 'Réponses citées tirées des vidéos YouTube, avec l’instant qui les prouve.',
+    icon: Clapperboard,
+    keywords: 'ragator vidéos youtube recherche question frères poulain corpus',
+  },
 };
 
 type GroupId = 'daily' | 'home' | 'capabilities';
@@ -111,7 +120,7 @@ const moduleGroups: { id: GroupId; title: string; description: string }[] = [
 ];
 
 // Ordre fixe du groupe « Au quotidien » ; un module ajouté dans addons/ vient ensuite.
-const dailyOrder = ['clock', 'weather', 'transit'];
+const dailyOrder = ['clock', 'weather', 'transit', 'ragator'];
 
 // Modules intégrés : ils ne dépendent pas d’une personne et se retrouvent par mots-clés.
 const builtIns = [

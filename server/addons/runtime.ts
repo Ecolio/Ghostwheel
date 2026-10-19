@@ -91,6 +91,8 @@ export class AddonRuntime {
     { promise: Promise<ModuleSnapshot>; signal: AbortSignal }
   >();
   private readonly now: () => number;
+  /** Numéro des lectures à la demande, pour des snapshotId distincts sans persistance. */
+  private querySequence = 0;
 
   constructor(private readonly options: AddonRuntimeOptions) {
     for (const addon of options.addons) this.addons.set(addon.id, addon);
@@ -162,10 +164,27 @@ export class AddonRuntime {
     profileId: string | null,
     instanceRef: string | null,
     signal: AbortSignal,
+    args: unknown = {},
   ): Promise<{ outcome: AddonReadOutcome; tool: ToolResult } | null> {
     const parsed = this.parseTool(name);
     if (!parsed) return null;
-    const outcome = await this.read(parsed.addonId, profileId, instanceRef, signal);
+    const tool = this.addons
+      .get(parsed.addonId)!
+      .tools.find((candidate) => candidate.name === parsed.toolName)!;
+    let query: string | null = null;
+    if (tool.query) {
+      const raw =
+        args && typeof args === 'object' ? (args as Record<string, unknown>).query : undefined;
+      query = typeof raw === 'string' ? raw.trim() : '';
+      if (!query || query.length > tool.query.maxLength) {
+        const outcome = fail(
+          query ? 'Question trop longue : reformulez plus court.' : 'Question manquante.',
+          { code: 'invalid_params', message: 'Question invalide.', retryable: false },
+        );
+        return { outcome, tool: this.toolResult(outcome) };
+      }
+    }
+    const outcome = await this.read(parsed.addonId, profileId, instanceRef, signal, query);
     return { outcome, tool: this.toolResult(outcome) };
   }
 
@@ -355,11 +374,16 @@ export class AddonRuntime {
     });
   }
 
+  /**
+   * Lecture d'une source. Avec `query` (outil à la demande), la collecte est propre à cette
+   * question : ni cache, ni regroupement, ni repli sur une réponse à une autre question.
+   */
   async read(
     addonId: string,
     profileId: string | null,
     instanceRef: string | null,
     signal: AbortSignal,
+    query: string | null = null,
   ): Promise<AddonReadOutcome> {
     const addon = this.addons.get(addonId);
     if (!addon)
@@ -374,13 +398,18 @@ export class AddonRuntime {
     let snapshot: ModuleSnapshot;
     try {
       if (signal.aborted) throw new AddonCollectError('unavailable', 'Collecte annulée.', true);
-      snapshot = await this.ensureSnapshot(instance, addon, signal);
+      snapshot =
+        query === null
+          ? await this.ensureSnapshot(instance, addon, signal)
+          : await this.collectQuery(instance, addon, query, signal);
       if (signal.aborted || !this.isCurrent(instance))
         throw new AddonCollectError('unavailable', 'Collecte annulée ou source modifiée.', true);
     } catch (error) {
+      const described = this.describe(error, { addonId: addon.id, instanceId: instance.id });
+      // Sans relevé enregistré, le message du module est dit tout de suite.
       return fail(
-        'Source indisponible.',
-        this.describe(error, { addonId: addon.id, instanceId: instance.id }),
+        query === null ? 'Source indisponible.' : `Source indisponible : ${described.message}`,
+        described,
       );
     }
     if (!snapshot.data) {
@@ -520,6 +549,70 @@ export class AddonRuntime {
     });
     this.inflight.set(key, { promise, signal });
     return promise;
+  }
+
+  /**
+   * Collecte d'une lecture à la demande : mêmes contrôles qu'une collecte ordinaire, mais le
+   * relevé reste en mémoire. Une erreur est levée telle quelle, sans toucher au dernier relevé.
+   * La question n'est jamais journalisée.
+   */
+  private async collectQuery(
+    instance: AddonInstance,
+    addon: AddonDefinition,
+    query: string,
+    signal: AbortSignal,
+  ): Promise<ModuleSnapshot> {
+    const startedAt = this.now();
+    const validateConfig = this.validator(
+      this.configValidators,
+      `${addon.id}@${instance.configVersion}`,
+      addon.configSchema,
+    );
+    const config = this.migrateConfig(addon, instance);
+    if (!validateConfig(config))
+      throw new AddonCollectError('config_invalid', 'Configuration de source invalide.', false);
+    const collection = await addon.collect({
+      instance,
+      config: config as Record<string, unknown>,
+      http: this.options.http,
+      now: this.now,
+      signal,
+      secret: (name) => this.secret(name),
+      query,
+    });
+    if (signal.aborted || !this.isCurrent(instance))
+      throw new AddonCollectError('unavailable', 'Collecte annulée ou source modifiée.', true);
+    const validateData = this.validator(
+      this.dataValidators,
+      `${addon.id}@${addon.dataVersion}`,
+      addon.dataSchema,
+    );
+    if (!validateData(collection.data))
+      throw new AddonCollectError('malformed', 'Données de source non conformes.', false);
+    const fetchedAt = this.now();
+    const sequence = ++this.querySequence;
+    this.options.logs?.write('info', 'addon', 'Lecture à la demande réussie', {
+      addonId: addon.id,
+      instanceId: instance.id,
+      instanceRef: instance.ref,
+      status: collection.empty ? 'empty' : 'ready',
+      durationMs: fetchedAt - startedAt,
+    });
+    return {
+      schemaVersion: 1,
+      snapshotId: `${addon.id}:${instance.ref ?? instance.id}:q${sequence}`.slice(0, 128),
+      cacheKey: `${addon.id}:${instance.ref ?? instance.id}:query`.slice(0, 256),
+      revision: sequence,
+      moduleId: addon.id,
+      dataVersion: addon.dataVersion,
+      scope: addonScope(instance),
+      source: collection.source ?? null,
+      fetchedAt: iso(fetchedAt),
+      observedAt: iso(collection.observedAt ?? null),
+      validUntil: iso(fetchedAt),
+      status: collection.empty ? 'empty' : 'ready',
+      data: collection.data as Record<string, unknown>,
+    };
   }
 
   private isCurrent(instance: AddonInstance): boolean {

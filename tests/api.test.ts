@@ -892,6 +892,7 @@ test('les modules et les actions HTTP s’administrent sans accepter d’URL arb
     .definitions;
   assert.deepEqual(definitions.map((definition) => definition.id).sort(), [
     'clock',
+    'ragator',
     'transit',
     'weather',
   ]);

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "question", "answer", "refused", "route", "degradedReason", "sources"],
+      "properties": {
+        "kind": { "const": "answer" },
+        "question": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "answer": { "type": "string", "minLength": 1, "maxLength": 4000 },
+        "refused": { "type": "boolean" },
+        "route": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "degradedReason": { "type": ["string", "null"], "maxLength": 300 },
+        "sources": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["videoId", "title", "startS", "publishedAt", "link"],
+            "properties": {
+              "videoId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{11}$" },
+              "title": { "type": "string", "minLength": 1, "maxLength": 300 },
+              "startS": { "type": ["integer", "null"], "minimum": 0, "maximum": 86400 },
+              "publishedAt": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+              "link": { "type": "string", "minLength": 1, "maxLength": 500, "pattern": "^https://" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "videos", "collections", "collection"],
+      "properties": {
+        "kind": { "const": "status" },
+        "videos": { "type": "integer", "minimum": 0 },
+        "collections": { "type": "integer", "minimum": 0 },
+        "collection": { "type": ["string", "null"], "minLength": 1, "maxLength": 120 }
+      }
+    }
+  ]
+}

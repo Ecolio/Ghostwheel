@@ -34,6 +34,8 @@ export interface AddonToolBridge {
     profileId: string | null,
     instanceRef: string | null,
     signal: AbortSignal,
+    /** Arguments bruts de l'appel : un outil à la demande y lit `query`. */
+    args?: unknown,
   ): Promise<{ outcome: AddonReadOutcome; tool: ToolResult } | null>;
   sourceLabel(addonId: string): string;
   /** Sources autorisées pour ce profil : identifiants que le modèle peut nommer. */
@@ -1334,7 +1336,7 @@ export class LiveTransport implements SessionTransport {
     const instanceRef = typeof rawRef === 'string' && rawRef.trim() ? rawRef.trim() : null;
     let tool: ToolResult = failureToolResult('Résultat indisponible.');
     try {
-      const invoked = await bridge.invoke(name, profileId, instanceRef, active.abort.signal);
+      const invoked = await bridge.invoke(name, profileId, instanceRef, active.abort.signal, args);
       if (invoked) {
         tool = invoked.tool;
         // Satellite : pas d’écran, le résumé du module suffit à la réponse parlée.

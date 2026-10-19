@@ -81,6 +81,7 @@ const spokenForms: Record<string, { head: string; repeats: readonly string[] }> 
     ],
   },
   clock: { head: 'l’heure', repeats: ['heure', 'horloge'] },
+  ragator: { head: 'les vidéos', repeats: ['videos', 'video', 'ragator'] },
 };
 
 const linkWords = new Set([

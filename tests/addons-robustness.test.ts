@@ -108,6 +108,19 @@ test('la raison d’un module refusé nomme le schéma et le premier message de 
   );
 });
 
+test('un outil à la demande déclare une longueur de question bornée', () => {
+  const [tool] = clock.tools;
+  assert.equal(
+    validateAddonDefinition({ ...clock, tools: [{ ...tool!, query: { maxLength: 500 } }] }),
+    null,
+  );
+  for (const query of [null, {}, { maxLength: 0 }, { maxLength: 2.5 }, { maxLength: 5000 }])
+    assert.equal(
+      validateAddonDefinition({ ...clock, tools: [{ ...tool!, query }] }),
+      'définition d’outil invalide.',
+    );
+});
+
 test('le catalogue expose les modules refusés et leur raison', async (t) => {
   const db = openDatabase(':memory:');
   const instances = new AddonRepository(db);

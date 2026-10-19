@@ -1,0 +1,16 @@
+{
+  "collections": [
+    {
+      "key": "les-freres-poulain",
+      "name": "Les Freres Poulain",
+      "channel": "Les Frères Poulain",
+      "videos": 404
+    },
+    {
+      "key": "atelier-voisin",
+      "name": "Atelier Voisin",
+      "channel": "L'Atelier Voisin",
+      "videos": 12
+    }
+  ]
+}

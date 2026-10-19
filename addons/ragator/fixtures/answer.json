@@ -1,0 +1,39 @@
+{
+  "question": "À quoi sert le module Peltier de la glacière ?",
+  "resolvedQuestion": "À quoi sert le module Peltier de la glacière ?",
+  "route": "chercher",
+  "mode": "court",
+  "analysis": { "source": "llm" },
+  "answer": "Le module Peltier transfère la chaleur d'une face vers l'autre : une face refroidit tandis que l'autre chauffe. [Gu8bnHQaG5s:t00062 @ 03:45]",
+  "refused": false,
+  "claims": [
+    {
+      "text": "Le module Peltier transfère la chaleur d'une face vers l'autre.",
+      "sourceIds": ["Gu8bnHQaG5s:t00062"]
+    }
+  ],
+  "sources": [
+    {
+      "sourceId": "Gu8bnHQaG5s:t00062",
+      "sourceIds": ["Gu8bnHQaG5s:t00062"],
+      "videoId": "Gu8bnHQaG5s",
+      "title": "Les glacières sur batterie coûtent 1100 €. La nôtre : 54 €",
+      "publishedAt": "2026-08-13",
+      "kind": "parole",
+      "startS": 225,
+      "endS": 231,
+      "link": "https://www.youtube.com/watch?v=Gu8bnHQaG5s&t=222s",
+      "excerpt": "Le Peltier, c'est une plaque : d'un côté ça refroidit, de l'autre ça chauffe.",
+      "urls": []
+    }
+  ],
+  "degradedReason": null,
+  "model": "openai/gpt-6-luna",
+  "judge": "JEV",
+  "retrieval": { "kind": "hybride" },
+  "timings": { "searchMs": 812, "llmMs": 3920, "totalMs": 4810 },
+  "turn": {
+    "question": "À quoi sert le module Peltier de la glacière ?",
+    "videoIds": ["Gu8bnHQaG5s"]
+  }
+}

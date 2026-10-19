@@ -111,6 +111,11 @@ export interface AddonCollectContext<
   signal: AbortSignal;
   /** Secret nommé, résolu côté serveur et jamais journalisé. */
   secret(name: string): string | undefined;
+  /**
+   * Question transmise par un outil qui déclare `query` : présente seulement pour cette lecture
+   * à la demande, absente pour une lecture ordinaire (outil `read`, **Tester**, affichage).
+   */
+  query?: string;
 }
 
 export interface AddonCollection<TData extends Record<string, unknown> = Record<string, unknown>> {
@@ -166,6 +171,12 @@ export interface AddonToolDefinition {
   name: string;
   description: string;
   parameters: Record<string, unknown>;
+  /**
+   * Extension compatible v1 : lecture à la demande. L'argument `query` de l'appel (une chaîne
+   * non vide, `maxLength` caractères au plus) est transmis à `collect` ; le résultat ne passe
+   * ni par le cache ni par le repli sur le dernier succès, et n'est pas enregistré.
+   */
+  query?: { maxLength: number };
 }
 
 /** Champ de recherche assistée : l'admin propose des choix, l'utilisateur ne saisit pas d'identifiant. */
