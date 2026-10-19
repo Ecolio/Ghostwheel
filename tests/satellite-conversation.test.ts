@@ -227,13 +227,16 @@ test('concentrateur : son d’avant le mot rejoué, voix vers le satellite, dét
   const { satellite } = store.create('Bureau');
   let detected: ((score: number) => void) | null = null;
   const vad: number[] = [];
+  const streams: string[] = [];
+  const ended: string[] = [];
   const perception = {
-    startWakeStream: (_id: string, callback: (score: number) => void) => {
+    startWakeStream: (id: string, callback: (score: number) => void) => {
+      streams.push(id);
       detected = callback;
       return true;
     },
     wakeAudio() {},
-    endWakeStream() {},
+    endWakeStream: (id: string) => ended.push(id),
     audio: (_interaction: string, pcm: Buffer) => vad.push(pcm.length),
   } as unknown as PerceptionBridge;
   const relayed: Buffer[] = [];
@@ -263,6 +266,9 @@ test('concentrateur : son d’avant le mot rejoué, voix vers le satellite, dét
     socket.messages().map((message) => message.type),
     ['welcome', 'listen', 'wake', 'session'],
   );
+  // La veille repart d’un flux neuf : l’ancien gardait le « Cornelius » qui vient d’être dit.
+  assert.equal(streams.length, 2);
+  assert.deepEqual(ended, [streams[0]]);
   socket.receive(frame(20));
   assert.equal(relayed.length, 0);
   f.emit({ type: 'session.started', event_id: 'e1', session: { id: 'live_sat' } });

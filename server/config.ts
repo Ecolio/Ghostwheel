@@ -22,6 +22,8 @@ export interface AppConfig {
   allowedHosts?: string[];
   /** Empreinte du certificat HTTPS en service, affichée dans l'administration. */
   tlsFingerprint?: string;
+  /** Empreinte de la clé publique : celle que vérifient les satellites audio. */
+  tlsKeyFingerprint?: string;
 }
 
 /** Mot de passe écrit par `npm run setup` et `.env.example`, à changer après l’installation. */

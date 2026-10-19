@@ -186,10 +186,13 @@ function IssuedToken({
           ))}
         </ul>
       )}
-      {network?.fingerprint && (
+      {network?.keyFingerprint && (
         <p className="text-muted-foreground">
-          Et l’empreinte du certificat, que le satellite vérifie à chaque connexion :{' '}
-          <span className="break-all font-mono text-xs text-foreground">{network.fingerprint}</span>
+          Et l’empreinte de la clé de Cornelius, que le satellite vérifie à chaque connexion (elle
+          ne change pas quand le certificat est renouvelé) :{' '}
+          <span className="break-all font-mono text-xs text-foreground">
+            {network.keyFingerprint}
+          </span>
         </p>
       )}
     </div>

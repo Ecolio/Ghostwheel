@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, createPublicKey } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
 import { hostname as systemHostname, networkInterfaces } from 'node:os';
 import { isIP } from 'node:net';
@@ -73,6 +73,11 @@ export interface Certificate {
   cert: string;
   /** Empreinte SHA-256, affichée pour vérifier le certificat depuis un autre appareil. */
   fingerprint: string;
+  /**
+   * Empreinte SHA-256 de la clé publique (SubjectPublicKeyInfo). Elle ne change pas quand le
+   * certificat est recréé : les satellites audio la vérifient à la place du certificat.
+   */
+  keyFingerprint: string;
   generated: boolean;
 }
 
@@ -91,16 +96,23 @@ export async function ensureCertificate(options: {
 }): Promise<Certificate> {
   if (options.certPath && options.keyPath) {
     const cert = readFileSync(options.certPath, 'utf8');
+    const key = readFileSync(options.keyPath, 'utf8');
     return {
       cert,
-      key: readFileSync(options.keyPath, 'utf8'),
+      key,
       fingerprint: fingerprintOf(cert),
+      keyFingerprint: keyFingerprintOf(key),
       generated: false,
     };
   }
   const names = [...new Set(['localhost', ...(options.names ?? machineHostnames())])];
   const addresses = [...new Set(['127.0.0.1', ...(options.addresses ?? localAddresses())])];
-  const wanted = JSON.stringify({ names: [...names].sort(), addresses: [...addresses].sort() });
+  // La signature compte : un ancien certificat SHA-1 (refusé par les satellites) est recréé.
+  const wanted = JSON.stringify({
+    names: [...names].sort(),
+    addresses: [...addresses].sort(),
+    signature: 'sha256',
+  });
   const certFile = join(options.directory, 'cert.pem');
   const keyFile = join(options.directory, 'key.pem');
   const metaFile = join(options.directory, 'cert.json');
@@ -112,10 +124,12 @@ export async function ensureCertificate(options: {
       };
       if (meta.subject === wanted && meta.notAfter > Date.now() + 30 * 24 * 3600 * 1000) {
         const cert = readFileSync(certFile, 'utf8');
+        const key = readFileSync(keyFile, 'utf8');
         return {
           cert,
-          key: readFileSync(keyFile, 'utf8'),
+          key,
           fingerprint: fingerprintOf(cert),
+          keyFingerprint: keyFingerprintOf(key),
           generated: false,
         };
       }
@@ -124,9 +138,14 @@ export async function ensureCertificate(options: {
     }
   }
   const notAfter = new Date(Date.now() + 825 * 24 * 3600 * 1000);
+  // Nouvelles adresses : nouveau certificat, mais même clé, pour que les satellites qui
+  // l’ont épinglée restent reliés.
+  const keyPair = existingKeyPair(keyFile);
   const pems = await generate([{ name: 'commonName', value: 'Cornelius' }], {
     keyType: 'ec',
     curve: 'P-256',
+    algorithm: 'sha256',
+    ...(keyPair ? { keyPair } : {}),
     notAfterDate: notAfter,
     extensions: [
       { name: 'basicConstraints', cA: false },
@@ -150,8 +169,31 @@ export async function ensureCertificate(options: {
     cert: pems.cert,
     key: pems.private,
     fingerprint: fingerprintOf(pems.cert),
+    keyFingerprint: keyFingerprintOf(pems.private),
     generated: true,
   };
+}
+
+function existingKeyPair(keyFile: string): { privateKey: string; publicKey: string } | null {
+  if (!existsSync(keyFile)) return null;
+  try {
+    const privateKey = readFileSync(keyFile, 'utf8');
+    const publicKey = createPublicKey(privateKey).export({ type: 'spki', format: 'pem' });
+    return { privateKey, publicKey: String(publicKey) };
+  } catch {
+    /* Clé illisible : une nouvelle est créée. */
+    return null;
+  }
+}
+
+/** Empreinte SHA-256 de la clé publique, au même format que celle du certificat. */
+export function keyFingerprintOf(privateKey: string): string {
+  const spki = createPublicKey(privateKey).export({ type: 'spki', format: 'der' });
+  return createHash('sha256')
+    .update(spki)
+    .digest('hex')
+    .toUpperCase()
+    .replace(/(..)(?!$)/g, '$1:');
 }
 
 function fingerprintOf(pem: string): string {

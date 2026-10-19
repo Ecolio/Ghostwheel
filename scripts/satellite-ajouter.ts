@@ -4,7 +4,10 @@
  *
  *   npx tsx --env-file-if-exists=.env scripts/satellite-ajouter.ts "Bureau"
  */
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { loadConfig } from '../server/config.js';
+import { keyFingerprintOf } from '../server/network.js';
 import { openDatabase } from '../server/storage.js';
 import { SATELLITE_NAME_MAX, SatelliteStore } from '../server/satellites-store.js';
 
@@ -16,6 +19,9 @@ if (!name || name.length > SATELLITE_NAME_MAX) {
   process.exit(1);
 }
 const config = loadConfig();
+// Clé du certificat de Cornelius : celle de CORNELIUS_TLS_KEY, sinon celle qu’il a créée.
+const keyFile = config.tlsKey ?? join(dirname(config.databasePath), 'tls', 'key.pem');
+const keyFingerprint = existsSync(keyFile) ? keyFingerprintOf(readFileSync(keyFile, 'utf8')) : null;
 const db = openDatabase(config.databasePath);
 try {
   const { satellite, token } = new SatelliteStore(db, Date.now).create(name);
@@ -27,7 +33,7 @@ try {
       'Depuis le réseau local : wss://<adresse>:' +
         config.httpsPort +
         '/satellite' +
-        (config.tlsFingerprint ? ' (empreinte ' + config.tlsFingerprint + ')' : ''),
+        (keyFingerprint ? '\nEmpreinte de la clé à vérifier :\n  ' + keyFingerprint : ''),
     );
 } finally {
   db.close();

@@ -628,10 +628,12 @@ export class PerceptionBridge {
     const lastVad = this.audioInteraction === session.interactionId ? this.lastVadAt : 0;
     // Le mode voix mesure le silence avec ce VAD : sans lui, la fin après silence est aveugle.
     // Les modes caméra ne s’en servent que pour l’animation d’écoute et ne coupent pas.
+    // Un satellite passe par le Wi-Fi, qui a des à-coups d’une à deux secondes : il a 5 s.
+    const vadLimit = session.satellite ? 5000 : 2000;
     if (
-      session.mode === 4 &&
+      (session.mode === 4 || session.satellite) &&
       session.phase === 'ready' &&
-      this.now() - Math.max(lastVad, session.readyAt!) >= 2000
+      this.now() - Math.max(lastVad, session.readyAt!) >= vadLimit
     ) {
       this.controller.close(
         'Détection de parole interrompue. Vérifiez le microphone et la perception.',

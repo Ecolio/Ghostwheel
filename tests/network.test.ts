@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { X509Certificate } from 'node:crypto';
+import { createHash, X509Certificate } from 'node:crypto';
 import { mkdtempSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -63,6 +63,17 @@ test('certificat autosigné : créé une fois, réutilisé, recréé si les adre
   const moved = await ensureCertificate({ ...options, addresses: ['192.168.1.21'] });
   assert.ok(moved.generated);
   assert.notEqual(moved.fingerprint, first.fingerprint);
+  // Satellites : la clé, et donc son empreinte, survit au nouveau certificat ; signé en SHA-256.
+  assert.equal(moved.keyFingerprint, first.keyFingerprint);
+  assert.match(first.keyFingerprint, /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/u);
+  assert.equal(
+    createHash('sha256')
+      .update(new X509Certificate(moved.cert).publicKey.export({ type: 'spki', format: 'der' }))
+      .digest('hex')
+      .toUpperCase()
+      .replace(/(..)(?!$)/g, '$1:'),
+    moved.keyFingerprint,
+  );
 });
 
 async function fixture(t: TestContext, overrides: Partial<AppConfig> = {}) {

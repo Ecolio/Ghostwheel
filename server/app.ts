@@ -370,6 +370,7 @@ export async function createApp(
             lan: true,
             urls: localAddresses().map((address) => `https://${address}:${config.httpsPort}`),
             fingerprint: config.tlsFingerprint ?? null,
+            keyFingerprint: config.tlsKeyFingerprint ?? null,
             trustedDevices: trustedDevices.count(),
           }
         : { lan: false, urls: [], fingerprint: null, trustedDevices: 0 },

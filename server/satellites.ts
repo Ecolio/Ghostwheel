@@ -182,10 +182,7 @@ export class SatelliteHub {
       );
     if (connection.helloTimer) clearTimeout(connection.helloTimer);
     connection.helloTimer = null;
-    const started = this.deps.perception.startWakeStream(connection.streamId, (score) =>
-      this.deps.arbiter.detected({ score, accept: () => this.wakeAccepted(connection, score) }),
-    );
-    if (!started) return socket.close(1008, 'Écoute du mot d’appel saturée.');
+    if (!this.startWake(connection)) return socket.close(1008, 'Écoute du mot d’appel saturée.');
     connection.firmware = message.firmware;
     connection.echoCancelled = message.aec === true;
     this.deps.store.seen(satellite.id);
@@ -275,10 +272,30 @@ export class SatelliteHub {
     }
   }
 
+  /** Flux de veille du satellite dans la perception, avec son propre état openWakeWord. */
+  private startWake(connection: Connection): boolean {
+    return this.deps.perception.startWakeStream(connection.streamId, (score) =>
+      this.deps.arbiter.detected({ score, accept: () => this.wakeAccepted(connection, score) }),
+    );
+  }
+
+  /**
+   * La conversation commence : la veille n’est plus alimentée, et son modèle garde en mémoire
+   * le « Cornelius » qui vient d’être dit. Repartir de ce modèle rouvrirait une conversation dès
+   * la fin de celle-ci ; un nouveau flux repart d’une écoute neuve.
+   */
+  private renewWake(connection: Connection) {
+    this.deps.perception.endWakeStream(connection.streamId);
+    connection.streamId = randomUUID();
+    if (!this.startWake(connection))
+      connection.socket.close(1008, 'Écoute du mot d’appel saturée.');
+  }
+
   private transition(connection: Connection, next: ConversationState) {
     const previous = connection.conversation;
     connection.conversation = next;
     if (next === 'connecting') {
+      this.renewWake(connection);
       connection.pending ??= [];
       this.send(connection, { type: 'session', state: 'connecting' });
       return;

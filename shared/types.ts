@@ -294,6 +294,8 @@ export interface NetworkStatus {
   urls: string[];
   /** Empreinte SHA-256 du certificat, pour le vérifier avant de l’accepter. */
   fingerprint: string | null;
+  /** Empreinte de la clé publique, stable : celle que les satellites audio vérifient. */
+  keyFingerprint?: string | null;
   /** Appareils du réseau autorisés comme miroir (absent des anciens serveurs). */
   trustedDevices?: number;
 }

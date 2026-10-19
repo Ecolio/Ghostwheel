@@ -33,7 +33,10 @@ try {
         keyPath: config.tlsKey,
       })
     : null;
-  if (certificate) config.tlsFingerprint = certificate.fingerprint;
+  if (certificate) {
+    config.tlsFingerprint = certificate.fingerprint;
+    config.tlsKeyFingerprint = certificate.keyFingerprint;
+  }
   let lanServer: ReturnType<typeof createServer> | null = null;
   let stopping = false;
   const stop = async () => {
