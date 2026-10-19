@@ -353,8 +353,10 @@ export async function createApp(
     arbiter: wakeArbiter,
     controller,
     logs,
+    live,
     heartbeat: options.timers !== false,
   });
+  live.attachSatelliteOutput((satelliteId, pcm) => satellites.play(satelliteId, pcm));
   const devices = () => {
     const local = perception.snapshot();
     return {
@@ -417,7 +419,8 @@ export async function createApp(
     const session = controller.sessionState();
     if (session.mode !== 4 || controller.isVoiceRecognitionEnabled()) return true;
     if (!vision.isEnabled()) return false;
-    return ['connecting', 'ready'].includes(session.phase);
+    // Une conversation de satellite se tient dans une autre pièce : la caméra n’a rien à voir.
+    return ['connecting', 'ready'].includes(session.phase) && !session.satellite;
   });
   const app = Fastify({ logger: false, bodyLimit: 16_384, requestTimeout: 10_000 });
   // Sessions administrateur en mémoire (un redémarrage les ferme), avec une expiration

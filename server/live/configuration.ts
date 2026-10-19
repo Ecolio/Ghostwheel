@@ -43,7 +43,15 @@ export interface LiveFeatures {
   webSearch?: boolean;
   /** Voix GPT-Live choisie dans l’administration ; Cedar par défaut. */
   voice?: string;
+  /** Satellite audio : ni écran ni carte, la réponse est seulement dite. */
+  voiceOnly?: boolean;
 }
+
+/** Consignes ajoutées en voix seule : elles priment sur toutes celles qui parlent de cartes. */
+const voiceOnlyInstructions =
+  '\n\nSatellite audio : cette conversation se tient dans une autre pièce de la maison, par un petit haut-parleur sans écran. Aucune carte, image ou caméra n’est disponible : ne propose jamais d’afficher, de montrer ou de regarder quelque chose. Donne la réponse à voix haute, en une ou deux phrases courtes ; pour une liste, garde l’essentiel.';
+const voiceOnlyDelegation =
+  '\n\nSatellite audio sans écran : l’outil ui__show_luna_card n’existe pas dans cette session et aucune carte ne s’affiche ; ignore toute consigne précédente qui demande une carte ou un affichage. Les outils des modules renvoient un résumé : retourne un résultat court, à dire tel quel, sans parler d’affichage.';
 
 /** Délégation des appareils de la maison ; aussi ajoutée à une session déjà ouverte. */
 export const homeDevicesDelegation =
@@ -126,14 +134,18 @@ Les identifiants exacts des sources et des commandes autorisées sont dans la de
             : ''),
         tools: [
           ...(webSearch ? [{ type: 'web_search' as const }] : []),
-          {
-            type: 'function',
-            name: 'ui__show_luna_card',
-            description:
-              'Afficher la réponse factuelle courante. À rappeler pour chaque nouvelle date, correction ou question de suivi, même sans demande explicite de carte : la nouvelle carte devient la principale. Jamais pour répéter le résultat d’un outil de module (heure, météo, bus) qui affiche déjà sa propre carte.',
-            strict: true,
-            parameters: strictSchema(cardSchema) as Record<string, unknown>,
-          },
+          ...(features.voiceOnly
+            ? []
+            : [
+                {
+                  type: 'function' as const,
+                  name: 'ui__show_luna_card',
+                  description:
+                    'Afficher la réponse factuelle courante. À rappeler pour chaque nouvelle date, correction ou question de suivi, même sans demande explicite de carte : la nouvelle carte devient la principale. Jamais pour répéter le résultat d’un outil de module (heure, météo, bus) qui affiche déjà sa propre carte.',
+                  strict: true,
+                  parameters: strictSchema(cardSchema) as Record<string, unknown>,
+                },
+              ]),
           ...extraTools.map((tool) => ({
             type: 'function' as const,
             name: tool.name,
@@ -155,5 +167,10 @@ Les identifiants exacts des sources et des commandes autorisées sont dans la de
   const custom = personalityInstructions(personality) + personalContextInstructions(personality);
   config.instructions += custom;
   if (config.delegation?.type === 'responses') config.delegation.responses.instructions += custom;
+  if (features.voiceOnly) {
+    config.instructions += voiceOnlyInstructions;
+    if (config.delegation?.type === 'responses')
+      config.delegation.responses.instructions += voiceOnlyDelegation;
+  }
   return config;
 }

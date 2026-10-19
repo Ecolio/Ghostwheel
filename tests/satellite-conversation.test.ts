@@ -1,0 +1,292 @@
+import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
+import test, { type TestContext } from 'node:test';
+import type { WebSocket } from 'ws';
+import type { SessionConfig } from 'openai/resources/live/live';
+import type { ConnectClientEvent, ConnectServerEvent } from 'openai/resources/live/sideband';
+import { openDatabase, ProfileRepository, SessionPreferences } from '../server/storage.js';
+import { SessionController } from '../server/controller.js';
+import { LiveTransport } from '../server/live/transport.js';
+import type { LiveGateway, LiveHandlers } from '../server/live/gateway.js';
+import { DiagnosticLog } from '../server/logs.js';
+import { SatelliteHub } from '../server/satellites.js';
+import { SatelliteStore } from '../server/satellites-store.js';
+import { WakeArbiter } from '../server/wake-arbiter.js';
+import type { PerceptionBridge } from '../server/perception.js';
+
+const bureau = { id: 'sat-bureau', name: 'Bureau' };
+
+/** Contrôleur réel, transport Live réel, passerelle simulée (aucun appel à OpenAI). */
+function fixture(t: TestContext) {
+  const db = openDatabase(':memory:');
+  let now = Date.now();
+  const profiles = new ProfileRepository(db);
+  const preferences = new SessionPreferences(db);
+  const sent: ConnectClientEvent[] = [];
+  const audio: Buffer[] = [];
+  const sessions: SessionConfig[] = [];
+  let handlers!: LiveHandlers;
+  const gateway: LiveGateway = {
+    async create() {
+      throw new Error('WebRTC inattendu pour un satellite.');
+    },
+    attach() {
+      throw new Error('Canal latéral inattendu pour un satellite.');
+    },
+    connect(session, value) {
+      sessions.push(session);
+      handlers = value;
+      return {
+        send: (event) => sent.push(event),
+        sendAudio: (pcm) => audio.push(pcm),
+        dispose() {},
+      };
+    },
+  };
+  const live = new LiveTransport(
+    gateway,
+    () => preferences.getOpenAIBlocked(),
+    new DiagnosticLog(),
+    {},
+    () => now,
+  );
+  const controller = new SessionController(profiles, live, () => now, preferences);
+  live.attach(controller);
+  const played: [string, Buffer][] = [];
+  live.attachSatelliteOutput((id, pcm) => played.push([id, pcm]));
+  controller.setWakeWordEnabled(true);
+  controller.setWakeWordAvailability(true, null);
+  t.after(() => {
+    live.dispose();
+    db.close();
+  });
+  const emit = (event: unknown) => handlers.event(event as ConnectServerEvent);
+  return {
+    db,
+    profiles,
+    controller,
+    live,
+    sent,
+    audio,
+    sessions,
+    played,
+    emit,
+    advance(ms: number) {
+      now += ms;
+      controller.tick();
+    },
+  };
+}
+
+const tone = (amplitude: number, bytes = 3200) => {
+  const pcm = Buffer.alloc(bytes);
+  for (let offset = 0; offset < bytes; offset += 2)
+    pcm.writeInt16LE(offset % 4 ? amplitude : -amplitude, offset);
+  return pcm;
+};
+const delta = (pcm: Buffer) => ({
+  type: 'session.output_audio.delta',
+  delta: pcm.toString('base64'),
+});
+
+test('satellite : session Live sur WebSocket, voix seule, sans navigateur ni caméra', (t) => {
+  const f = fixture(t);
+  // Aucun miroir ouvert : le satellite ouvre quand même, en mode caméra par défaut.
+  assert.equal(f.controller.satelliteWake(bureau), true);
+  const state = f.controller.sessionState();
+  assert.equal(state.phase, 'connecting');
+  assert.deepEqual(state.satellite, bureau);
+  assert.equal(f.controller.wakeDetected(), false);
+  assert.equal(f.sessions.length, 1);
+  const session = f.sessions[0]!;
+  assert.deepEqual(session.audio?.format, { type: 'audio/pcm', rate: 16000 });
+  assert.equal('client' in session, false);
+  assert.match(String(session.instructions), /Satellite audio/u);
+  const tools =
+    session.delegation?.type === 'responses'
+      ? (session.delegation.responses.tools ?? []).map((tool) => ('name' in tool ? tool.name : ''))
+      : [];
+  assert.equal(tools.includes('ui__show_luna_card'), false);
+  assert.equal(
+    tools.some((name) => /^(vision|image|memory)__/u.test(name)),
+    false,
+  );
+  f.emit({ type: 'session.started', event_id: 'e1', session: { id: 'live_sat' } });
+  assert.equal(f.controller.sessionState().phase, 'ready');
+  // Une personne passe devant le miroir : rien ne change pour la conversation du bureau.
+  const profile = f.profiles.create('Léa');
+  f.controller.heartbeat();
+  f.controller.observe({
+    schemaVersion: 1,
+    producerBootId: 'camera',
+    sequence: 1,
+    observedAt: Date.now(),
+    health: 'ok',
+    presence: true,
+    engaged: true,
+    people: [{ trackId: 'one', profileId: profile.id }],
+  });
+  assert.equal(f.controller.snapshot().state.activeProfile, null);
+  f.advance(6000);
+  assert.equal(f.controller.sessionState().phase, 'ready');
+});
+
+test('satellite : son relayé, semi-duplex pendant que Cornelius parle', (t) => {
+  const f = fixture(t);
+  f.controller.satelliteWake(bureau);
+  // Avant session.started, le micro ne part pas.
+  f.live.satelliteAudio(bureau.id, tone(3000));
+  assert.equal(f.audio.length, 0);
+  f.emit({ type: 'session.started', event_id: 'e1', session: { id: 'live_sat' } });
+  f.live.satelliteAudio('autre', tone(3000));
+  assert.equal(f.audio.length, 0);
+  f.live.satelliteAudio(bureau.id, tone(3000));
+  assert.equal(f.audio.at(-1)!.readInt16LE(0), -3000);
+  // Le flux de sortie part vers le satellite, silences compris.
+  f.emit(delta(Buffer.alloc(3200)));
+  f.live.satelliteAudio(bureau.id, tone(3000));
+  assert.equal(f.audio.at(-1)!.readInt16LE(0), -3000);
+  f.emit(delta(tone(8000)));
+  assert.deepEqual(
+    f.played.map(([id, pcm]) => [id, pcm.length]),
+    [
+      [bureau.id, 3200],
+      [bureau.id, 3200],
+    ],
+  );
+  f.live.satelliteAudio(bureau.id, tone(3000));
+  assert.equal(
+    f.audio.at(-1)!.every((byte) => byte === 0),
+    true,
+  );
+  f.advance(700);
+  f.live.satelliteAudio(bureau.id, tone(3000));
+  assert.equal(f.audio.at(-1)!.readInt16LE(0), -3000);
+});
+
+test('satellite : fin sur silence, clôture confirmée, puis retour à la veille', (t) => {
+  const f = fixture(t);
+  f.controller.satelliteWake(bureau);
+  f.emit({ type: 'session.started', event_id: 'e1', session: { id: 'live_sat' } });
+  f.advance(21_000);
+  const state = f.controller.sessionState();
+  assert.deepEqual([state.phase, state.reason], ['closing', 'Fin de conversation après silence.']);
+  assert.equal(f.sent.at(-1)?.type, 'session.close');
+  f.emit({ type: 'session.closed', event_id: 'e2', usage: {} });
+  assert.deepEqual(
+    [f.controller.sessionState().phase, f.controller.sessionState().satellite],
+    ['idle', null],
+  );
+  assert.equal(f.controller.isWakeListening(), true);
+});
+
+test('satellite : réservé aux membres, déconnexion pendant la conversation', (t) => {
+  const f = fixture(t);
+  f.controller.setOpening({ trigger: 'voice', audience: 'members', recognizeVoice: false });
+  assert.equal(f.controller.satelliteWake(bureau), false);
+  assert.match(String(f.controller.snapshot().state.diagnostic), /Satellite/u);
+  f.controller.setOpening({ trigger: 'voice', audience: 'everyone', recognizeVoice: false });
+  assert.equal(f.controller.satelliteWake(bureau), true);
+  f.controller.satelliteGone('autre');
+  assert.equal(f.controller.sessionState().phase, 'connecting');
+  f.controller.satelliteGone(bureau.id);
+  assert.deepEqual(
+    [f.controller.sessionState().phase, f.controller.sessionState().reason],
+    ['closing', 'Satellite déconnecté.'],
+  );
+});
+
+class FakeSocket extends EventEmitter {
+  readyState = 1;
+  sent: (string | Buffer)[] = [];
+  send(value: string | Buffer) {
+    this.sent.push(value);
+  }
+  close() {
+    this.readyState = 3;
+    this.emit('close');
+  }
+  ping() {}
+  terminate() {
+    this.close();
+  }
+  receive(value: unknown) {
+    if (Buffer.isBuffer(value)) this.emit('message', value, true);
+    else this.emit('message', Buffer.from(JSON.stringify(value)), false);
+  }
+  messages() {
+    return this.sent
+      .filter((value): value is string => typeof value === 'string')
+      .map((value) => JSON.parse(value));
+  }
+}
+
+test('concentrateur : son d’avant le mot rejoué, voix vers le satellite, détection de voix', (t) => {
+  const f = fixture(t);
+  const store = new SatelliteStore(f.db, Date.now);
+  const { satellite } = store.create('Bureau');
+  let detected: ((score: number) => void) | null = null;
+  const vad: number[] = [];
+  const perception = {
+    startWakeStream: (_id: string, callback: (score: number) => void) => {
+      detected = callback;
+      return true;
+    },
+    wakeAudio() {},
+    endWakeStream() {},
+    audio: (_interaction: string, pcm: Buffer) => vad.push(pcm.length),
+  } as unknown as PerceptionBridge;
+  const relayed: Buffer[] = [];
+  const hub = new SatelliteHub({
+    store,
+    perception,
+    arbiter: new WakeArbiter(() => 1),
+    controller: f.controller,
+    logs: new DiagnosticLog(),
+    live: {
+      satelliteAudio: (id, pcm) => {
+        f.live.satelliteAudio(id, pcm);
+        relayed.push(pcm);
+      },
+    },
+    heartbeat: false,
+  });
+  f.live.attachSatelliteOutput((id, pcm) => hub.play(id, pcm));
+  t.after(() => hub.dispose());
+  const socket = new FakeSocket();
+  hub.connect(socket as unknown as WebSocket, satellite);
+  socket.receive({ type: 'hello', protocol: 1, firmware: '0.1.0' });
+  const frame = (value: number) => Buffer.alloc(2560, value);
+  for (let index = 1; index <= 8; index++) socket.receive(frame(index));
+  detected!(0.9);
+  assert.deepEqual(
+    socket.messages().map((message) => message.type),
+    ['welcome', 'listen', 'wake', 'session'],
+  );
+  socket.receive(frame(20));
+  assert.equal(relayed.length, 0);
+  f.emit({ type: 'session.started', event_id: 'e1', session: { id: 'live_sat' } });
+  // Six trames d’avant la détection, puis celle reçue pendant l’ouverture.
+  assert.deepEqual(
+    relayed.map((pcm) => pcm[0]),
+    [3, 4, 5, 6, 7, 8, 20],
+  );
+  assert.deepEqual(
+    f.audio.map((pcm) => pcm[0]),
+    [3, 4, 5, 6, 7, 8, 20],
+  );
+  assert.equal(vad.length, Math.floor((7 * 2560) / 1024));
+  assert.equal(
+    vad.every((length) => length === 1024),
+    true,
+  );
+  f.emit(delta(tone(8000)));
+  assert.equal(socket.sent.filter(Buffer.isBuffer).length, 1);
+  // Un autre satellite ne reçoit rien et n’envoie plus de son tant que la conversation dure.
+  const other = new FakeSocket();
+  hub.connect(other as unknown as WebSocket, store.create('Cuisine').satellite);
+  other.receive({ type: 'hello', protocol: 1, firmware: '0.1.0' });
+  assert.deepEqual(other.messages().at(-1), { type: 'listen', enabled: false });
+  socket.close();
+  assert.equal(f.controller.sessionState().reason, 'Satellite déconnecté.');
+});

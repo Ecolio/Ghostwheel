@@ -2,14 +2,16 @@
 
 Cette page décrit le dialogue entre Cornelius et un satellite audio (micro et haut-parleur sur ESP32-S3, par exemple la carte Waveshare ESP32-S3-AUDIO-Board). Elle s’adresse aux personnes qui écrivent le firmware, développé dans un dépôt séparé, et à celles qui modifient le serveur. Le protocole est versionné : toute modification incompatible change son numéro.
 
-État : **version 1, en cours de développement** sur la branche `satellite`. Seule la veille (mot d’appel) est en place ; la conversation viendra dans une étape suivante.
+État : **version 1, en cours de développement** sur la branche `satellite`. La veille (mot d’appel) et la conversation en voix seule sont en place.
 
 ## Principe
 
-- Un satellite ne parle qu’à Cornelius, jamais à OpenAI : la clé reste sur l’ordinateur du miroir.
+- Un satellite ne parle qu’à Cornelius, jamais à OpenAI : la clé reste sur l’ordinateur du miroir, qui relaie le son vers une session Live.
 - En veille, le satellite envoie le son de son micro ; l’ordinateur y cherche « Cornelius » avec le même modèle que le miroir. Le son n’est envoyé que lorsque le serveur le demande (message `listen`).
 - Une seule conversation à la fois dans toute la maison : miroir ou un satellite.
 - Quand le miroir et un satellite entendent « Cornelius » en même temps, l’appareil au meilleur score l’emporte.
+- Une conversation de satellite est **anonyme et en voix seule** : ni carte, ni image, ni caméra, ni mémoire personnelle. Elle se termine après un silence (réglage **Fin de parole**, 20 s par défaut), ou quand le satellite se déconnecte.
+- L’ouverture réservée aux membres du foyer exclut les satellites : ils ne voient personne. Le satellite reçoit alors `busy`.
 
 ## Connexion
 
@@ -25,12 +27,16 @@ Un jeton inconnu ou révoqué est refusé (403) avant l’ouverture du WebSocket
 
 ## Son
 
-Le son circule en messages binaires, toujours au même format :
+Le son circule en messages binaires, toujours au même format : PCM 16 bits signé little-endian, mono, 16 000 Hz.
 
-- PCM 16 bits signé little-endian, mono, 16 000 Hz ;
-- trames de **2 560 octets** (1 280 échantillons, 80 ms) dans le sens satellite → serveur.
+| Sens | Trames | Rythme |
+|---|---|---|
+| satellite → serveur | exactement **2 560 octets** (1 280 échantillons, 80 ms) | celui du micro, sans regroupement |
+| serveur → satellite | taille variable (en pratique 100 ms) | temps réel, **silences compris**, pendant toute la conversation |
 
-Une trame d’une autre taille ferme la connexion. Le satellite envoie les trames au rythme du micro, sans les regrouper.
+Une trame montante d’une autre taille ferme la connexion. La voix de Cornelius arrive au rythme où elle doit être jouée : un tampon de lecture de 200 à 300 ms suffit. Quand Cornelius est interrompu ou se tait, le flux continue avec du silence ; il n’y a pas de message pour vider le tampon.
+
+**Semi-duplex.** Sans annulation d’écho, le serveur remplace par du silence le son du micro tant que Cornelius parle, et 600 ms après. Le satellite continue d’envoyer ses trames normalement.
 
 ## Messages
 
@@ -41,7 +47,7 @@ Les autres messages sont des objets JSON en texte, avec un champ `type`. Un mess
 | Message | Quand | Effet |
 |---|---|---|
 | `{"type":"hello","protocol":1,"firmware":"0.1.0"}` | premier message, dans les 5 s | le serveur répond `welcome`, ou ferme si le protocole n’est pas pris en charge |
-| binaire, 2 560 octets | tant que `listen` vaut `true` | cherché pour « Cornelius » |
+| binaire, 2 560 octets | tant que `listen` vaut `true` | veille : cherché pour « Cornelius » ; conversation : envoyé à Live |
 | `{"type":"mic","muted":true}` | bouton de vie privée | le serveur ignore le son tant que le micro est coupé |
 
 `firmware` est une chaîne de 1 à 32 caractères.
@@ -53,8 +59,19 @@ Les autres messages sont des objets JSON en texte, avec un champ `type`. Un mess
 | `{"type":"welcome","protocol":1,"id":"…","name":"Chambre","volume":70}` | connexion acceptée ; `volume` de 0 à 100 |
 | `{"type":"listen","enabled":true}` | envoyer (`true`) ou cesser d’envoyer (`false`) le son du micro ; envoyé après `welcome` puis à chaque changement |
 | `{"type":"wake","score":0.93}` | « Cornelius » a été entendu par ce satellite (signal lumineux) |
+| `{"type":"busy"}` | la conversation ne s’ouvre pas ici : une autre est en cours, ou l’ouverture est réservée aux membres |
+| `{"type":"session","state":"connecting"}` | la conversation s’ouvre ; le son continue d’être envoyé (il est gardé, puis rejoué) |
+| `{"type":"session","state":"ready"}` | la conversation est ouverte : la voix de Cornelius arrive en binaire |
+| `{"type":"session","state":"closed"}` | la conversation est finie : arrêter la lecture |
 
-`listen` passe à `false` quand le mot d’appel est désactivé ou pas prêt, ou qu’une conversation est en cours.
+`listen` vaut `true` pendant la veille et pendant la conversation de ce satellite ; il passe à `false` quand le mot d’appel est désactivé ou pas prêt, ou qu’une conversation se tient ailleurs.
+
+### Déroulé d’une conversation
+
+1. Le satellite envoie son micro ; « Cornelius » est entendu.
+2. `wake`, puis `session: connecting`. Le serveur garde le son qui précède le mot (environ 0,5 s) et celui qui suit : la question peut suivre sans pause.
+3. `session: ready` (environ 1 s plus tard) : le son gardé part vers Live, puis le micro en direct ; la voix de Cornelius arrive.
+4. Après le silence réglé, `session: closed`, puis `listen` reprend sa valeur de veille.
 
 ## Fermetures
 
@@ -63,7 +80,7 @@ Les autres messages sont des objets JSON en texte, avec un champ `type`. Un mess
 | 1008 | `hello` absent, invalide ou de protocole non pris en charge ; trame invalide ; satellite révoqué ou reconnecté ailleurs |
 | 1001 | arrêt du serveur |
 
-Après une fermeture, le satellite se reconnecte avec un délai croissant (1 s, 2 s, 4 s… jusqu’à 60 s).
+Après une fermeture, le satellite se reconnecte avec un délai croissant (1 s, 2 s, 4 s… jusqu’à 60 s). Une déconnexion pendant la conversation la termine.
 
 ## Essayer sans matériel
 
@@ -73,16 +90,16 @@ Créer un satellite et afficher son jeton :
 npx tsx --env-file-if-exists=.env scripts/satellite-ajouter.ts "Bureau"
 ```
 
-Puis simuler le satellite avec un enregistrement WAV (PCM mono 16 kHz) qui contient « Cornelius » :
+Puis simuler le satellite avec un enregistrement WAV (PCM mono 16 kHz) qui contient « Cornelius » et une question :
 
 ```sh
 npx tsx scripts/satellite-sim.ts --token <jeton> --wav question.wav
 ```
 
-Le simulateur envoie du silence, puis l’enregistrement, au rythme réel, et affiche les messages du serveur.
+Le simulateur envoie du silence, puis l’enregistrement, au rythme réel, affiche les messages du serveur et enregistre la voix de Cornelius dans `data/satellite-sim.wav`. Avec `--wake-only`, il s’arrête après la détection, sans conversation ni appel à OpenAI.
 
 ## À venir
 
-- Conversation : son de Cornelius vers le satellite (même format, en continu au rythme réel), états `listening`, `speaking`, `busy`.
+- Annulation d’écho sur le satellite, pour pouvoir couper la parole à Cornelius.
 - Mot d’appel détecté sur le satellite (`wake` envoyé par le satellite avec le son qui précède), vérifié par le serveur.
-- Bouton d’action, volume, mise à jour du firmware.
+- Satellite rattaché à un profil (mémoire personnelle), bouton d’action, volume, mise à jour du firmware.

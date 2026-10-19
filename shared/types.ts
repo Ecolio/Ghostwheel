@@ -34,6 +34,8 @@ export interface SessionState extends Scope {
   readyAt: number | null;
   manualStop: boolean;
   microphoneEnabled: boolean;
+  /** Conversation tenue par un satellite audio (pièce), et non par le miroir. */
+  satellite?: { id: string; name: string } | null;
 }
 export interface PerceptionObservation {
   schemaVersion: 1;

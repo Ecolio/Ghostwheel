@@ -20,7 +20,7 @@ import {
   personalContextInstructions,
 } from './configuration.js';
 import { cardOverlap, cardTokens, DUPLICATE_CARD_OVERLAP } from './card-overlap.js';
-import type { LiveConnection, LiveGateway } from './gateway.js';
+import type { LiveAudioConnection, LiveConnection, LiveGateway } from './gateway.js';
 
 export interface AddonToolBridge {
   tools(profileId?: string | null): {
@@ -94,6 +94,11 @@ interface ActiveSession {
   offer?: string;
   remoteId?: string;
   connection?: LiveConnection;
+  /** Satellite audio de la conversation : le serveur porte le son sur un WebSocket principal. */
+  satelliteId: string | null;
+  audio?: LiveAudioConnection;
+  /** Semi-duplex : le micro du satellite est rendu muet tant que Cornelius parle. */
+  echoUntil: number;
   attached: boolean;
   started: boolean;
   // Démarrage sans attendre le canal de données du navigateur : média WebRTC connecté
@@ -183,6 +188,13 @@ function failureToolResult(summary: string): ToolResult {
   };
 }
 
+// Son des satellites : PCM16 mono 16 kHz dans les deux sens, sans conversion.
+const SATELLITE_AUDIO_FORMAT = { type: 'audio/pcm', rate: 16000 } as const;
+// Lecture du satellite (tampon et haut-parleur) après le dernier son audible de Cornelius.
+const SATELLITE_ECHO_GUARD_MS = 600;
+// Outils sans objet sur un satellite : pas d’écran, pas de caméra, pas d’identité.
+const SATELLITE_EXCLUDED_TOOLS = /^(vision|image|memory)__/u;
+
 // Sous le délai de conservation des connexions HTTP inactives de Node (4 s).
 const prewarmIntervalMs = 3000;
 
@@ -198,6 +210,27 @@ export class LiveTransport implements SessionTransport {
   private autoIllustration: { abort: AbortController; active: ActiveSession } | null = null;
   private vision: VisionToolBridge | null = null;
   private memory: PersonalMemory | null = null;
+  private satelliteOutput: ((satelliteId: string, pcm: Buffer) => void) | null = null;
+  /** Son de Cornelius vers le satellite de la conversation, au rythme où Live le produit. */
+  attachSatelliteOutput(output: (satelliteId: string, pcm: Buffer) => void) {
+    this.satelliteOutput = output;
+  }
+  /** Micro du satellite de la conversation, vers Live (trames PCM16 16 kHz). */
+  satelliteAudio(satelliteId: string, pcm: Buffer): void {
+    const active = this.active;
+    if (
+      !active?.audio ||
+      active.satelliteId !== satelliteId ||
+      !active.attached ||
+      active.closing ||
+      active.finalized ||
+      active.blocked ||
+      this.isBlocked()
+    )
+      return;
+    // Semi-duplex : sans annulation d’écho, Cornelius s’entendrait et se couperait lui-même.
+    active.audio.sendAudio(this.now() < active.echoUntil ? Buffer.alloc(pcm.length) : pcm);
+  }
   attachMemory(memory: PersonalMemory) {
     this.memory = memory;
   }
@@ -267,9 +300,12 @@ export class LiveTransport implements SessionTransport {
     )
       this.finalize(this.active);
     if (this.active && !this.active.finalized) throw new Error('Une session Live reste ouverte.');
+    const satellite = this.controller.sessionState().satellite ?? null;
     this.active = {
       scope: { ...scope },
       abort: new AbortController(),
+      satelliteId: satellite?.id ?? null,
+      echoUntil: 0,
       blocked: false,
       attached: false,
       started: false,
@@ -304,6 +340,51 @@ export class LiveTransport implements SessionTransport {
       },
       { once: true },
     );
+    if (satellite) this.connectSatellite(active);
+  }
+  /**
+   * Conversation d’un satellite : pas de navigateur pour négocier WebRTC, le serveur ouvre
+   * lui-même la session Live sur un WebSocket principal, en voix seule et sans identité.
+   */
+  private connectSatellite(active: ActiveSession) {
+    const gateway = this.gateway;
+    if (!gateway?.connect) {
+      queueMicrotask(() => this.controller.close('Clé OpenAI absente.'));
+      return;
+    }
+    const { client: _client, audio, ...config } = this.configuration(null, true);
+    active.toolsProfileId = null;
+    this.logs?.write('info', 'openai', 'Session Live du satellite demandée', {
+      interactionId: active.scope.interactionId,
+    });
+    const connection = gateway.connect(
+      { ...config, audio: { ...audio, format: SATELLITE_AUDIO_FORMAT } },
+      {
+        open: () => {},
+        event: (event) => {
+          if (this.disposed || this.active !== active || active.finalized) return;
+          // session.started vaut ici création, canal de contrôle et média à la fois.
+          if (event.type === 'session.started' && !active.attached) {
+            active.attached = true;
+            active.mediaConnected = true;
+            active.remoteId = event.session.id ?? undefined;
+            if (active.closing) this.send(active, { type: 'session.close' });
+            else this.controller.controlAttached(active.scope);
+          }
+          this.receive(active, event);
+        },
+        failure: () => {
+          if (this.disposed || this.active !== active || active.finalized) return;
+          if (active.closing) this.finalize(active);
+          else {
+            this.controller.close('Session Live du satellite interrompue.');
+            this.controller.publish();
+          }
+        },
+      },
+    );
+    active.connection = connection;
+    active.audio = connection;
   }
   private require(scope: Scope, alreadyReady = false) {
     const active = this.active;
@@ -324,14 +405,17 @@ export class LiveTransport implements SessionTransport {
     return active;
   }
   /** Configuration Live du profil, avec les réglages du foyer (recherche web, délégation). */
-  private configuration(profileId: string | null) {
+  private configuration(profileId: string | null, voiceOnly = false) {
     return liveConfiguration(
-      this.toolDescriptors(profileId),
+      this.toolDescriptors(profileId).filter(
+        (tool) => !voiceOnly || !SATELLITE_EXCLUDED_TOOLS.test(tool.name),
+      ),
       this.integrations.personality?.(profileId),
       this.controller.snapshot().state.delegationMode,
       {
         webSearch: this.controller.isWebSearchEnabled(),
         voice: this.controller.getSpeechVoice(),
+        voiceOnly,
       },
     );
   }
@@ -523,7 +607,7 @@ export class LiveTransport implements SessionTransport {
     this.memory?.close(active.scope);
     active.closing = true;
     active.abort.abort();
-    if (!active.response) {
+    if (!active.response && !active.connection) {
       // No creation request left this process: nothing remote can still be open.
       queueMicrotask(() => this.finalize(active));
       return;
@@ -755,6 +839,13 @@ export class LiveTransport implements SessionTransport {
           ? { code: error.code, message: error.message, errorType: error.type, param: error.param }
           : {}),
       });
+    }
+    // Satellite : le flux de sortie (16 kHz, silences compris) part tel quel vers sa pièce.
+    if (active.satelliteId && String(object(event).type ?? '') === 'session.output_audio.delta') {
+      const delta = object(event).delta;
+      if (typeof delta === 'string' && delta.length <= 262_144)
+        this.satelliteOutput?.(active.satelliteId, Buffer.from(delta, 'base64'));
+      if (audibleLiveOutput(event)) active.echoUntil = this.now() + SATELLITE_ECHO_GUARD_MS;
     }
     // Le calcul d’énergie ne sert qu’à la minuterie de silence (mode voix ou option).
     if (
@@ -1220,7 +1311,8 @@ export class LiveTransport implements SessionTransport {
       const invoked = await bridge.invoke(name, profileId, instanceRef, active.abort.signal);
       if (invoked) {
         tool = invoked.tool;
-        if (invoked.outcome.ok && !active.closing && !active.finalized) {
+        // Satellite : pas d’écran, le résumé du module suffit à la réponse parlée.
+        if (invoked.outcome.ok && !active.closing && !active.finalized && !active.satelliteId) {
           const shown = this.controller.showModuleCard(
             active.scope,
             callId,

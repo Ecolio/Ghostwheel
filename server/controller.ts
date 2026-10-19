@@ -109,7 +109,9 @@ const voiceIdentityWindowMs = 8000;
  * Chemins d’ouverture : présence (automatic), bouton (manual), mot d’appel (wake), et reprise
  * de la même conversation après un changement de contexte (resume).
  */
-type OpenSource = 'automatic' | 'manual' | 'wake' | 'resume';
+type OpenSource = 'automatic' | 'manual' | 'wake' | 'resume' | 'satellite';
+const satelliteMembersDiagnostic =
+  'Satellite : l’ouverture est réservée aux membres reconnus, qu’un satellite ne peut pas voir.';
 const unknownPersonDiagnostic =
   'Personne non reconnue : seules les personnes du foyer ouvrent une conversation.';
 
@@ -130,6 +132,7 @@ export class SessionController {
     readyAt: null,
     manualStop: false,
     microphoneEnabled: false,
+    satellite: null,
   };
   private profile: Profile | null = null;
   private selection: MirrorState['selection'] = 'household';
@@ -530,6 +533,9 @@ export class SessionController {
     const previous = this.observation;
     if (previous?.producerBootId === input.producerBootId && input.sequence <= previous.sequence)
       return false;
+    // Conversation dans une autre pièce : ce que voit la caméra du miroir ne la concerne pas.
+    // La présence reprend avec les observations suivantes, une fois la conversation finie.
+    if (this.satelliteSession()) return true;
     if (this.session.mode === 4) {
       this.observeVoiceMode(input, previous, now);
       return true;
@@ -1107,6 +1113,47 @@ export class SessionController {
     return accepted;
   }
 
+  /**
+   * « Cornelius » entendu par un satellite : la conversation s’ouvre dans sa pièce, sans
+   * navigateur ni caméra, anonyme. Faux si une conversation est déjà en cours ou si
+   * l’ouverture est réservée aux membres reconnus du foyer (un satellite ne voit personne).
+   */
+  satelliteWake(satellite: { id: string; name: string }): boolean {
+    if (!this.isWakeListening()) return false;
+    if (this.session.mode === 2 || this.knownPeopleOnly) {
+      this.diagnostic = satelliteMembersDiagnostic;
+      this.publish();
+      return false;
+    }
+    if (this.session.manualStop) this.clearManualStop();
+    const unavailable = this.transport.unavailableReason?.();
+    if (unavailable) {
+      this.session.phase = 'blocked';
+      this.session.reason = unavailable;
+      this.publish();
+      return false;
+    }
+    if (this.diagnostic === satelliteMembersDiagnostic) this.diagnostic = null;
+    this.startupWakeAt = this.now();
+    this.changeProfile(null, 'household', false);
+    this.admit('satellite', 'satellite:' + satellite.id, { ...satellite });
+    this.publish();
+    return this.session.phase === 'connecting';
+  }
+
+  /** Le satellite de la conversation s’est déconnecté : elle s’arrête avec lui. */
+  satelliteGone(id: string): void {
+    if (this.session.satellite?.id !== id) return;
+    this.close('Satellite déconnecté.');
+    this.publish();
+  }
+
+  private satelliteSession(): boolean {
+    return (
+      !!this.session.satellite && ['connecting', 'ready', 'closing'].includes(this.session.phase)
+    );
+  }
+
   /** Clé du cycle d'ouverture propre au mode, pour ne pas rouvrir en boucle devant la même personne. */
   private triggerKey(source: OpenSource = 'automatic'): string | null {
     // Sans caméra en veille, seule une demande explicite (mot d’appel, bouton, reprise) ouvre.
@@ -1165,21 +1212,34 @@ export class SessionController {
       this.session.reason = unavailable;
       return;
     }
+    this.admit(source, trigger);
+  }
+
+  /** Ouvre la conversation : nouvelle interaction, transport ouvert (miroir ou satellite). */
+  private admit(
+    source: OpenSource,
+    trigger: string,
+    satellite: { id: string; name: string } | null = null,
+  ): void {
     const id = randomUUID();
-    if (source !== 'wake') this.startupWakeAt = null;
+    if (source !== 'wake' && source !== 'satellite') this.startupWakeAt = null;
     // Only the first admission in this presence cycle measures detection latency.
     // A manual restart or profile change must not reuse an old detection timestamp.
-    this.startupPresenceAt = this.measuredPresence !== this.presentSince ? this.presentSince : null;
-    this.measuredPresence = this.presentSince;
+    // Un satellite ne dépend pas de la présence devant le miroir : son cycle reste intact.
+    this.startupPresenceAt =
+      !satellite && this.measuredPresence !== this.presentSince ? this.presentSince : null;
     this.startupEngagementAt = this.startupPresenceAt !== null ? this.engagementAt : null;
+    if (!satellite) {
+      this.measuredPresence = this.presentSince;
+      this.consumedTrigger = trigger;
+      this.reengagementRequired = false;
+    }
     if (this.startupPresenceAt !== null)
       this.measure?.('detection_admission', {
         durationMs: this.now() - this.startupPresenceAt,
         interactionId: id,
         mode: this.session.mode,
       });
-    this.consumedTrigger = trigger;
-    this.reengagementRequired = false;
     this.diagnostic = null;
     this.handledCalls.clear();
     this.webSearchActive = false;
@@ -1192,6 +1252,7 @@ export class SessionController {
       recognized: this.observation?.people.filter((person) => person.profileId).length ?? 0,
       selection: this.selection,
       profileId: this.profile?.id ?? null,
+      ...(satellite ? { satellite: satellite.name } : {}),
     });
     this.session = {
       ...this.session,
@@ -1202,6 +1263,7 @@ export class SessionController {
       readyAt: null,
       microphoneEnabled: false,
       contextVersion: this.session.contextVersion + 1,
+      satellite,
     };
     this.started = false;
     this.controlReady = false;
@@ -1209,7 +1271,9 @@ export class SessionController {
     this.resetSilence();
     // Mode voix : la caméra s’allume avec la conversation et peut reconnaître la personne.
     this.voiceIdentityUntil =
-      this.session.mode === 4 && this.voiceRecognition ? this.now() + voiceIdentityWindowMs : null;
+      this.session.mode === 4 && this.voiceRecognition && !satellite
+        ? this.now() + voiceIdentityWindowMs
+        : null;
     this.voiceIdentityCameraSeen = false;
     try {
       this.transport.open(this.scope());
@@ -1303,6 +1367,7 @@ export class SessionController {
 
   /** Retour au repos après la clôture confirmée ou abandonnée ; relance si elle était demandée. */
   private release(reason?: string): void {
+    const released = this.session.satellite;
     this.voice = { phase: 'idle', startedAt: this.now(), endsAt: null };
     this.resetSilence();
     this.session = {
@@ -1313,12 +1378,14 @@ export class SessionController {
       startedAt: null,
       readyAt: null,
       microphoneEnabled: false,
+      satellite: null,
     };
     this.cards = [];
     this.webSearchActive = false;
     this.closingAt = null;
     this.voiceIdentityUntil = null;
-    const reopen = this.reopenAfterClose;
+    // Une conversation de satellite ne se rouvre pas d’elle-même : « Cornelius » suffit.
+    const reopen = released ? null : this.reopenAfterClose;
     this.reopenAfterClose = null;
     // Mode voix : sans caméra en veille, rien ne prouve que la personne est encore là, sauf
     // quand la même conversation reprend avec un contexte à jour.
@@ -1465,6 +1532,8 @@ export class SessionController {
         : [];
     if (
       !this.current(scope) ||
+      // Voix seule : la conversation d’un satellite n’affiche rien sur le miroir.
+      this.session.satellite ||
       this.session.phase !== 'ready' ||
       this.handledCalls.has(callId) ||
       !Number.isFinite(validUntil) ||
@@ -1508,7 +1577,7 @@ export class SessionController {
 
   /** Minuterie de silence : toujours en mode voix, sur option dans les modes caméra. */
   silenceTracking(): boolean {
-    return this.session.mode === 4 || this.silenceClose.enabled;
+    return this.session.mode === 4 || this.silenceClose.enabled || this.satelliteSession();
   }
 
   private silenceDelay(): number {
@@ -1607,7 +1676,10 @@ export class SessionController {
       this.assistantOutputUntil = null;
       if (!this.userSpeaking && !this.assistantBusy) this.silenceSince = outputEndedAt;
     }
-    if (this.session.mode === 4) {
+    // Satellite : ni caméra ni navigateur dans sa pièce, seul le silence termine la conversation.
+    if (this.satelliteSession()) {
+      if (this.silenceExpired(now)) this.close('Fin de conversation après silence.');
+    } else if (this.session.mode === 4) {
       if (this.silenceExpired(now)) this.close('Fin de conversation après silence.');
     } else {
       if (!this.sensorHealthy()) {
@@ -1634,7 +1706,8 @@ export class SessionController {
         this.close('Fin d’engagement.');
       } else if (this.silenceExpired(now)) this.closeAfterSilence();
     }
-    if (!this.browserHealthy()) this.close('Le navigateur ne répond plus.');
+    if (!this.satelliteSession() && !this.browserHealthy())
+      this.close('Le navigateur ne répond plus.');
     if (
       this.session.phase === 'connecting' &&
       now - this.session.startedAt! >= limits.connectionMs

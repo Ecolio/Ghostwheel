@@ -1,14 +1,19 @@
 /**
  * Simulateur de satellite audio : parle le protocole des satellites (version 1) sans matériel.
- * Il envoie du silence au rythme d’un micro, puis l’enregistrement donné, et affiche les
- * messages du serveur. Voir docs/developpement/satellites-protocole.md.
+ * Il envoie du silence au rythme d’un micro, puis l’enregistrement donné, affiche les
+ * messages du serveur et enregistre la voix de Cornelius. Voir
+ * docs/developpement/satellites-protocole.md.
  *
  *   npx tsx scripts/satellite-sim.ts --token <jeton> [--wav cornelius.wav] [--after 2]
- *     [--url ws://127.0.0.1:3000/satellite] [--fingerprint AA:BB:…] [--timeout 30]
+ *     [--url ws://127.0.0.1:3000/satellite] [--fingerprint AA:BB:…] [--timeout 60]
+ *     [--out data/satellite-sim.wav] [--wake-only]
  *
- * Avec --wav, la sortie vaut 0 si « Cornelius » est entendu, 1 sinon.
+ * Avec --wav, la sortie vaut 0 si « Cornelius » est entendu (et, sans --wake-only, si la
+ * conversation s’ouvre puis se ferme), 1 sinon. --wake-only s’arrête après la détection,
+ * sans conversation ni appel à OpenAI.
  */
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import type { TLSSocket } from 'node:tls';
 import WebSocket from 'ws';
 
@@ -24,7 +29,9 @@ const token = option('token') ?? process.env.CORNELIUS_SATELLITE_TOKEN;
 const url = option('url') ?? 'ws://127.0.0.1:' + (process.env.PORT ?? 3000) + '/satellite';
 const wavPath = option('wav');
 const afterMs = Number(option('after') ?? 2) * 1000;
-const timeoutMs = Number(option('timeout') ?? 30) * 1000;
+const timeoutMs = Number(option('timeout') ?? 60) * 1000;
+const output = option('out') ?? 'data/satellite-sim.wav';
+const wakeOnly = process.argv.includes('--wake-only');
 const fingerprint = option('fingerprint')?.replace(/:/g, '').toUpperCase();
 if (!token) {
   console.error('Jeton manquant : --token <jeton> ou CORNELIUS_SATELLITE_TOKEN.');
@@ -70,6 +77,39 @@ let speechAt: number | null = null;
 let speechOffset = 0;
 let heard = false;
 let refused = false;
+let conversed = false;
+let firstAudible: number | null = null;
+const voice: Buffer[] = [];
+
+// Même seuil que le serveur : la voix de Live arrive en continu, silences compris.
+function audible(pcm: Buffer): boolean {
+  let energy = 0;
+  let count = 0;
+  for (let offset = 0; offset + 1 < pcm.length; offset += 16) {
+    const sample = pcm.readInt16LE(offset);
+    energy += sample * sample;
+    count++;
+  }
+  const rms = 0.007 * 32768;
+  return count > 0 && energy / count >= rms * rms;
+}
+
+function wav(pcm: Buffer): Buffer {
+  const header = Buffer.alloc(44);
+  header.write('RIFF', 0, 'ascii');
+  header.writeUInt32LE(36 + pcm.length, 4);
+  header.write('WAVEfmt ', 8, 'ascii');
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(1, 22);
+  header.writeUInt32LE(RATE, 24);
+  header.writeUInt32LE(RATE * 2, 28);
+  header.writeUInt16LE(2, 32);
+  header.writeUInt16LE(16, 34);
+  header.write('data', 36, 'ascii');
+  header.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([header, pcm]);
+}
 let streamTimer: ReturnType<typeof setTimeout> | null = null;
 
 const socket = new WebSocket(url, {
@@ -123,7 +163,15 @@ function stream() {
 }
 
 socket.on('message', (data, binary) => {
-  if (binary) return;
+  if (binary) {
+    const pcm = Buffer.from(data as Buffer);
+    voice.push(pcm);
+    if (firstAudible === null && audible(pcm)) {
+      firstAudible = at();
+      log('Cornelius parle.');
+    }
+    return;
+  }
   const message = JSON.parse(String(data));
   if (message.type === 'welcome')
     log(
@@ -143,17 +191,29 @@ socket.on('message', (data, binary) => {
     );
     const wasListening = listening;
     listening = message.enabled === true;
-    if (streamTimer) clearTimeout(streamTimer);
+    if (!listening && streamTimer) clearTimeout(streamTimer);
     if (listening && !wasListening) stream();
   } else if (message.type === 'wake') {
     heard = true;
     log('« Cornelius » entendu (score ' + message.score + ').');
-    if (speech) setTimeout(() => socket.close(1000), 1000);
-  } else log('Message : ' + JSON.stringify(message));
+    if (speech && wakeOnly) setTimeout(() => socket.close(1000), 1000);
+  } else if (message.type === 'session') {
+    log('Conversation : ' + message.state + '.');
+    if (message.state === 'ready') conversed = true;
+    if (message.state === 'closed' && speech) setTimeout(() => socket.close(1000), 300);
+  } else if (message.type === 'busy') log('Occupé : la conversation ne s’ouvre pas ici.');
+  else log('Message : ' + JSON.stringify(message));
 });
 socket.on('close', (code, reason) => {
   log('Fermé (' + code + (reason.length ? ' ' + reason : '') + ').');
-  process.exit(refused || (speech && !heard) ? 1 : 0);
+  const pcm = Buffer.concat(voice);
+  if (pcm.length) {
+    mkdirSync(dirname(output), { recursive: true });
+    writeFileSync(output, wav(pcm));
+    log('Voix reçue : ' + (pcm.length / 2 / RATE).toFixed(2) + ' s → ' + output);
+  }
+  const failed = refused || (speech && (!heard || (!wakeOnly && !conversed)));
+  process.exit(failed ? 1 : 0);
 });
 socket.on('error', (error) => log('Erreur : ' + error.message));
 setTimeout(() => {

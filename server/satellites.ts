@@ -11,6 +11,14 @@ export const SATELLITE_PROTOCOL = 1;
 const FRAME_BYTES = 2560;
 const HELLO_MS = 5000;
 const PING_MS = 15_000;
+// Son gardé avant la détection : la question suit « Cornelius » sans pause.
+const PREROLL_FRAMES = 6;
+// Son gardé pendant l’ouverture de la session Live (8 s au plus).
+const PENDING_FRAMES = 100;
+// Trame attendue par la détection de voix locale (512 échantillons).
+const VAD_BYTES = 1024;
+
+type ConversationState = 'idle' | 'connecting' | 'ready' | 'closing';
 
 interface Connection {
   socket: WebSocket;
@@ -21,6 +29,13 @@ interface Connection {
   listening: boolean | null;
   alive: boolean;
   helloTimer: ReturnType<typeof setTimeout> | null;
+  /** Conversation de ce satellite, telle que le contrôleur la publie. */
+  conversation: ConversationState;
+  interactionId: string | null;
+  preroll: Buffer[];
+  /** Son reçu entre la détection et la session prête, rejoué à Live dès qu’elle l’est. */
+  pending: Buffer[] | null;
+  vadRemainder: Buffer;
 }
 
 export interface SatelliteStatus {
@@ -48,11 +63,13 @@ export class SatelliteHub {
       arbiter: WakeArbiter;
       controller: SessionController;
       logs: DiagnosticLog;
+      /** Micro du satellite vers la session Live de sa conversation. */
+      live: { satelliteAudio(satelliteId: string, pcm: Buffer): void } | null;
       /** Faux dans les tests : pas de ping périodique. */
       heartbeat?: boolean;
     },
   ) {
-    this.unsubscribe = deps.controller.subscribe(() => this.syncListening());
+    this.unsubscribe = deps.controller.subscribe(() => this.sync());
     if (deps.heartbeat !== false) {
       this.pingTimer = setInterval(() => this.ping(), PING_MS);
       this.pingTimer.unref();
@@ -76,6 +93,11 @@ export class SatelliteHub {
       muted: false,
       listening: null,
       alive: true,
+      conversation: 'idle',
+      interactionId: null,
+      preroll: [],
+      pending: null,
+      vadRemainder: Buffer.alloc(0),
       helloTimer: setTimeout(() => socket.close(1008, 'Message hello attendu.'), HELLO_MS),
     };
     connection.helloTimer!.unref?.();
@@ -109,6 +131,13 @@ export class SatelliteHub {
   /** Satellite supprimé ou jeton renouvelé : sa connexion s’arrête aussitôt. */
   disconnect(id: string, reason: string): void {
     this.connections.get(id)?.socket.close(1008, reason);
+  }
+
+  /** Voix de Cornelius pour le satellite de la conversation (PCM16 16 kHz). */
+  play(satelliteId: string, pcm: Buffer): void {
+    const connection = this.connections.get(satelliteId);
+    if (connection?.conversation !== 'ready' || connection.socket.readyState !== 1) return;
+    connection.socket.send(pcm);
   }
 
   /** Nom ou réglages changés : la connexion en cours les reprend. */
@@ -160,7 +189,7 @@ export class SatelliteHub {
       name: satellite.name,
       volume: satellite.volume,
     });
-    this.syncListening();
+    this.sync();
   }
 
   private audio(connection: Connection, data: unknown) {
@@ -170,26 +199,91 @@ export class SatelliteHub {
     if (pcm.length !== FRAME_BYTES) return socket.close(1008, 'Trame audio invalide.');
     // Trames encore en route après « listen: false », ou micro coupé : jamais analysées.
     if (connection.muted || !connection.listening) return;
+    if (connection.conversation === 'connecting') {
+      if (connection.pending && connection.pending.length < PENDING_FRAMES)
+        connection.pending.push(pcm);
+      return;
+    }
+    if (connection.conversation === 'ready') return this.converse(connection, pcm);
+    connection.preroll.push(pcm);
+    if (connection.preroll.length > PREROLL_FRAMES) connection.preroll.shift();
     this.deps.perception.wakeAudio(connection.streamId, pcm);
+  }
+
+  /** Conversation prête : le micro part vers Live et vers la détection de voix (silence). */
+  private converse(connection: Connection, pcm: Buffer) {
+    this.deps.live?.satelliteAudio(connection.satellite.id, pcm);
+    if (!connection.interactionId) return;
+    let audio = Buffer.concat([connection.vadRemainder, pcm]);
+    while (audio.length >= VAD_BYTES) {
+      this.deps.perception.audio(connection.interactionId, audio.subarray(0, VAD_BYTES));
+      audio = audio.subarray(VAD_BYTES);
+    }
+    connection.vadRemainder = Buffer.from(audio);
   }
 
   private wakeAccepted(connection: Connection, score: number) {
     if (this.connections.get(connection.satellite.id) !== connection) return;
     if (!this.deps.controller.isWakeListening()) return;
+    const rounded = Math.round(score * 100) / 100;
+    this.send(connection, { type: 'wake', score: rounded });
+    // Le son qui précède et suit le mot rejoindra Live : la question suit souvent sans pause.
+    connection.pending = [...connection.preroll];
+    const accepted = this.deps.controller.satelliteWake({
+      id: connection.satellite.id,
+      name: connection.satellite.name,
+    });
     this.deps.logs.write('info', 'local', 'Mot d’appel entendu par un satellite', {
       satellite: connection.satellite.name,
-      score: Math.round(score * 100) / 100,
+      score: rounded,
+      accepted,
     });
-    this.send(connection, { type: 'wake', score: Math.round(score * 100) / 100 });
+    if (!accepted) {
+      connection.pending = null;
+      this.send(connection, { type: 'busy' });
+    }
   }
 
-  private syncListening() {
-    const listening = this.deps.controller.isWakeListening();
+  /** Suit l’état publié : son demandé ou non, conversation de chaque satellite. */
+  private sync() {
+    const session = this.deps.controller.sessionState();
+    const wakeListening = this.deps.controller.isWakeListening();
     for (const connection of this.connections.values()) {
-      if (!connection.firmware || connection.listening === listening) continue;
-      connection.listening = listening;
-      this.send(connection, { type: 'listen', enabled: listening });
+      if (!connection.firmware) continue;
+      const mine = session.satellite?.id === connection.satellite.id;
+      if (mine) connection.interactionId = session.interactionId;
+      const conversation = mine ? toConversation(session.phase) : 'idle';
+      if (conversation !== connection.conversation) this.transition(connection, conversation);
+      const listening = wakeListening || conversation === 'connecting' || conversation === 'ready';
+      if (connection.listening !== listening) {
+        connection.listening = listening;
+        this.send(connection, { type: 'listen', enabled: listening });
+      }
     }
+  }
+
+  private transition(connection: Connection, next: ConversationState) {
+    const previous = connection.conversation;
+    connection.conversation = next;
+    if (next === 'connecting') {
+      connection.pending ??= [];
+      this.send(connection, { type: 'session', state: 'connecting' });
+      return;
+    }
+    if (next === 'ready') {
+      this.send(connection, { type: 'session', state: 'ready' });
+      const pending = connection.pending ?? [];
+      connection.pending = null;
+      for (const frame of pending) this.converse(connection, frame);
+      return;
+    }
+    // Clôture : plus de son dans un sens ni dans l’autre.
+    connection.pending = null;
+    connection.preroll = [];
+    connection.vadRemainder = Buffer.alloc(0);
+    if (next === 'idle') connection.interactionId = null;
+    if (previous === 'connecting' || previous === 'ready')
+      this.send(connection, { type: 'session', state: 'closed' });
   }
 
   private ping() {
@@ -211,6 +305,7 @@ export class SatelliteHub {
     if (this.connections.get(connection.satellite.id) !== connection) return;
     this.connections.delete(connection.satellite.id);
     if (!connection.firmware) return;
+    this.deps.controller.satelliteGone(connection.satellite.id);
     this.deps.store.seen(connection.satellite.id);
     this.deps.logs.write('info', 'local', 'Satellite déconnecté', {
       satellite: connection.satellite.name,
@@ -220,4 +315,8 @@ export class SatelliteHub {
   private send(connection: Connection, value: unknown) {
     if (connection.socket.readyState === 1) connection.socket.send(JSON.stringify(value));
   }
+}
+
+function toConversation(phase: string): ConversationState {
+  return phase === 'connecting' || phase === 'ready' || phase === 'closing' ? phase : 'idle';
 }
