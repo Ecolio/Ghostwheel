@@ -117,6 +117,14 @@ L’enregistrement d’un visage demande le service caméra. Quel que soit le mo
   - **Délais de présence** : cinq délais en secondes, avec un bouton « Valeurs par défaut ». « Confirmer un départ » (1,5 s, de 0 à 30), « Terminer après la perte du regard » (8 s, de 0 à 60), « Garder l’identité sans nouvelle preuve » (8 s, de 0 à 60), « Confirmer une présence » (0,4 s, de 0 à 5) et « Confirmer le regard » (0,35 s, de 0 à 5) ;
   - **Délégation : recherches et actions** : le modèle qui fait les recherches, les cartes et les commandes. « Normal », « Rapide » (par défaut) ou « Ultra rapide ». Changer de mode pendant une conversation la termine, après confirmation. « Ultra rapide » ne fonctionne pas si votre compte OpenAI garde ses données en Europe.
 
+## Satellites audio
+
+*Premiers réglages.* Les micros et haut-parleurs des autres pièces. Voir [Les satellites audio](../fonctionnalites/satellites.md).
+
+- **Nouveaux satellites** (quand un satellite neuf attend) : « Faire clignoter », une pièce, puis « Associer » ; ou « Refuser ».
+- Une fiche par satellite : en ligne ou non, firmware, micro coupé ; la pièce et « Conversations au nom de » (« Le foyer » par défaut), avec « Enregistrer » ; puis, enregistrés aussitôt, le volume (0 à 10), la couleur et la luminosité de l’anneau, la veilleuse et l’écoute attentive ; enfin « Nouveau jeton » et « Retirer ».
+- Le formulaire « Pièce du nouveau satellite » crée un accès pour un satellite configuré à la main (développement) : le jeton est affiché une seule fois, avec les adresses et l’empreinte de la clé.
+
 ## Personnaliser Cornelius
 
 *Au quotidien.* Son caractère, sa façon de parler à chacun, sa voix et la taille de son orbe.

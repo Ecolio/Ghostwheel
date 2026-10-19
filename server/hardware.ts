@@ -265,6 +265,8 @@ export function registerHardware(
       return reply.code(400).send({ error: 'État média invalide.' });
     try {
       const { scope, type } = req.body;
+      // Le miroir n’a pas de média dans la conversation d’un satellite : rien à signaler.
+      if (controller.sessionState().satellite) return { ok: true };
       if (type === 'connected') live.mediaConnected(scope);
       else if (type === 'started') live.started(scope);
       else if (

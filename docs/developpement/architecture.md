@@ -93,6 +93,10 @@ Hors base : les secrets dans `.env`, les journaux dans `data/logs/` (à côté d
 
 Les modèles sont téléchargés et vérifiés (empreintes SHA-256 de `perception/models.json`) par `perception/download_models.py`. L’administration lance ce même script pour installer un modèle de vision (`server/model-downloads.ts`), un téléchargement à la fois.
 
+## Satellites audio
+
+Un satellite (firmware ESP-IDF, dépôt séparé) se connecte en WebSocket sécurisé à `/satellite` (`server/satellites.ts`), après une association par `/satellite/pair` (`server/satellites-pairing.ts`) ; Cornelius s’annonce en mDNS (`server/discovery.ts`). En veille, son micro rejoint la perception comme un flux de veille de plus (`wake_start` avec un emplacement par flux) ; `server/wake-arbiter.ts` départage les appareils qui entendent le même appel. Une conversation de satellite est admise par le contrôleur (`satelliteWake`) sans navigateur ni caméra ; le transport Live ouvre alors lui-même une session sur un WebSocket principal en PCM 16 kHz, relaie le micro et renvoie la voix au satellite, en voix seule. Le protocole est décrit dans [le protocole des satellites](satellites-protocole.md).
+
 ## Vision
 
 La description de la scène est séparée de la reconnaissance des visages. `perception/scene.py` exécute LFM2.5-VL (variantes 450M, 1,6B ou 3B) dans un fil dédié, isolé de la présence et de la parole ; `server/vision.ts` (`VisionBridge`) décide quand demander une description :

@@ -2,7 +2,7 @@
 
 Cette page décrit le dialogue entre Cornelius et un satellite audio (micro et haut-parleur sur ESP32-S3, par exemple la carte Waveshare ESP32-S3-AUDIO-Board). Elle s’adresse aux personnes qui écrivent le firmware, développé dans un dépôt séparé, et à celles qui modifient le serveur. Le protocole est versionné : toute modification incompatible change son numéro.
 
-État : **version 1, en cours de développement** sur la branche `satellite`. La veille (mot d’appel) et la conversation en voix seule sont en place.
+État : **version 1**. Veille (mot d’appel), conversation en voix seule, découverte mDNS, association et réglages depuis l’administration, écoute attentive avec annulation d’écho. Le guide d’installation est dans [Les satellites audio](../fonctionnalites/satellites.md).
 
 ## Principe
 

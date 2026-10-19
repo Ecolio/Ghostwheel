@@ -4,8 +4,7 @@ import type { SatelliteSettings } from '../shared/satellites.js';
 
 /**
  * Satellites audio du foyer (rejouable). Le jeton n’est jamais gardé : seulement son empreinte.
- * Créée par le registre lui-même tant que la fonction reste sur la branche des satellites :
- * sans changer la version de la base, une branche principale l’ouvre encore.
+ * Les réglages (volume, anneau, écoute attentive) sont ceux de l’administration.
  */
 export const satellitesMigration = `CREATE TABLE IF NOT EXISTS satellites (
   id TEXT PRIMARY KEY,
@@ -14,22 +13,13 @@ export const satellitesMigration = `CREATE TABLE IF NOT EXISTS satellites (
   profile_id TEXT REFERENCES profiles(id) ON DELETE SET NULL,
   volume INTEGER NOT NULL DEFAULT 70 CHECK (volume BETWEEN 0 AND 100),
   created_at INTEGER NOT NULL,
-  last_seen_at INTEGER
+  last_seen_at INTEGER,
+  led_color TEXT NOT NULL DEFAULT '#00ffb4'
+    CHECK (led_color GLOB '#[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]'),
+  led_brightness INTEGER NOT NULL DEFAULT 6 CHECK (led_brightness BETWEEN 0 AND 10),
+  night_light INTEGER NOT NULL DEFAULT 0 CHECK (night_light IN (0, 1)),
+  attentive INTEGER NOT NULL DEFAULT 0 CHECK (attentive IN (0, 1))
 ) STRICT;`;
-
-/** Réglages ajoutés après la création de la table : ajoutés aux bases qui ne les ont pas. */
-const settingsColumns: readonly [string, string][] = [
-  [
-    'led_color',
-    "led_color TEXT NOT NULL DEFAULT '#00ffb4' CHECK (led_color GLOB '#[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]')",
-  ],
-  [
-    'led_brightness',
-    'led_brightness INTEGER NOT NULL DEFAULT 6 CHECK (led_brightness BETWEEN 0 AND 10)',
-  ],
-  ['night_light', 'night_light INTEGER NOT NULL DEFAULT 0 CHECK (night_light IN (0, 1))'],
-  ['attentive', 'attentive INTEGER NOT NULL DEFAULT 0 CHECK (attentive IN (0, 1))'],
-];
 
 export { SATELLITE_NAME_MAX } from '../shared/satellites.js';
 
@@ -68,17 +58,7 @@ export class SatelliteStore {
   constructor(
     private readonly db: DatabaseSync,
     private readonly now: () => number,
-  ) {
-    db.exec(satellitesMigration);
-    const columns = new Set(
-      db
-        .prepare('PRAGMA table_info(satellites)')
-        .all()
-        .map((row) => String(row.name)),
-    );
-    for (const [name, definition] of settingsColumns)
-      if (!columns.has(name)) db.exec('ALTER TABLE satellites ADD COLUMN ' + definition);
-  }
+  ) {}
   list(): Satellite[] {
     return this.db
       .prepare('SELECT * FROM satellites ORDER BY created_at, id')

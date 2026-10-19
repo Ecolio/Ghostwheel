@@ -99,7 +99,14 @@ export function Mirror({ connection }: { connection: MirrorConnection }) {
   }, [preparation.ready, preparation.busy]);
   const { readAudio, audioLocked } = useVoice(state, fresh);
   useMeasures(state, fresh, readAudio);
-  const phase = fresh && state ? state.session.phase : 'idle';
+  // Une conversation tenue par un satellite : le miroir reste au repos et dit seulement où.
+  const satelliteName =
+    fresh &&
+    state?.session.satellite &&
+    ['connecting', 'ready', 'closing'].includes(state.session.phase)
+      ? state.session.satellite.name
+      : null;
+  const phase = fresh && state && !satelliteName ? state.session.phase : 'idle';
   const present = fresh && state?.presence.health === 'ok' && state.presence.state !== 'absent';
   const voiceOnlyActive =
     fresh && state?.session.mode === 4 && ['connecting', 'ready', 'closing'].includes(phase);
@@ -190,7 +197,7 @@ export function Mirror({ connection }: { connection: MirrorConnection }) {
         fullscreen
         readAudio={readAudio}
         phase={phase}
-        activity={fresh ? state?.voice : null}
+        activity={fresh && !satelliteName ? state?.voice : null}
         now={now}
         presence={!present && !voiceOnlyActive ? 'sleeping' : recognizedId ? 'recognized' : 'aware'}
         recognitionKey={recognizedId}
@@ -272,8 +279,14 @@ export function Mirror({ connection }: { connection: MirrorConnection }) {
               </p>
             </div>
           )}
-          {fresh && state && (peopleVisible || imageActivity) && (
+          {fresh && state && (peopleVisible || imageActivity || satelliteName) && (
             <div className="mirror-status">
+              {satelliteName && (
+                <span className="mirror-activity" role="status">
+                  <span className="mirror-activity-dot" aria-hidden="true" />
+                  Conversation en cours : {satelliteName}
+                </span>
+              )}
               {imageActivity && (
                 <span className="mirror-activity" role="status">
                   <span className="mirror-activity-dot" aria-hidden="true" />

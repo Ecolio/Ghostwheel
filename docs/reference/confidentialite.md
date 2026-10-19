@@ -5,7 +5,7 @@ Cette page dit ce qui reste sur l’ordinateur du miroir, ce qui part chez OpenA
 ## En bref
 
 - La caméra, les visages et la vision restent sur l’ordinateur. Aucune image ne quitte la machine.
-- En veille, le son du micro reste sur l’ordinateur.
+- En veille, le son du micro reste sur l’ordinateur. Celui d’un satellite audio va à l’ordinateur par le réseau local, chiffré, et n’en sort pas.
 - Pendant une conversation, la voix et le texte de l’échange partent chez OpenAI. Après la conversation, le texte dit par une personne reconnue peut repartir chez OpenAI pour choisir les souvenirs à garder.
 - Cornelius n’enregistre ni image, ni son, ni transcription de conversation sur le disque.
 
@@ -25,6 +25,8 @@ La caméra est lue par la perception, mais le micro est lu par le navigateur qui
 - **Micro gardé prêt** (dans **Quand il écoute → Réglages avancés**). Le micro reste prêt sur l’ordinateur. Le son n’est envoyé à la conversation qu’une fois celle-ci ouverte, avec le début de la phrase.
 - **Sans mot d’appel ni micro gardé prêt.** Le micro préparé est relâché après 15 secondes si aucune conversation ne s’ouvre.
 - **Pendant une conversation.** Le son part chez OpenAI, le temps de la conversation seulement. Il passe aussi par la détection locale de la parole.
+
+**Les satellites audio.** Un satellite envoie le son de son micro à l’ordinateur, par le réseau local et chiffré (WebSocket sécurisé, port `3443`), seulement quand Cornelius écoute « Cornelius » ou pendant sa propre conversation. L’ordinateur y cherche le mot, puis transmet la conversation à OpenAI comme pour le miroir. Une conversation de satellite rattaché à une personne nourrit la mémoire de cette personne ; sinon, elle ne laisse aucun souvenir. Le bouton du satellite coupe son micro. Voir [Les satellites audio](../fonctionnalites/satellites.md).
 
 Pour couper tout envoi vers OpenAI, utilisez **Bloquer OpenAI** (voir plus bas).
 

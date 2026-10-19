@@ -517,6 +517,8 @@ export class LiveTransport implements SessionTransport {
   offer(scope: Scope, sdp: string): Promise<LiveCreateResponse> {
     if (this.isBlocked()) throw new Error('Connexions OpenAI bloquées.');
     const active = this.require(scope);
+    // Le satellite porte déjà le son de sa conversation : aucune offre WebRTC n’y a sa place.
+    if (active.satelliteId) throw new Error('Conversation tenue par un satellite.');
     // Une clé changée pendant la création ne mélange pas deux comptes : cette session garde la
     // passerelle qui l’a créée.
     const gateway = this.gateway;

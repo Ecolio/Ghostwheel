@@ -86,7 +86,7 @@ La caméra, les visages et l’écoute du mot d’appel restent sur l’ordinate
 | 🎥 **Matériel** | une webcam, un micro, des haut-parleurs et un écran (seul, ou derrière un miroir sans tain) |
 | 🛠️ **Logiciels** | Node.js 24 (24.2 ou plus récent), Python 3.12 et Git |
 | 🔑 **Clé OpenAI** | d’un compte payant : sans elle, Cornelius ne peut pas parler |
-| ➕ **En option** | une carte graphique pour la vision et les images, un jeton [Météo Concept](https://api.meteo-concept.com/) pour la météo, un jeton [PRIM](https://prim.iledefrance-mobilites.fr/) pour les transports d’Île-de-France |
+| ➕ **En option** | une carte graphique pour la vision et les images, un jeton [Météo Concept](https://api.meteo-concept.com/) pour la météo, un jeton [PRIM](https://prim.iledefrance-mobilites.fr/) pour les transports d’Île-de-France, des [satellites audio](docs/fonctionnalites/satellites.md) (Waveshare ESP32-S3-AUDIO-Board) pour parler à Cornelius depuis d’autres pièces |
 
 ## 🚀 Installer
 

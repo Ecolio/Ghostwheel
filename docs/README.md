@@ -15,6 +15,7 @@ Cette page est l’index de la documentation. Elle indique par où commencer, pu
 | installer Cornelius | [Linux](installation/linux.md), [Windows](installation/windows.md), puis [carte graphique](installation/gpu.md) si besoin |
 | réussir le premier lancement | [Premier démarrage](installation/premier-demarrage.md) |
 | choisir ce qui ouvre la conversation | [Ouverture et présence](fonctionnalites/ouverture-et-presence.md), [Mot d’appel](fonctionnalites/mot-d-appel.md) |
+| parler à Cornelius depuis une autre pièce | [Les satellites audio](fonctionnalites/satellites.md) |
 | ajouter la météo, les transports ou une commande | [Les modules](modules/README.md) |
 | écrire mon propre module | [Créer un module](modules/creer-un-module.md) |
 | comprendre pourquoi rien ne se passe | [Dépannage](utilisation/depannage.md) |
@@ -39,6 +40,7 @@ Cette page est l’index de la documentation. Elle indique par où commencer, pu
 
 - [Ouverture et présence](fonctionnalites/ouverture-et-presence.md) : ce qui ouvre, fait durer et ferme une conversation.
 - [Le mot d’appel](fonctionnalites/mot-d-appel.md) : ouvrir la conversation en disant « Cornelius ».
+- [Les satellites audio](fonctionnalites/satellites.md) : un micro et un haut-parleur dans une autre pièce, installés et associés sans saisie.
 - [La personnalité](fonctionnalites/personnalite.md) : le caractère de Cornelius et les repères de chaque personne.
 - [La mémoire](fonctionnalites/memoire.md) : ce que Cornelius retient et comment le gérer.
 - [La vision locale](fonctionnalites/vision-locale.md) : décrire ce qui se trouve devant le miroir, sans envoyer d’image.
@@ -58,6 +60,7 @@ Cette page est l’index de la documentation. Elle indique par où commencer, pu
 - [Développer Cornelius](developpement/README.md) : environnement, scripts, organisation du dépôt, conventions.
 - [Architecture](developpement/architecture.md) : comment les parties du système fonctionnent ensemble.
 - [Tests et recette](developpement/tests-et-recette.md) : tests automatiques et vérification sur le miroir réel.
+- [Le protocole des satellites](developpement/satellites-protocole.md) : le dialogue entre Cornelius et un satellite audio, pour écrire ou modifier son firmware.
 - [Les prompts](developpement/prompts.md) : où vivent les consignes données aux modèles.
 - [Feuille de route](developpement/feuille-de-route.md) : ce qui reste à valider et à construire.
 - [Contribuer](../CONTRIBUTING.md) : proposer une modification.

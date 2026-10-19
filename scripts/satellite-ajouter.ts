@@ -1,6 +1,6 @@
 /**
- * Crée un satellite audio et affiche son jeton (montré une seule fois), en attendant la rubrique
- * de l’administration.
+ * Crée l’accès d’un satellite audio configuré à la main (développement) et affiche son jeton,
+ * montré une seule fois. Un satellite ordinaire s’associe dans Administration → Satellites audio.
  *
  *   npx tsx --env-file-if-exists=.env scripts/satellite-ajouter.ts "Bureau"
  */

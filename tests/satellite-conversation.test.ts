@@ -98,6 +98,8 @@ test('satellite : session Live sur WebSocket, voix seule, sans navigateur ni cam
   assert.deepEqual(state.satellite, bureau);
   assert.equal(f.controller.wakeDetected(), false);
   assert.equal(f.sessions.length, 1);
+  // Un miroir ouvert ne se greffe pas sur la conversation du satellite.
+  assert.throws(() => f.live.offer(f.controller.scope(), 'sdp'), /satellite/u);
   const session = f.sessions[0]!;
   assert.deepEqual(session.audio?.format, { type: 'audio/pcm', rate: 16000 });
   assert.equal('client' in session, false);

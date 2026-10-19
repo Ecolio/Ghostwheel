@@ -6,6 +6,21 @@ Le fonctionnement actuel est décrit dans la [documentation](docs/README.md). Ce
 
 ## Non publié
 
+### 2026-10-19 : satellites audio
+
+**Ajouté**
+
+- Satellites audio (Waveshare ESP32-S3-AUDIO-Board, firmware ESP-IDF séparé) : « Cornelius » entendu dans une autre pièce ouvre une conversation en voix seule, relayée par l’ordinateur vers OpenAI (session Live en WebSocket, PCM 16 kHz). Une seule conversation à la fois dans la maison ; le miroir affiche « Conversation en cours : » et la pièce.
+- Mot d’appel sur plusieurs flux à la fois (un état openWakeWord par appareil) et départage du miroir et des satellites au meilleur score.
+- Installation sans saisie : réseau de configuration du satellite pour le Wi-Fi, annonce mDNS de Cornelius (`_cornelius._tcp`, `CORNELIUS_MDNS`), association dans **Administration → Satellites audio**.
+- Réglages de chaque satellite : pièce, conversations au nom d’une personne ou du foyer, volume, couleur et luminosité de l’anneau, veilleuse, écoute attentive (couper la parole à Cornelius grâce à l’annulation d’écho du satellite).
+- Protocole des satellites documenté pour le firmware ; simulateur de satellite et sonde Live (`scripts/satellite-sim.ts`, `scripts/satellite-sonde.ts`).
+
+**Modifié**
+
+- Certificat du réseau local signé en SHA-256, et même clé gardée quand il est recréé : les satellites retiennent l’empreinte de cette clé.
+- L’extracteur de souvenirs ne prend plus « Cornelius », l’assistant qu’on interpelle, pour le sujet d’un fait.
+
 ### 2026-10-15 : préparation de la publication
 
 **Ajouté**

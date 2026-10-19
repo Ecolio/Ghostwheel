@@ -36,6 +36,7 @@ import { addonRefsMigration } from './addons/migrations.js';
 import { adminPasswordMigration } from './admin-password.js';
 import { secretsMigration } from './secrets.js';
 import { trustedDevicesMigration } from './trusted-devices.js';
+import { satellitesMigration } from './satellites-store.js';
 import { rotateMigrationBackups } from './backups.js';
 
 import type { Profile } from '../shared/types.js';
@@ -362,6 +363,8 @@ export const migrations: readonly string[] = [
     openai_quality TEXT NOT NULL DEFAULT 'low'
   ) STRICT;
   INSERT OR IGNORE INTO image_generation_provider (id) VALUES (1);`,
+  // Satellites audio : micro et haut-parleur d’une autre pièce, associés dans l’administration.
+  satellitesMigration,
 ];
 
 /** The server owns this connection. Backups include WAL changes via SQLite itself. */

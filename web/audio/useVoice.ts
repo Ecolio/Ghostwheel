@@ -26,7 +26,9 @@ export function useVoice(state: MirrorState | null, fresh: boolean) {
   const recovery = useRef<string | null>(null);
   const [audioLocked, setAudioLocked] = useState(false);
   const [wakeRetry, setWakeRetry] = useState(0);
-  const scope = state?.session;
+  // Conversation d’un satellite : elle se tient dans une autre pièce, ce navigateur n’y prend
+  // aucune part (ni micro, ni son, ni connexion OpenAI).
+  const scope = state?.session.satellite ? undefined : state?.session;
   const advancedBuffer = state?.advancedAudioBuffer ?? false;
   // Un arrêt manuel n’éteint pas la veille : dire « Cornelius » le lève côté serveur.
   const listenForWake = !!(

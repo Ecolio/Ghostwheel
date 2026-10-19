@@ -86,6 +86,8 @@ Avant de changer cette valeur, essayez le modèle avec plusieurs voix, à plusie
 - Si la conversation ne s’ouvre pas (personne non reconnue alors que l’ouverture est réservée aux membres du foyer, par exemple), rien n’est envoyé.
 - Avec **Micro gardé prêt**, le début de la phrase dite avec « Cornelius » est gardé sur l’ordinateur puis transmis à la conversation une fois ouverte (voir [Ouverture et présence](ouverture-et-presence.md#micro-gardé-prêt-bêta)).
 
+Les [satellites audio](satellites.md) écoutent aussi « Cornelius » : ils envoient le son de leur micro à l’ordinateur, par le réseau local, et c’est l’ordinateur qui cherche le mot, avec le même modèle. Quand le miroir et un satellite entendent le même appel, l’appareil au meilleur score l’emporte.
+
 Pour couper toute écoute, choisissez une autre ouverture que « Cornelius », ou utilisez **Bloquer OpenAI** dans le panneau **Conversation** de la rubrique **Quand il écoute**.
 
 ## Quand il ne répond pas
