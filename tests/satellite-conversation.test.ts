@@ -264,7 +264,7 @@ test('concentrateur : son d’avant le mot rejoué, voix vers le satellite, dét
   detected!(0.9);
   assert.deepEqual(
     socket.messages().map((message) => message.type),
-    ['welcome', 'listen', 'wake', 'session'],
+    ['welcome', 'settings', 'listen', 'wake', 'session'],
   );
   // La veille repart d’un flux neuf : l’ancien gardait le « Cornelius » qui vient d’être dit.
   assert.equal(streams.length, 2);

@@ -44,6 +44,22 @@ export interface SatelliteStatus {
   online: boolean;
   firmware: string | null;
   muted: boolean;
+  /** Annulation d’écho annoncée dans « hello ». */
+  aec: boolean;
+}
+
+/** Réglages de l’administration, tels que le satellite les applique (message « settings »). */
+function settingsMessage(satellite: Satellite) {
+  return {
+    type: 'settings',
+    volume: satellite.volume,
+    led: {
+      color: satellite.ledColor,
+      brightness: satellite.ledBrightness,
+      nightLight: satellite.nightLight,
+    },
+    attentive: satellite.attentive,
+  };
 }
 
 const object = (value: unknown): Record<string, unknown> =>
@@ -83,8 +99,13 @@ export class SatelliteHub {
   status(id: string): SatelliteStatus {
     const connection = this.connections.get(id);
     return connection?.firmware
-      ? { online: true, firmware: connection.firmware, muted: connection.muted }
-      : { online: false, firmware: null, muted: false };
+      ? {
+          online: true,
+          firmware: connection.firmware,
+          muted: connection.muted,
+          aec: connection.echoCancelled,
+        }
+      : { online: false, firmware: null, muted: false, aec: false };
   }
 
   connect(socket: WebSocket, satellite: Satellite): void {
@@ -149,10 +170,10 @@ export class SatelliteHub {
   refresh(satellite: Satellite): void {
     const connection = this.connections.get(satellite.id);
     if (!connection) return;
-    const volumeChanged = connection.satellite.volume !== satellite.volume;
+    const before = JSON.stringify(settingsMessage(connection.satellite));
     connection.satellite = satellite;
-    if (volumeChanged && connection.firmware)
-      this.send(connection, { type: 'volume', volume: satellite.volume });
+    if (connection.firmware && JSON.stringify(settingsMessage(satellite)) !== before)
+      this.send(connection, settingsMessage(satellite));
   }
 
   dispose(): void {
@@ -198,6 +219,7 @@ export class SatelliteHub {
       name: satellite.name,
       volume: satellite.volume,
     });
+    this.send(connection, settingsMessage(satellite));
     this.sync();
   }
 
@@ -221,7 +243,12 @@ export class SatelliteHub {
 
   /** Conversation prête : le micro part vers Live et vers la détection de voix (silence). */
   private converse(connection: Connection, pcm: Buffer) {
-    this.deps.live?.satelliteAudio(connection.satellite.id, pcm, connection.echoCancelled);
+    // Écoute attentive : micro ouvert pendant que Cornelius parle, si le satellite annule l’écho.
+    this.deps.live?.satelliteAudio(
+      connection.satellite.id,
+      pcm,
+      connection.echoCancelled && connection.satellite.attentive,
+    );
     if (!connection.interactionId) return;
     let audio = Buffer.concat([connection.vadRemainder, pcm]);
     while (audio.length >= VAD_BYTES) {

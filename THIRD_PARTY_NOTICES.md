@@ -106,6 +106,7 @@ Liste générée depuis `package-lock.json` par `npm run notices`. « exécution
 | @jridgewell/resolve-uri | 3.1.2 | MIT | outil |
 | @jridgewell/sourcemap-codec | 1.6.0 | MIT | outil |
 | @jridgewell/trace-mapping | 0.3.31 | MIT | outil |
+| @leichtgewicht/ip-codec | 2.0.5 | MIT | exécution |
 | @lukeed/ms | 2.0.2 | MIT | exécution |
 | @napi-rs/wasm-runtime | 1.1.4 | MIT | outil |
 | @noble/hashes | 1.8.0 | MIT | exécution |
@@ -253,6 +254,7 @@ Liste générée depuis `package-lock.json` par `npm run notices`. « exécution
 | atomic-sleep | 1.0.0 | MIT | exécution |
 | avvio | 9.3.0 | MIT | exécution |
 | balanced-match | 4.0.4 | MIT | exécution |
+| bonjour-service | 1.4.4 | MIT | exécution |
 | brace-expansion | 5.0.12 | MIT | exécution |
 | bytestreamjs | 2.0.1 | BSD-3-Clause | exécution |
 | class-variance-authority | 0.7.1 | Apache-2.0 | exécution |
@@ -265,6 +267,7 @@ Liste générée depuis `package-lock.json` par `npm run notices`. « exécution
 | dequal | 2.0.3 | MIT | exécution |
 | detect-libc | 2.1.2 | Apache-2.0 | outil |
 | detect-node-es | 1.1.0 | MIT | exécution |
+| dns-packet | 5.6.1 | MIT | exécution |
 | duplexify | 4.1.3 | MIT | exécution |
 | end-of-stream | 1.4.5 | MIT | exécution |
 | enhanced-resolve | 5.25.1 | MIT | outil |
@@ -325,6 +328,7 @@ Liste générée depuis `package-lock.json` par `npm run notices`. « exécution
 | mime | 3.0.0 | MIT | exécution |
 | minimatch | 10.2.6 | BlueOak-1.0.0 | exécution |
 | minipass | 7.1.3 | BlueOak-1.0.0 | exécution |
+| multicast-dns | 7.2.5 | MIT | exécution |
 | nanoid | 3.3.19 | MIT | outil |
 | on-exit-leak-free | 2.1.2 | MIT | exécution |
 | once | 1.4.0 | ISC | exécution |
@@ -380,6 +384,7 @@ Liste générée depuis `package-lock.json` par `npm run notices`. « exécution
 | tapable | 2.3.3 | MIT | outil |
 | thread-stream | 4.2.0 | MIT | exécution |
 | three | 0.186.0 | MIT | exécution |
+| thunky | 1.1.0 | MIT | exécution |
 | tinyglobby | 0.2.17 | MIT | outil |
 | toad-cache | 3.7.4 | MIT | exécution |
 | toidentifier | 1.0.1 | MIT | exécution |

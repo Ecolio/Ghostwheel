@@ -1,8 +1,15 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { compile } from '../shared/validation.js';
 import type { ProfileRepository } from './storage.js';
-import { SATELLITE_NAME_MAX, type Satellite, type SatelliteStore } from './satellites-store.js';
+import { SATELLITE_LED_COLOR_PATTERN } from '../shared/satellites.js';
+import {
+  SATELLITE_NAME_MAX,
+  type Satellite,
+  type SatelliteChanges,
+  type SatelliteStore,
+} from './satellites-store.js';
 import type { SatelliteHub } from './satellites.js';
+import type { SatellitePairing } from './satellites-pairing.js';
 
 const name = { type: 'string', minLength: 1, maxLength: SATELLITE_NAME_MAX, pattern: '\\S' };
 const createSchema = compile<{ name: string }>({
@@ -11,7 +18,7 @@ const createSchema = compile<{ name: string }>({
   required: ['name'],
   properties: { name },
 });
-const updateSchema = compile<{ name?: string; profileId?: string | null; volume?: number }>({
+const updateSchema = compile<SatelliteChanges>({
   type: 'object',
   additionalProperties: false,
   minProperties: 1,
@@ -19,6 +26,10 @@ const updateSchema = compile<{ name?: string; profileId?: string | null; volume?
     name,
     profileId: { type: ['string', 'null'], minLength: 1, maxLength: 128 },
     volume: { type: 'integer', minimum: 0, maximum: 100 },
+    ledColor: { type: 'string', pattern: SATELLITE_LED_COLOR_PATTERN },
+    ledBrightness: { type: 'integer', minimum: 0, maximum: 10 },
+    nightLight: { type: 'boolean' },
+    attentive: { type: 'boolean' },
   },
 });
 
@@ -33,11 +44,12 @@ export function registerSatellites(
   services: {
     store: SatelliteStore;
     hub: SatelliteHub;
+    pairing: SatellitePairing;
     profiles: ProfileRepository;
     requireAdmin(request: FastifyRequest, reply: FastifyReply): Promise<void>;
   },
 ) {
-  const { store, hub, profiles, requireAdmin } = services;
+  const { store, hub, pairing, profiles, requireAdmin } = services;
   const view = (satellite: Satellite) => ({ ...satellite, ...hub.status(satellite.id) });
 
   app.get(
@@ -57,9 +69,47 @@ export function registerSatellites(
     },
   );
 
+  // Satellite neuf, sans jeton : il attend qu’on l’associe dans l’administration. Réseau
+  // local seulement (contrôle commun à toutes les requêtes), aucun droit avant ce clic.
+  app.get('/satellite/pair', { websocket: true }, (socket, request) =>
+    pairing.connect(socket, request.raw.socket?.remoteAddress ?? null),
+  );
+
   app.get('/api/admin/satellites', { preHandler: requireAdmin }, async () => ({
     satellites: store.list().map(view),
+    pending: pairing.list(),
   }));
+  app.post<{ Params: { device: string } }>(
+    '/api/admin/satellites/pending/:device/accept',
+    { preHandler: requireAdmin },
+    async (request, reply) => {
+      if (!createSchema(request.body)) return reply.code(400).send({ error: 'Nom invalide.' });
+      if (!pairing.list().some((entry) => entry.device === request.params.device))
+        return reply.code(404).send({ error: 'Ce satellite n’attend plus : rebranchez-le.' });
+      const { satellite, token } = store.create(request.body.name.trim());
+      if (!pairing.accept(request.params.device, { name: satellite.name, token })) {
+        store.remove(satellite.id);
+        return reply.code(409).send({ error: 'Ce satellite vient de se déconnecter : réessayez.' });
+      }
+      return { satellite: view(satellite) };
+    },
+  );
+  app.post<{ Params: { device: string } }>(
+    '/api/admin/satellites/pending/:device/identify',
+    { preHandler: requireAdmin },
+    async (request, reply) =>
+      pairing.identify(request.params.device)
+        ? { ok: true }
+        : reply.code(404).send({ error: 'Ce satellite n’attend plus.' }),
+  );
+  app.delete<{ Params: { device: string } }>(
+    '/api/admin/satellites/pending/:device',
+    { preHandler: requireAdmin },
+    async (request, reply) =>
+      pairing.reject(request.params.device)
+        ? { ok: true }
+        : reply.code(404).send({ error: 'Ce satellite n’attend plus.' }),
+  );
   app.post('/api/admin/satellites', { preHandler: requireAdmin }, async (request, reply) => {
     if (!createSchema(request.body)) return reply.code(400).send({ error: 'Nom invalide.' });
     const { satellite, token } = store.create(request.body.name.trim());

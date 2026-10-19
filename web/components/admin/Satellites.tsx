@@ -1,17 +1,24 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { KeyRound, MicOff, TriangleAlert } from 'lucide-react';
 import type { NetworkStatus, Profile } from '../../../shared/types';
-import { SATELLITE_NAME_MAX, type SatelliteView } from '../../../shared/satellites';
+import {
+  SATELLITE_LED_PRESETS,
+  SATELLITE_NAME_MAX,
+  type SatelliteSettings,
+  type PendingSatelliteView,
+  type SatelliteView,
+} from '../../../shared/satellites';
 import { api } from '../../api';
 import { formatWhen } from './format';
-import { ConfirmAction, Field, ResourceState } from './shared';
+import { ConfirmAction, Field, OwnerSelect, ResourceState } from './shared';
 import type { RunAction } from './types';
 import { useAdminResource } from './useAdminResource';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
-import { NativeSelect, NativeSelectOption } from '../ui/native-select';
+import { Label } from '../ui/label';
+import { Switch } from '../ui/switch';
 
 /** Jeton tout juste créé : montré une seule fois, avec ce qu’il faut saisir dans le satellite. */
 interface Issued {
@@ -32,14 +39,22 @@ export function Satellites({
   network: NetworkStatus | undefined;
   run: RunAction;
 }) {
-  const load = useCallback(() => api.satellites().then((result) => result.satellites), []);
+  const load = useCallback(
+    () =>
+      api.satellites().then((result) => ({
+        satellites: result.satellites,
+        pending: result.pending ?? [],
+      })),
+    [],
+  );
   const resource = useAdminResource(load);
   const { reload } = resource;
-  // Satellites en ligne ou non : la liste suit sans recharger la page.
+  // Satellites en ligne, satellites neufs qui attendent : la liste suit sans recharger la page.
   useEffect(() => {
-    const timer = setInterval(() => void reload(), 10_000);
+    const timer = setInterval(() => void reload(), 4_000);
     return () => clearInterval(timer);
   }, [reload]);
+  const pending = resource.data?.pending ?? [];
   const [name, setName] = useState('');
   const [issued, setIssued] = useState<Issued | null>(null);
   const create = async () => {
@@ -63,7 +78,9 @@ export function Satellites({
           <CardTitle>Satellites audio</CardTitle>
           <CardDescription>
             Un satellite écoute « Cornelius » dans une autre pièce et y tient la conversation, à
-            voix seule : ni carte, ni caméra. Une seule conversation à la fois dans la maison.
+            voix seule : ni carte, ni caméra. Une seule conversation à la fois dans la maison. Un
+            satellite neuf, relié au Wi-Fi, apparaît tout seul ci-dessous pour être associé ; le
+            formulaire suivant ne sert qu’à un satellite configuré à la main.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
@@ -105,17 +122,20 @@ export function Satellites({
           )}
         </CardContent>
       </Card>
+      {pending.length > 0 && (
+        <PendingSatellites pending={pending} run={run} onChanged={() => void resource.reload()} />
+      )}
       <ResourceState
         resource={resource}
         loadingLabel="Lecture des satellites…"
-        isEmpty={(satellites) => satellites.length === 0}
+        isEmpty={(data) => data.satellites.length === 0}
         empty={{
-          title: 'Aucun satellite pour l’instant.',
+          title: 'Aucun satellite associé pour l’instant.',
           description:
-            'Ajoutez-en un ci-dessus, puis saisissez son jeton dans le satellite lors de sa configuration.',
+            'Branchez un satellite neuf : il ouvre un réseau Wi-Fi « Cornelius-Satellite », où vous choisissez le Wi-Fi de la maison, puis il apparaît ici pour être associé.',
         }}
       >
-        {(satellites) => (
+        {({ satellites }) => (
           <div className="space-y-4">
             {satellites.map((satellite) => (
               <SatelliteCard
@@ -213,21 +233,14 @@ function SatelliteCard({
   onChanged: () => void;
 }) {
   const [name, setName] = useState(satellite.name);
-  const [volume, setVolume] = useState(String(satellite.volume));
   const [profileId, setProfileId] = useState(satellite.profileId ?? '');
   const [confirming, setConfirming] = useState<'token' | 'remove' | null>(null);
-  const volumeValue = Number(volume);
-  const volumeValid = /^\d{1,3}$/u.test(volume) && volumeValue <= 100;
-  const changed =
-    name.trim() !== satellite.name ||
-    (volumeValid && volumeValue !== satellite.volume) ||
-    profileId !== (satellite.profileId ?? '');
+  const changed = name.trim() !== satellite.name || profileId !== (satellite.profileId ?? '');
   const id = 'satellite-' + satellite.id;
   const save = async () => {
     const ok = await run('Satellite enregistré.', () =>
       api.updateSatellite(satellite.id, {
         name: name.trim(),
-        volume: volumeValue,
         profileId: profileId || null,
       }),
     );
@@ -256,10 +269,10 @@ function SatelliteCard({
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         <form
-          className="grid gap-4 sm:grid-cols-3"
+          className="grid gap-4 sm:grid-cols-2"
           onSubmit={(event) => {
             event.preventDefault();
-            if (changed && volumeValid && name.trim()) void save();
+            if (changed && name.trim()) void save();
           }}
         >
           <Field id={id + '-name'} label="Pièce">
@@ -271,44 +284,24 @@ function SatelliteCard({
             />
           </Field>
           <Field
-            id={id + '-volume'}
-            label="Volume"
-            error={volumeValid ? undefined : 'Un nombre de 0 à 100.'}
-          >
-            <Input
-              id={id + '-volume'}
-              inputMode="numeric"
-              value={volume}
-              onChange={(event) => setVolume(event.target.value)}
-            />
-          </Field>
-          <Field
             id={id + '-profile'}
             label="Conversations au nom de"
             help={
               profileId
                 ? 'Quiconque parle dans cette pièce accède à la mémoire de cette personne.'
-                : 'Personne : conversations anonymes, sans mémoire personnelle.'
+                : 'Le foyer : tout le monde, sans mémoire personnelle.'
             }
           >
-            <NativeSelect
+            <OwnerSelect
               id={id + '-profile'}
-              wrapperClassName="w-full"
-              className="w-full"
               value={profileId}
-              onChange={(event) => setProfileId(event.target.value)}
-            >
-              <NativeSelectOption value="">Personne (anonyme)</NativeSelectOption>
-              {profiles.map((profile) => (
-                <NativeSelectOption key={profile.id} value={profile.id}>
-                  {profile.name}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
+              onChange={setProfileId}
+              profiles={profiles}
+            />
           </Field>
           {changed && (
-            <div className="flex gap-2 sm:col-span-3">
-              <Button type="submit" size="sm" disabled={!volumeValid || !name.trim()}>
+            <div className="flex gap-2 sm:col-span-2">
+              <Button type="submit" size="sm" disabled={!name.trim()}>
                 Enregistrer
               </Button>
               <Button
@@ -317,7 +310,6 @@ function SatelliteCard({
                 variant="ghost"
                 onClick={() => {
                   setName(satellite.name);
-                  setVolume(String(satellite.volume));
                   setProfileId(satellite.profileId ?? '');
                 }}
               >
@@ -326,6 +318,7 @@ function SatelliteCard({
             </div>
           )}
         </form>
+        <SatelliteSettingsPanel satellite={satellite} run={run} />
         {confirming === 'token' ? (
           <ConfirmAction
             message={`Créer un nouveau jeton pour « ${satellite.name} » ? L’ancien cesse aussitôt de fonctionner : il faudra saisir le nouveau dans le satellite.`}
@@ -366,5 +359,277 @@ function SatelliteCard({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Son et lumière d’un satellite : enregistrés aussitôt (les curseurs après une courte pause),
+ * et appliqués par le satellite connecté sans redémarrer.
+ */
+function SatelliteSettingsPanel({ satellite, run }: { satellite: SatelliteView; run: RunAction }) {
+  const id = 'satellite-' + satellite.id;
+  const [volume, setVolume] = useState(Math.round(satellite.volume / 10));
+  const [brightness, setBrightness] = useState(satellite.ledBrightness);
+  const [color, setColor] = useState(satellite.ledColor);
+  const [nightLight, setNightLight] = useState(satellite.nightLight);
+  const [attentive, setAttentive] = useState(satellite.attentive);
+  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  useEffect(() => {
+    const pending = timers.current;
+    return () => pending.forEach((timer) => clearTimeout(timer));
+  }, []);
+  const save = (key: string, label: string, patch: Partial<SatelliteSettings>, delayMs = 0) => {
+    clearTimeout(timers.current.get(key));
+    const send = () =>
+      void run(label, () => api.updateSatellite(satellite.id, patch), {
+        key: id + '-' + key,
+        payload: patch,
+      });
+    if (delayMs === 0) send();
+    else timers.current.set(key, setTimeout(send, delayMs));
+  };
+  const swatch = (value: string) => (
+    <span
+      className="inline-block size-4 rounded-full border border-border"
+      style={{ backgroundColor: value }}
+      aria-hidden="true"
+    />
+  );
+  return (
+    <div className="space-y-4 rounded-lg border p-4">
+      <p className="font-medium">Son et lumière</p>
+      <div className="flex items-center gap-4">
+        <Label htmlFor={id + '-volume'} className="w-28 shrink-0">
+          Volume
+        </Label>
+        <input
+          id={id + '-volume'}
+          type="range"
+          className="w-full max-w-xs accent-primary"
+          min={0}
+          max={10}
+          step={1}
+          value={volume}
+          aria-valuetext={`${volume} sur 10`}
+          onChange={(event) => {
+            const value = Number(event.target.value);
+            setVolume(value);
+            save('volume', `Volume : ${value} sur 10.`, { volume: value * 10 }, 400);
+          }}
+        />
+        <output htmlFor={id + '-volume'} className="w-10 text-right tabular-nums">
+          {volume}
+        </output>
+      </div>
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium">Couleur de l’anneau</legend>
+        <div className="flex flex-wrap items-center gap-2">
+          {SATELLITE_LED_PRESETS.map((preset) => (
+            <Button
+              key={preset.color}
+              type="button"
+              size="sm"
+              variant={color === preset.color ? 'default' : 'outline'}
+              aria-pressed={color === preset.color}
+              onClick={() => {
+                setColor(preset.color);
+                save('color', `Couleur : ${preset.label.toLowerCase()}.`, {
+                  ledColor: preset.color,
+                });
+              }}
+            >
+              {swatch(preset.color)}
+              {preset.label}
+            </Button>
+          ))}
+          <label className="flex items-center gap-2 text-sm">
+            <span className="sr-only">Autre couleur</span>
+            <input
+              type="color"
+              className="h-8 w-10 cursor-pointer rounded border bg-transparent"
+              value={color}
+              onChange={(event) => {
+                const value = event.target.value.toLowerCase();
+                setColor(value);
+                save('color', 'Couleur de l’anneau enregistrée.', { ledColor: value }, 400);
+              }}
+            />
+            Autre…
+          </label>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Pour l’écoute, l’ouverture et la conversation. Les alertes gardent leur couleur : rouge
+          micro coupé, orange Cornelius injoignable, ambre occupé.
+        </p>
+      </fieldset>
+      <div className="flex items-center gap-4">
+        <Label htmlFor={id + '-brightness'} className="w-28 shrink-0">
+          Luminosité
+        </Label>
+        <input
+          id={id + '-brightness'}
+          type="range"
+          className="w-full max-w-xs accent-primary"
+          min={0}
+          max={10}
+          step={1}
+          value={brightness}
+          aria-valuetext={brightness === 0 ? 'alertes seulement' : `${brightness} sur 10`}
+          onChange={(event) => {
+            const value = Number(event.target.value);
+            setBrightness(value);
+            save(
+              'brightness',
+              value === 0 ? 'Anneau éteint, sauf alertes.' : `Luminosité : ${value} sur 10.`,
+              { ledBrightness: value },
+              400,
+            );
+          }}
+        />
+        <output htmlFor={id + '-brightness'} className="w-10 text-right tabular-nums">
+          {brightness}
+        </output>
+      </div>
+      <div className="flex items-center justify-between gap-4">
+        <Label htmlFor={id + '-night'}>
+          Veilleuse : une lueur faible en veille, pour voir que le satellite est prêt
+        </Label>
+        <Switch
+          id={id + '-night'}
+          checked={nightLight}
+          onCheckedChange={(enabled) => {
+            setNightLight(enabled);
+            save('night', enabled ? 'Veilleuse allumée.' : 'Veilleuse éteinte.', {
+              nightLight: enabled,
+            });
+          }}
+        />
+      </div>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-4">
+          <Label htmlFor={id + '-attentive'}>
+            Écoute attentive : couper la parole à Cornelius pendant qu’il répond
+          </Label>
+          <Switch
+            id={id + '-attentive'}
+            aria-describedby={id + '-attentive-help'}
+            checked={attentive}
+            onCheckedChange={(enabled) => {
+              setAttentive(enabled);
+              save(
+                'attentive',
+                enabled ? 'Écoute attentive activée.' : 'Écoute attentive désactivée.',
+                { attentive: enabled },
+              );
+            }}
+          />
+        </div>
+        <p id={id + '-attentive-help'} className="text-xs text-muted-foreground">
+          {satellite.aec
+            ? 'Le satellite annule l’écho de son haut-parleur : son micro reste ouvert pendant que Cornelius parle.'
+            : satellite.online
+              ? 'Sans effet pour l’instant : ce satellite n’annule pas encore l’écho, son micro est coupé pendant que Cornelius parle.'
+              : 'Ne s’applique qu’à un satellite qui annule l’écho de son haut-parleur.'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** Satellites neufs, reliés au Wi-Fi, qui attendent qu’on les associe à Cornelius. */
+function PendingSatellites({
+  pending,
+  run,
+  onChanged,
+}: {
+  pending: PendingSatelliteView[];
+  run: RunAction;
+  onChanged: () => void;
+}) {
+  return (
+    <Card className="border-primary/50">
+      <CardHeader>
+        <CardTitle>Nouveaux satellites</CardTitle>
+        <CardDescription>
+          Ces satellites ont trouvé Cornelius et attendent votre accord. Donnez une pièce à chacun ;
+          « Faire clignoter » allume son anneau pour le reconnaître.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        {pending.map((entry) => (
+          <PendingSatellite key={entry.device} entry={entry} run={run} onChanged={onChanged} />
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+function PendingSatellite({
+  entry,
+  run,
+  onChanged,
+}: {
+  entry: PendingSatelliteView;
+  run: RunAction;
+  onChanged: () => void;
+}) {
+  const [name, setName] = useState('');
+  const id = 'pending-' + entry.device;
+  return (
+    <form
+      className="space-y-3 rounded-lg border p-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!name.trim()) return;
+        void run('Satellite associé.', () => api.acceptSatellite(entry.device, name.trim()), {
+          key: id + '-accept',
+        }).then(onChanged);
+      }}
+    >
+      <p>
+        <span className="font-mono">{entry.device}</span>
+        <span className="text-muted-foreground">
+          {' '}
+          · firmware {entry.firmware}
+          {entry.address ? ' · ' + entry.address.replace(/^::ffff:/u, '') : ''}
+        </span>
+      </p>
+      <div className="flex flex-wrap items-end gap-3">
+        <Field id={id + '-name'} label="Pièce" className="min-w-56 flex-1">
+          <Input
+            id={id + '-name'}
+            value={name}
+            maxLength={SATELLITE_NAME_MAX}
+            placeholder="Chambre, cuisine…"
+            onChange={(event) => setName(event.target.value)}
+          />
+        </Field>
+        <Button type="submit" disabled={!name.trim()}>
+          Associer
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() =>
+            void run('Le satellite clignote.', () => api.identifySatellite(entry.device), {
+              key: id + '-identify',
+            })
+          }
+        >
+          Faire clignoter
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() =>
+            void run('Association refusée.', () => api.rejectSatellite(entry.device), {
+              key: id + '-reject',
+            }).then(onChanged)
+          }
+        >
+          Refuser
+        </Button>
+      </div>
+    </form>
   );
 }

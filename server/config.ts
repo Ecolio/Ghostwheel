@@ -14,6 +14,8 @@ export interface AppConfig {
   primApiKey?: string;
   /** Accès depuis les autres appareils du réseau local (HTTPS), en plus de la machine. */
   lan?: boolean;
+  /** Annonce mDNS (_cornelius._tcp) pour les satellites audio ; vraie par défaut. */
+  mdns?: boolean;
   /** Port HTTPS du réseau local (le port HTTP, lui, ne sert que la machine). */
   httpsPort?: number;
   tlsCert?: string;
@@ -52,6 +54,10 @@ export function loadConfig(): AppConfig & { port: number } {
       (process.env.CORNELIUS_LAN ?? '1').trim().toLowerCase(),
     ),
     httpsPort,
+    // Les satellites audio trouvent Cornelius seuls ; CORNELIUS_MDNS=0 retire l’annonce.
+    mdns: !['0', 'false', 'non', 'no'].includes(
+      (process.env.CORNELIUS_MDNS ?? '1').trim().toLowerCase(),
+    ),
     tlsCert: process.env.CORNELIUS_TLS_CERT || undefined,
     tlsKey: process.env.CORNELIUS_TLS_KEY || undefined,
     allowedHosts: (process.env.CORNELIUS_ALLOWED_HOSTS ?? '')

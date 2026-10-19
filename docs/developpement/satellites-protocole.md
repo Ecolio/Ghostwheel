@@ -58,7 +58,8 @@ Les autres messages sont des objets JSON en texte, avec un champ `type`. Un mess
 | Message | Sens |
 |---|---|
 | `{"type":"welcome","protocol":1,"id":"…","name":"Chambre","volume":70}` | connexion acceptée ; `volume` de 0 à 100 |
-| `{"type":"volume","volume":40}` | volume changé dans l’administration |
+| `{"type":"settings","volume":70,"led":{"color":"#00ffb4","brightness":6,"nightLight":false},"attentive":false}` | réglages de l’administration : après `welcome`, puis à chaque changement ; volume de 0 à 100, luminosité de 0 à 10 (0 : alertes seulement), veilleuse en veille, écoute attentive |
+| `{"type":"volume","volume":40}` | ancien message, remplacé par `settings` ; toujours accepté par le firmware |
 | `{"type":"listen","enabled":true}` | envoyer (`true`) ou cesser d’envoyer (`false`) le son du micro ; envoyé après `welcome` puis à chaque changement |
 | `{"type":"wake","score":0.93}` | « Cornelius » a été entendu par ce satellite (signal lumineux) |
 | `{"type":"busy"}` | la conversation ne s’ouvre pas ici : une autre est en cours, ou l’ouverture est réservée aux membres |
@@ -74,6 +75,25 @@ Les autres messages sont des objets JSON en texte, avec un champ `type`. Un mess
 2. `wake`, puis `session: connecting`. Le serveur garde le son qui précède le mot (environ 0,5 s) et celui qui suit : la question peut suivre sans pause.
 3. `session: ready` (environ 1 s plus tard) : le son gardé part vers Live, puis le micro en direct ; la voix de Cornelius arrive.
 4. Après le silence réglé, `session: closed`, puis `listen` reprend sa valeur de veille.
+
+## Découverte
+
+Cornelius s’annonce sur le réseau local en mDNS, service `_cornelius._tcp`, sur le port HTTPS (3443), sur chacune de ses interfaces. Le texte du service donne `path=/satellite`, `protocol=1` et `key` (empreinte de la clé, à titre indicatif). `CORNELIUS_MDNS=0` retire l’annonce.
+
+Le satellite utilise l’adresse fixe qu’on lui a donnée, sinon celle trouvée par mDNS. L’ordinateur annonce toutes ses adresses : le satellite prend celle de son propre sous-réseau. Injoignable pendant 30 s, Cornelius est recherché de nouveau, adresse fixe comprise.
+
+## Association
+
+Un satellite sans jeton ouvre `wss://<adresse>:3443/satellite/pair`, sans en-tête `Authorization`, et retient la clé de ce premier Cornelius (confiance au premier contact).
+
+| Sens | Message | Sens |
+|---|---|---|
+| satellite → serveur | `{"type":"pair","protocol":1,"device":"cornelius-satellite-b0c6b4","firmware":"0.2.0"}` | premier message, dans les 5 s ; `device` : 3 à 48 caractères parmi a-z, 0-9 et « - » |
+| serveur → satellite | `{"type":"waiting"}` | le satellite apparaît dans **Administration → Satellites audio → Nouveaux satellites** |
+| serveur → satellite | `{"type":"identify"}` | « Faire clignoter » : l’anneau clignote quelques secondes |
+| serveur → satellite | `{"type":"paired","name":"Chambre","token":"…"}` | associé : le satellite enregistre le jeton et l’empreinte de la clé, puis redémarre et se connecte à `/satellite` |
+
+Aucun droit n’est accordé sans le clic « Associer ». Le serveur garde au plus 8 satellites en attente.
 
 ## Fermetures
 

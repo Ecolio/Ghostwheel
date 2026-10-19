@@ -97,9 +97,24 @@ test('registre : jeton montré une fois, empreinte seule gardée, révocation', 
     name: 'Chambre',
     profileId: null,
     volume: 70,
+    ledColor: '#00ffb4',
+    ledBrightness: 6,
+    nightLight: false,
+    attentive: false,
     createdAt: 1000,
     lastSeenAt: null,
   });
+  // Réglages de l’administration : enregistrés, et les autres champs restent intacts.
+  const tuned = store.update(satellite.id, {
+    ledColor: '#2f7bff',
+    ledBrightness: 0,
+    nightLight: true,
+    attentive: true,
+  })!;
+  assert.deepEqual(
+    [tuned.ledColor, tuned.ledBrightness, tuned.nightLight, tuned.attentive, tuned.volume],
+    ['#2f7bff', 0, true, true, 70],
+  );
   assert.equal(JSON.stringify(db.prepare('SELECT * FROM satellites').all()).includes(token), false);
   assert.equal(store.authenticate(token)?.id, satellite.id);
   assert.equal(store.authenticate(token + 'x'), null);
@@ -222,6 +237,12 @@ test('veille : le son suit « listen », la détection revient au satellite', as
     name: 'Bureau',
     volume: 70,
   });
+  assert.deepEqual(await device.next((message) => message.type === 'settings'), {
+    type: 'settings',
+    volume: 70,
+    led: { color: '#00ffb4', brightness: 6, nightLight: false },
+    attentive: false,
+  });
   // Mot d’appel désactivé : le satellite n’envoie rien.
   assert.deepEqual(await device.next((message) => message.type === 'listen'), {
     type: 'listen',
@@ -257,4 +278,130 @@ test('veille : le son suit « listen », la détection revient au satellite', as
   assert.equal(worker.received.filter(Buffer.isBuffer).length, before);
   device.socket.terminate();
   await worker.next((message) => message.type === 'wake_end');
+});
+
+test('réglages depuis l’administration : validés, envoyés au satellite connecté', async (t) => {
+  const f = await fixture(t);
+  const cookie = await f.admin();
+  const headers = { cookie, origin };
+  const { token, satellite } = (
+    await f.app.inject({
+      method: 'POST',
+      url: '/api/admin/satellites',
+      headers,
+      payload: { name: 'Chambre' },
+    })
+  ).json();
+  const url = '/api/admin/satellites/' + satellite.id;
+  for (const payload of [
+    { ledColor: 'bleu' },
+    { ledColor: '#FFFFFF' },
+    { ledBrightness: 11 },
+    { nightLight: 'oui' },
+    { attentive: 1 },
+  ])
+    assert.equal(
+      (await f.app.inject({ method: 'PATCH', url, headers, payload })).statusCode,
+      400,
+      JSON.stringify(payload),
+    );
+  const device = await f.satellite(token);
+  device.socket.send(JSON.stringify({ type: 'hello', protocol: 1, firmware: '0.2.0', aec: true }));
+  await device.next((message) => message.type === 'settings');
+  const listed = await f.app.inject({ url: '/api/admin/satellites', headers });
+  assert.equal(listed.json().satellites[0].aec, true);
+  const changed = await f.app.inject({
+    method: 'PATCH',
+    url,
+    headers,
+    payload: { volume: 30, ledColor: '#9b5cff', ledBrightness: 2, nightLight: true },
+  });
+  assert.equal(changed.statusCode, 200, changed.body);
+  assert.deepEqual(
+    await device.next((message) => message.type === 'settings' && message.led.color === '#9b5cff'),
+    {
+      type: 'settings',
+      volume: 30,
+      led: { color: '#9b5cff', brightness: 2, nightLight: true },
+      attentive: false,
+    },
+  );
+});
+
+test('association : un satellite neuf attend, clignote, puis reçoit son jeton', async (t) => {
+  const f = await fixture(t);
+  const cookie = await f.admin();
+  const headers = { cookie, origin };
+  const pair = async () => {
+    const socket = await f.app.injectWS('/satellite/pair', { headers: { host: 'localhost' } });
+    t.after(() => socket.terminate());
+    const received: any[] = [];
+    socket.on('message', (data) => received.push(JSON.parse(String(data))));
+    return { socket, received };
+  };
+  const invalid = await pair();
+  invalid.socket.send(JSON.stringify({ type: 'pair', protocol: 1, device: 'Mauvais Nom!' }));
+  assert.equal((await once(invalid.socket, 'close'))[0], 1008);
+  const fresh = await pair();
+  fresh.socket.send(
+    JSON.stringify({
+      type: 'pair',
+      protocol: 1,
+      device: 'cornelius-satellite-b0c6b4',
+      firmware: '0.2.0',
+    }),
+  );
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.deepEqual([...fresh.received], [{ type: 'waiting' }]);
+  const listed = (await f.app.inject({ url: '/api/admin/satellites', headers })).json();
+  assert.deepEqual(
+    listed.pending.map((entry: { device: string }) => entry.device),
+    ['cornelius-satellite-b0c6b4'],
+  );
+  const base = '/api/admin/satellites/pending/cornelius-satellite-b0c6b4';
+  assert.equal(
+    (await f.app.inject({ method: 'POST', url: base + '/identify', headers })).statusCode,
+    200,
+  );
+  assert.equal(
+    (
+      await f.app.inject({
+        method: 'POST',
+        url: base + '/accept',
+        headers: { origin },
+        payload: { name: 'Chambre' },
+      })
+    ).statusCode,
+    401,
+  );
+  const accepted = await f.app.inject({
+    method: 'POST',
+    url: base + '/accept',
+    headers,
+    payload: { name: ' Chambre ' },
+  });
+  assert.equal(accepted.statusCode, 200, accepted.body);
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.equal(fresh.received[1]?.type, 'identify');
+  const paired = fresh.received[2]!;
+  assert.deepEqual([paired.type, paired.name], ['paired', 'Chambre']);
+  // Le jeton reçu ouvre bien la connexion des satellites ; plus rien n’attend.
+  const device = await f.satellite(paired.token);
+  device.socket.send(JSON.stringify({ type: 'hello', protocol: 1, firmware: '0.2.0' }));
+  await device.next((message) => message.type === 'welcome');
+  assert.deepEqual(
+    (await f.app.inject({ url: '/api/admin/satellites', headers })).json().pending,
+    [],
+  );
+  assert.equal(
+    (
+      await f.app.inject({
+        method: 'POST',
+        url: base + '/accept',
+        headers,
+        payload: { name: 'Bis' },
+      })
+    ).statusCode,
+    404,
+  );
 });

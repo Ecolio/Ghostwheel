@@ -4,6 +4,7 @@ import { createServer } from 'node:https';
 import { dirname, join } from 'node:path';
 import { createApp } from './app.js';
 import { loadConfig } from './config.js';
+import { announceSatellites } from './discovery.js';
 import { ensureCertificate, localAddresses } from './network.js';
 
 /** Écoute un port ; après un redémarrage, attend que l’ancienne instance l’ait libéré. */
@@ -38,10 +39,12 @@ try {
     config.tlsKeyFingerprint = certificate.keyFingerprint;
   }
   let lanServer: ReturnType<typeof createServer> | null = null;
+  let unannounce: (() => Promise<void>) | null = null;
   let stopping = false;
   const stop = async () => {
     if (stopping) return;
     stopping = true;
+    await unannounce?.().catch(() => {});
     lanServer?.close();
     lanServer?.closeAllConnections();
     // Une connexion qui traîne ne bloque pas l’arrêt plus de quelques secondes.
@@ -94,6 +97,15 @@ try {
     for (const address of localAddresses())
       console.info(`Réseau local · https://${address}:${config.httpsPort}`);
     console.info(`Empreinte du certificat · ${certificate.fingerprint}`);
+    if (config.mdns !== false) {
+      unannounce = announceSatellites({
+        port: config.httpsPort ?? 3443,
+        keyFingerprint: certificate.keyFingerprint,
+        onError: (error) =>
+          console.warn('Annonce mDNS des satellites impossible :', (error as Error)?.message),
+      });
+      console.info('Satellites · annonce mDNS _cornelius._tcp');
+    }
   }
   for (const signal of ['SIGINT', 'SIGTERM'] as const) process.once(signal, () => void stop());
 } catch (error) {

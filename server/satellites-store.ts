@@ -1,5 +1,6 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
+import type { SatelliteSettings } from '../shared/satellites.js';
 
 /**
  * Satellites audio du foyer (rejouable). Le jeton n’est jamais gardé : seulement son empreinte.
@@ -16,17 +17,35 @@ export const satellitesMigration = `CREATE TABLE IF NOT EXISTS satellites (
   last_seen_at INTEGER
 ) STRICT;`;
 
+/** Réglages ajoutés après la création de la table : ajoutés aux bases qui ne les ont pas. */
+const settingsColumns: readonly [string, string][] = [
+  [
+    'led_color',
+    "led_color TEXT NOT NULL DEFAULT '#00ffb4' CHECK (led_color GLOB '#[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]')",
+  ],
+  [
+    'led_brightness',
+    'led_brightness INTEGER NOT NULL DEFAULT 6 CHECK (led_brightness BETWEEN 0 AND 10)',
+  ],
+  ['night_light', 'night_light INTEGER NOT NULL DEFAULT 0 CHECK (night_light IN (0, 1))'],
+  ['attentive', 'attentive INTEGER NOT NULL DEFAULT 0 CHECK (attentive IN (0, 1))'],
+];
+
 export { SATELLITE_NAME_MAX } from '../shared/satellites.js';
 
-export interface Satellite {
+export interface Satellite extends SatelliteSettings {
   id: string;
   name: string;
   /** Profil rattaché (mémoire personnelle) ; null : satellite anonyme, le cas par défaut. */
   profileId: string | null;
-  volume: number;
   createdAt: number;
   lastSeenAt: number | null;
 }
+
+export type SatelliteChanges = Partial<SatelliteSettings> & {
+  name?: string;
+  profileId?: string | null;
+};
 
 const tokenHash = (token: string) => createHash('sha256').update(token).digest('hex');
 
@@ -36,6 +55,10 @@ function satellite(row: Record<string, unknown>): Satellite {
     name: String(row.name),
     profileId: row.profile_id === null ? null : String(row.profile_id),
     volume: Number(row.volume),
+    ledColor: String(row.led_color),
+    ledBrightness: Number(row.led_brightness),
+    nightLight: Number(row.night_light) === 1,
+    attentive: Number(row.attentive) === 1,
     createdAt: Number(row.created_at),
     lastSeenAt: row.last_seen_at === null ? null : Number(row.last_seen_at),
   };
@@ -47,6 +70,14 @@ export class SatelliteStore {
     private readonly now: () => number,
   ) {
     db.exec(satellitesMigration);
+    const columns = new Set(
+      db
+        .prepare('PRAGMA table_info(satellites)')
+        .all()
+        .map((row) => String(row.name)),
+    );
+    for (const [name, definition] of settingsColumns)
+      if (!columns.has(name)) db.exec('ALTER TABLE satellites ADD COLUMN ' + definition);
   }
   list(): Satellite[] {
     return this.db
@@ -75,18 +106,22 @@ export class SatelliteStore {
       .run(tokenHash(token), id).changes;
     return changed ? token : null;
   }
-  update(
-    id: string,
-    changes: { name?: string; profileId?: string | null; volume?: number },
-  ): Satellite | null {
+  update(id: string, changes: SatelliteChanges): Satellite | null {
     const current = this.get(id);
     if (!current) return null;
+    const next = { ...current, ...changes };
     this.db
-      .prepare('UPDATE satellites SET name = ?, profile_id = ?, volume = ? WHERE id = ?')
+      .prepare(
+        'UPDATE satellites SET name = ?, profile_id = ?, volume = ?, led_color = ?, led_brightness = ?, night_light = ?, attentive = ? WHERE id = ?',
+      )
       .run(
-        changes.name ?? current.name,
-        changes.profileId === undefined ? current.profileId : changes.profileId,
-        changes.volume ?? current.volume,
+        next.name,
+        next.profileId,
+        next.volume,
+        next.ledColor,
+        next.ledBrightness,
+        next.nightLight ? 1 : 0,
+        next.attentive ? 1 : 0,
         id,
       );
     return this.get(id);

@@ -52,6 +52,7 @@ import { WakeArbiter } from './wake-arbiter.js';
 import { SatelliteStore } from './satellites-store.js';
 import { SatelliteHub } from './satellites.js';
 import { registerSatellites } from './satellites-api.js';
+import { SatellitePairing } from './satellites-pairing.js';
 import { AmbientModules } from './addons/ambient.js';
 import { AddonRuntime } from './addons/runtime.js';
 import { loadAddons } from './addons/registry.js';
@@ -637,7 +638,14 @@ export async function createApp(
 
   registerHomeAssistant(app, homeAssistant, requireAdmin, () => controller.homeAssistantChanged());
   registerAgents(app, agents, requireAdmin);
-  registerSatellites(app, { store: satelliteStore, hub: satellites, profiles, requireAdmin });
+  const satellitePairing = new SatellitePairing(logs, now);
+  registerSatellites(app, {
+    store: satelliteStore,
+    hub: satellites,
+    pairing: satellitePairing,
+    profiles,
+    requireAdmin,
+  });
   registerAddons(app, {
     runtime: addonRuntime,
     actions: actionExecutor,
@@ -1410,6 +1418,7 @@ export async function createApp(
     await agents.dispose();
     downloads.dispose();
     satellites.dispose();
+    satellitePairing.dispose();
     wakeArbiter.dispose();
     perception.dispose();
     db.close();

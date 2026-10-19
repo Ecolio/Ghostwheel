@@ -40,7 +40,7 @@ import type { AgentAdminView, AgentConnectionInput, AgentTaskView } from '../sha
 import type { ToolResult } from '../shared/addons';
 import type { MemoryView, MemoryEdit } from '../shared/memory';
 import type { PersonalityView } from '../shared/personality';
-import type { SatelliteView } from '../shared/satellites';
+import type { PendingSatelliteView, SatelliteView } from '../shared/satellites';
 
 export type Role = 'admin' | 'kiosk';
 
@@ -358,7 +358,24 @@ export const api = {
   changePassword: (current: string, next: string) =>
     post<{ ok: boolean }>('/api/admin/password', { current, next }),
   restartServer: () => post<{ ok: boolean }>('/api/admin/restart', {}),
-  satellites: () => request<{ satellites: SatelliteView[] }>('/api/admin/satellites'),
+  satellites: () =>
+    request<{ satellites: SatelliteView[]; pending?: PendingSatelliteView[] }>(
+      '/api/admin/satellites',
+    ),
+  acceptSatellite: (device: string, name: string) =>
+    post<{ satellite: SatelliteView }>(
+      '/api/admin/satellites/pending/' + encodeURIComponent(device) + '/accept',
+      { name },
+    ),
+  identifySatellite: (device: string) =>
+    post<{ ok: boolean }>(
+      '/api/admin/satellites/pending/' + encodeURIComponent(device) + '/identify',
+      {},
+    ),
+  rejectSatellite: (device: string) =>
+    request<{ ok: boolean }>('/api/admin/satellites/pending/' + encodeURIComponent(device), {
+      method: 'DELETE',
+    }),
   createSatellite: (name: string) =>
     post<{ satellite: SatelliteView; token: string }>('/api/admin/satellites', { name }),
   updateSatellite: (
