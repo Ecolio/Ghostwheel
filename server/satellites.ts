@@ -31,6 +31,7 @@ interface Connection {
   listening: boolean | null;
   alive: boolean;
   helloTimer: ReturnType<typeof setTimeout> | null;
+  lastLogAt: number;
   /** Conversation de ce satellite, telle que le contrôleur la publie. */
   conversation: ConversationState;
   interactionId: string | null;
@@ -119,6 +120,7 @@ export class SatelliteHub {
       muted: false,
       listening: null,
       alive: true,
+      lastLogAt: 0,
       conversation: 'idle',
       interactionId: null,
       preroll: [],
@@ -148,6 +150,24 @@ export class SatelliteHub {
           satellite: satellite.name,
           muted: message.muted,
         });
+      } else if (
+        message.type === 'log' &&
+        typeof message.message === 'string' &&
+        message.message.length <= 200 &&
+        Date.now() - connection.lastLogAt >= 1000
+      ) {
+        // Mesures du satellite (niveaux d’écho…) : dans le journal de Cornelius, une par seconde
+        // au plus, sans jamais de son ni de texte de conversation.
+        connection.lastLogAt = Date.now();
+        this.deps.logs.write(
+          message.level === 'warn' ? 'warn' : 'info',
+          'local',
+          'Journal du satellite',
+          {
+            satellite: satellite.name,
+            message: message.message,
+          },
+        );
       }
     });
     socket.on('close', () => this.closed(connection));

@@ -37,7 +37,7 @@ Le son circule en messages binaires, toujours au même format : PCM 16 bits sign
 
 Une trame montante d’une autre taille ferme la connexion. La voix de Cornelius arrive au rythme où elle doit être jouée : un tampon de lecture de 200 à 300 ms suffit. Quand Cornelius est interrompu ou se tait, le flux continue avec du silence ; il n’y a pas de message pour vider le tampon.
 
-**Semi-duplex.** Sans annulation d’écho, le serveur remplace par du silence le son du micro tant que Cornelius parle, et 600 ms après. Le satellite continue d’envoyer ses trames normalement. Un satellite qui annonce `"aec": true` (annulation d’écho faite sur la carte, avec la voie de référence du haut-parleur) garde son micro ouvert : on peut alors couper la parole à Cornelius.
+**Semi-duplex.** Sans annulation d’écho, le serveur remplace par du silence le son du micro tant que Cornelius parle, et 600 ms après. Le satellite continue d’envoyer ses trames normalement. Un satellite qui annonce `"aec": true` (annulation d’écho faite sur la carte, avec la voie de référence du haut-parleur) et dont l’**écoute attentive** est activée dans l’administration garde son micro ouvert : on peut alors couper la parole à Cornelius. Mesuré sur la Waveshare (ESP-SR, mode communication) : la voix de Cornelius baisse de 35 à 55 dB, jusqu’au bruit de fond du micro.
 
 ## Messages
 
@@ -50,6 +50,7 @@ Les autres messages sont des objets JSON en texte, avec un champ `type`. Un mess
 | `{"type":"hello","protocol":1,"firmware":"0.1.0","aec":false}` | premier message, dans les 5 s | le serveur répond `welcome`, ou ferme si le protocole n’est pas pris en charge |
 | binaire, 2 560 octets | tant que `listen` vaut `true` | veille : cherché pour « Cornelius » ; conversation : envoyé à Live |
 | `{"type":"mic","muted":true}` | bouton de vie privée | le serveur ignore le son tant que le micro est coupé |
+| `{"type":"log","message":"…"}` | mesure à suivre (niveaux d’écho…) | inscrite dans le journal de Cornelius ; 200 caractères, une par seconde au plus, jamais de son ni de conversation |
 
 `firmware` est une chaîne de 1 à 32 caractères ; `aec`, facultatif (faux par défaut), annonce l’annulation d’écho.
 
@@ -122,6 +123,5 @@ Le simulateur envoie du silence, puis l’enregistrement, au rythme réel, affic
 
 ## À venir
 
-- Annulation d’écho sur le satellite, pour pouvoir couper la parole à Cornelius.
 - Mot d’appel détecté sur le satellite (`wake` envoyé par le satellite avec le son qui précède), vérifié par le serveur.
 - Bouton d’action, mise à jour du firmware.
