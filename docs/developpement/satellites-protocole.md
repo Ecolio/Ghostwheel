@@ -21,7 +21,7 @@ Cette page décrit le dialogue entre Cornelius et un satellite audio (micro et h
 | Adresse | `wss://<ordinateur>:3443/satellite` depuis le réseau local (accès réseau local activé), `ws://127.0.0.1:3000/satellite` depuis l’ordinateur lui-même |
 | Authentification | en-tête `Authorization: Bearer <jeton>`, jeton créé dans l’administration et montré une seule fois |
 | Origine | aucun en-tête `Origin` : un satellite n’est pas un navigateur |
-| TLS | certificat auto-signé de Cornelius ; le satellite épingle son empreinte SHA-256, affichée dans **Réseau local** |
+| TLS | certificat auto-signé de Cornelius, signé en SHA-256 ; il change avec les adresses de l’ordinateur, pas sa clé. Le satellite épingle l’**empreinte SHA-256 de la clé publique** (SubjectPublicKeyInfo), affichée dans **Administration → Satellites audio** |
 | Maintien | le serveur envoie un ping WebSocket toutes les 15 s et coupe un satellite muet depuis 30 s |
 
 Un jeton inconnu ou révoqué est refusé (403) avant l’ouverture du WebSocket.
