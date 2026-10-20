@@ -4,7 +4,7 @@ import {
   type AddonHttpClient,
   type AddonPresentation,
   type ModuleSnapshot,
-} from '../../shared/addons.js';
+} from '#cornelius/addons';
 import configSchema from './config.schema.json' with { type: 'json' };
 import dataSchema from './data.schema.json' with { type: 'json' };
 

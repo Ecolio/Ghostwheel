@@ -239,6 +239,8 @@ export interface AddonDefinition<
   id: string;
   apiVersion: 1;
   version: string;
+  /** Version minimale du cœur (« x.y.z »), facultative : un cœur plus ancien refuse le module. */
+  minCoreVersion?: string;
   /** Libellé public de la source, affiché sur les cartes. */
   sourceLabel: string;
   /** Jetons requis, facultatif et compatible v1 : l'administration signale ceux qui manquent. */

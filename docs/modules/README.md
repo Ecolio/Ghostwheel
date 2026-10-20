@@ -36,6 +36,20 @@ En haut de l’onglet, « Sources de » montre les sources de tout le monde, du 
 
 Un module installé mais refusé au démarrage apparaît en bas, sous « Module non chargé », avec la raison.
 
+### Modules externes
+
+Des modules peuvent aussi venir du dépôt [cornelius-modules](https://github.com/lfpoulain/cornelius-modules), cloné **à côté** du dossier de Cornelius (ou dans le dossier de `CORNELIUS_MODULES_DIR`). Ils se mettent à jour sans toucher à Cornelius. Depuis le dossier de Cornelius :
+
+```bash
+git clone https://github.com/lfpoulain/cornelius-modules.git ../cornelius-modules
+```
+
+```bash
+git -C ../cornelius-modules pull
+```
+
+Redémarrez ensuite Cornelius : les modules ne sont lus qu’au démarrage. Un module externe s’exécute avec les mêmes droits que Cornelius : n’installez que des modules dont vous connaissez l’auteur. Il est refusé, avec la raison sous « Module non chargé », s’il porte l’identifiant d’un module livré avec Cornelius ou s’il demande une version de Cornelius plus récente que celle installée.
+
 ## Ajouter une source
 
 1. Dans le module, cliquez sur **Ajouter une source**.

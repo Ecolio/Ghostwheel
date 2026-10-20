@@ -4,6 +4,11 @@
   "license": "PolyForm-Noncommercial-1.0.0",
   "private": true,
   "type": "module",
+  "imports": {
+    "#cornelius/addons": "./shared/addons.ts",
+    "#cornelius/validation": "./shared/validation.ts",
+    "#cornelius/testing": "./server/addons/testing.ts"
+  },
   "engines": {
     "node": ">=24.2.0 <25"
   },
@@ -15,6 +20,7 @@
     "test": "tsx --test \"tests/*.test.ts\" \"addons/*/*.test.ts\"",
     "setup": "tsx scripts/setup.ts",
     "test:e2e": "playwright test",
+    "test:modules": "tsx scripts/test-modules.ts",
     "mesures": "tsx scripts/mesures.ts",
     "notices": "tsx scripts/notices.ts",
     "recette": "tsx scripts/recette.ts",

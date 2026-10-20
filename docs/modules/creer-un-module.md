@@ -35,7 +35,7 @@ Dans `index.ts`, le champ `id` doit être **identique au nom du dossier**. Il co
 
 Le gabarit déclare déjà `id: 'parking'`. Pour un dossier d’un autre nom, changez `id` et la valeur de `sources` dans `present` : sinon le module est refusé au démarrage (« identifiant « parking » différent du dossier. »).
 
-Remplacez ensuite les éléments fictifs : `sourceLabel` (le nom du fournisseur ; pour un nouveau module, c’est aussi son nom dans l’administration), `baseUrl`, le `provider` renvoyé par `collect`, les types `ParkingConfig` et `ParkingData`, les textes. Gardez les imports en `.js` et les imports JSON avec `with { type: 'json' }`.
+Remplacez ensuite les éléments fictifs : `sourceLabel` (le nom du fournisseur ; pour un nouveau module, c’est aussi son nom dans l’administration), `baseUrl`, le `provider` renvoyé par `collect`, les types `ParkingConfig` et `ParkingData`, les textes. Gardez les imports locaux en `.js`, les imports JSON avec `with { type: 'json' }`, et importez le contrat par ses alias `#cornelius/addons` et `#cornelius/validation` (et `#cornelius/testing` dans les tests), jamais par un chemin `../../shared/` ou `../../server/` : le module fonctionne alors aussi hors du dépôt.
 
 L’outil vocal prend le nom `<id>__read` : ici `parking__read`.
 
@@ -175,9 +175,20 @@ npm test
 
 Le nom, l’icône, la description et l’exemple de nom des modules fournis sont écrits dans l’interface (`web/components/admin/Addons.tsx`, `web/components/admin/AddonForm.tsx`), comme la tournure de la phrase à prononcer (`web/components/admin/format.ts`). Un nouveau module fonctionne sans ces ajouts ; ajoutez-les pour une présentation soignée.
 
+## Publier un module hors du dépôt
+
+Un module n’a pas besoin d’être dans `addons/` pour être chargé. Cornelius lit aussi le dépôt [cornelius-modules](https://github.com/lfpoulain/cornelius-modules), cloné à côté de son dossier (ou dans `CORNELIUS_MODULES_DIR`) et mis à jour par `git pull` sans mettre à jour Cornelius. Ce dépôt a son propre tutoriel ; les règles sont les mêmes.
+
+- Le dépôt range un module par dossier, à sa racine : `parking/index.ts`, `piscine/index.ts`. Les dossiers sans `index.ts` (`docs/`, `scripts/`, `node_modules/`) sont ignorés.
+- Les alias `#cornelius/…` sont toujours résolus vers le Cornelius qui charge le module, même si le dépôt a son propre `package.json`.
+- Un identifiant déjà pris par un module livré est refusé : le module livré reste en place.
+- Si le module utilise une fonction du cœur apparue dans une version donnée, déclarez `minCoreVersion: '0.2.0'` : un Cornelius plus ancien le refuse avec la raison au lieu de planter à la première lecture.
+- `npm test`, `npm run check` et `npm run format` de Cornelius ne couvrent que `addons/`. Pour les modules externes, lancez `npm run test:modules` depuis Cornelius (ou `npm test` depuis cornelius-modules) : il exécute les `*/*.test.ts` du dossier externe avec la résolution des alias `#cornelius/…`, qu’un simple `npx tsx --test` ne ferait pas si le dépôt a son propre `package.json`.
+
 ## 9. Liste de contrôle
 
 - [ ] Dossier et `id` identiques ; le module se charge sans « Module non chargé ».
+- [ ] Contrat importé par `#cornelius/addons` et `#cornelius/validation` ; `minCoreVersion` déclaré si le module dépend d’un ajout récent du cœur.
 - [ ] Fournisseur fictif, adresse et textes du gabarit remplacés.
 - [ ] Champs de réglage avec `title`, `description` et bornes ; valeurs par défaut vérifiées.
 - [ ] Collecte avec `context.http` et `context.signal`, réponse validée, erreurs explicites.

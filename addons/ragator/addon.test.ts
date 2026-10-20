@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { AddonRuntime } from '../../server/addons/runtime.js';
-import { validateAddonDefinition } from '../../server/addons/registry.js';
-import { AddonRepository, openDatabase } from '../../server/storage.js';
-import type { AddonHttpClient, AddonHttpRequest } from '../../shared/addons.js';
-import { validators } from '../../shared/validation.js';
+import {
+  AddonRepository,
+  AddonRuntime,
+  openDatabase,
+  validateAddonDefinition,
+} from '#cornelius/testing';
+import type { AddonHttpClient, AddonHttpRequest } from '#cornelius/addons';
+import { validators } from '#cornelius/validation';
 import addon from './index.js';
 import answer from './fixtures/answer.json' with { type: 'json' };
 import collections from './fixtures/collections.json' with { type: 'json' };

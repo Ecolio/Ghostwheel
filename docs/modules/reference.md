@@ -49,6 +49,7 @@ Le fichier `index.ts` DOIT exporter par défaut un objet `AddonDefinition<TConfi
 | `id` | DOIT être égal au nom du dossier et suivre `^[a-z][a-z0-9_]{0,31}$` |
 | `apiVersion` | DOIT valoir `1` |
 | `version` | Version du code, chaîne libre (par exemple `1.0.0`) |
+| `minCoreVersion` | Facultatif : version minimale de Cornelius, `x.y.z` ; un cœur plus ancien refuse le module |
 | `sourceLabel` | Nom public du fournisseur, sans secret ; sert de nom au module tant que l’interface n’en prévoit pas d’autre |
 | `secrets` | Facultatif : jetons attendus dans `.env` (voir [Les secrets](#les-secrets)) |
 | `configVersion` | Entier ≥ 1, à incrémenter quand les réglages changent de forme |
@@ -66,7 +67,9 @@ Le fichier `index.ts` DOIT exporter par défaut un objet `AddonDefinition<TConfi
 
 Les schémas suivent JSON Schema 2020-12, compilés par Ajv en mode strict avec les formats standards ([shared/validation.ts](../../shared/validation.ts)). Ils DEVRAIENT déclarer `type: "object"`, `additionalProperties: false`, `required`, des bornes numériques et des longueurs maximales. Une valeur absente DOIT être modélisée (`null`, champ facultatif, liste vide), jamais inventée.
 
-Le chargeur lit `addons/` **au démarrage seulement** : redémarrer après tout ajout ou toute modification. Un dossier dont le nom ne suit pas le motif (`_template`, `mon-module`) est ignoré sans message. Un dossier sans `index.ts`, une définition incomplète, un schéma qui ne compile pas ou un `id` différent du dossier sont refusés : la raison s’affiche dans **Modules** sous « Module non chargé » et dans le journal, et les autres modules se chargent normalement. Le chargeur ne vérifie ni les valeurs par défaut, ni la collecte, ni les longueurs de carte : les tests du module DOIVENT le faire.
+Le module DOIT importer le contrat par les alias `#cornelius/addons` et `#cornelius/validation` (champ `imports` du `package.json`), toujours résolus vers le cœur qui le charge. Ses tests importent de même `#cornelius/testing` : `validateAddonDefinition`, `openDatabase`, `AddonRepository` et `AddonRuntime`.
+
+Le chargeur lit `addons/`, puis le dossier des modules externes (`cornelius-modules` cloné à côté de Cornelius, ou `CORNELIUS_MODULES_DIR`), **au démarrage seulement** : redémarrer après tout ajout ou toute modification. Dans le dossier externe, un sous-dossier sans `index.ts` est ignoré sans message, et un identifiant déjà pris par un module de `addons/` est refusé. Un dossier dont le nom ne suit pas le motif (`_template`, `mon-module`) est ignoré sans message. Un dossier sans `index.ts`, une définition incomplète, un schéma qui ne compile pas ou un `id` différent du dossier sont refusés : la raison s’affiche dans **Modules** sous « Module non chargé » et dans le journal, et les autres modules se chargent normalement. Le chargeur ne vérifie ni les valeurs par défaut, ni la collecte, ni les longueurs de carte : les tests du module DOIVENT le faire.
 
 ## Les contextes
 
@@ -288,7 +291,7 @@ fields: [
 
 ## Versions et migrations
 
-`version` suit le code, `configVersion` les réglages, `dataVersion` les données. `apiVersion` est le contrat avec le cœur : le changer rend le module inchargeable.
+`version` suit le code, `configVersion` les réglages, `dataVersion` les données. `apiVersion` est le contrat avec le cœur : le changer rend le module inchargeable. `minCoreVersion` marque une dépendance à un ajout compatible du cœur (une fonction de `#cornelius/addons`, un champ facultatif) : comparé à la `version` du `package.json` de Cornelius, il refuse le module proprement sur un cœur trop ancien.
 
 Quand `configVersion` augmente, `configMigrate` DOIT vérifier `fromVersion` et le contenu, garder les choix existants, compléter les nouveaux champs et refuser une version inconnue, sans réseau ni écriture. **Limite actuelle** : la migration s’applique en mémoire à chaque collecte, puis le résultat est validé ; elle n’est jamais écrite en base. Le formulaire de l’administration montre l’ancienne configuration, avec les nouveaux champs vides. À l’enregistrement, c’est le contenu du formulaire qui est validé contre le nouveau schéma et enregistré avec la nouvelle `configVersion`, sans passer par `configMigrate` : testez la réédition.
 
@@ -301,6 +304,8 @@ Une nouvelle `dataVersion` force une collecte, et l’ancien relevé n’est plu
 | Le dossier s’appelle `parking-gare` | Ignoré sans message (tiret interdit) |
 | `id` diffère du nom du dossier | Refusé : « identifiant … différent du dossier. » |
 | Un schéma ne compile pas | Refusé, avec la première erreur d’Ajv |
+| Un module externe reprend l’identifiant d’un module livré | Refusé : « identifiant déjà pris par un module livré avec Cornelius. » |
+| `minCoreVersion` dépasse la version installée | Refusé : « nécessite Cornelius … ou plus récent (installé : …). » |
 | Le jeton manque | « Jeton manquant », ajout de source grisé ; une source existante échoue en `config_invalid` |
 | Le fournisseur ne répond pas | `timeout` après `timeoutMs` ; repli sur le dernier succès s’il existe |
 | Les données ne respectent pas `dataSchema` | Échec `malformed`, traité comme une panne : repli sur le dernier succès s’il existe |

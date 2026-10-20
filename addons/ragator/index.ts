@@ -1,10 +1,6 @@
 /** Ragator : réponses citées tirées d'un corpus de vidéos YouTube, par son interface web locale. */
-import {
-  AddonCollectError,
-  type AddonDefinition,
-  type AddonHttpResponse,
-} from '../../shared/addons.js';
-import { compile } from '../../shared/validation.js';
+import { AddonCollectError, type AddonDefinition, type AddonHttpResponse } from '#cornelius/addons';
+import { compile } from '#cornelius/validation';
 import configSchema from './config.schema.json' with { type: 'json' };
 import dataSchema from './data.schema.json' with { type: 'json' };
 

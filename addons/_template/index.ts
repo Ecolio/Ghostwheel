@@ -1,6 +1,6 @@
 /** Exemple pédagogique : remplacer le fournisseur fictif avant toute installation. */
-import { AddonCollectError, type AddonDefinition } from '../../shared/addons.js';
-import { compile } from '../../shared/validation.js';
+import { AddonCollectError, type AddonDefinition } from '#cornelius/addons';
+import { compile } from '#cornelius/validation';
 import configSchema from './config.schema.json' with { type: 'json' };
 import dataSchema from './data.schema.json' with { type: 'json' };
 

@@ -6,6 +6,17 @@ Le fonctionnement actuel est décrit dans la [documentation](docs/README.md). Ce
 
 ## Non publié
 
+### 2026-10-20 : modules externes
+
+**Ajouté**
+
+- Modules externes : Cornelius charge aussi le dépôt `cornelius-modules` cloné à côté de lui (ou `CORNELIUS_MODULES_DIR`), mis à jour sans mettre à jour Cornelius. Un module externe ne remplace jamais un module livré. `npm run test:modules` lance leurs tests.
+- Champ facultatif `minCoreVersion` du contrat v1 : un module qui demande un Cornelius plus récent est refusé avec la raison.
+
+**Modifié**
+
+- Les modules importent le contrat par `#cornelius/addons` et `#cornelius/validation`, et leurs tests le cœur par `#cornelius/testing`, au lieu de chemins `../../shared/` et `../../server/`.
+
 ### 2026-10-19 : satellites audio
 
 **Ajouté**

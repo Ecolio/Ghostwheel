@@ -1,9 +1,11 @@
 import { readdirSync, existsSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import packageJson from '../../package.json' with { type: 'json' };
 import type { AddonDefinition, AddonSecretRequirement } from '../../shared/addons.js';
 import type { DiagnosticLog } from '../logs.js';
 import { compile } from '../../shared/validation.js';
+import './core-imports.js';
 
 /**
  * Découverte dynamique des modules : un dossier `addons/<id>/` portant un `index.ts`
@@ -12,6 +14,11 @@ import { compile } from '../../shared/validation.js';
  * invalide est signalé puis ignoré, jamais la cause d'un échec du serveur.
  * Les fixtures et schémas restent la propriété du module, le registre ne connaît
  * que la définition qu'il exporte par défaut.
+ *
+ * Deux dossiers sont parcourus : `addons/`, livré avec le dépôt, puis le dépôt de
+ * modules externes (`cornelius-modules` cloné à côté de Cornelius, ou
+ * `CORNELIUS_MODULES_DIR`), mis à jour indépendamment du cœur. Un module livré garde
+ * toujours son identifiant.
  */
 
 export interface AddonLoadReport {
@@ -24,8 +31,28 @@ export interface AddonLoadReport {
 const entryFile = 'index.ts';
 /** Un identifiant devient un nom d'outil (`<id>__<tool>`) : alphabet strict exigé. */
 const idPattern = /^[a-z][a-z0-9_]{0,31}$/;
+const repository = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 /** Racine `addons/` déduite de ce fichier : le registre suit le dépôt, pas le cwd. */
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'addons');
+const root = resolve(repository, 'addons');
+/** Version du cœur, comparée au `minCoreVersion` facultatif des modules. */
+export const coreVersion: string = packageJson.version;
+const versionPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/u;
+
+/** Modules externes : `CORNELIUS_MODULES_DIR` (relatif au cwd), sinon `cornelius-modules` voisin du dépôt. */
+export function externalAddonsRoot(env: NodeJS.ProcessEnv = process.env): string {
+  const configured = env.CORNELIUS_MODULES_DIR?.trim();
+  return configured ? resolve(configured) : resolve(repository, '..', 'cornelius-modules');
+}
+
+function compareVersions(a: string, b: string): number {
+  const left = a.split('.').map(Number);
+  const right = b.split('.').map(Number);
+  for (let index = 0; index < 3; index += 1) {
+    const delta = (left[index] ?? 0) - (right[index] ?? 0);
+    if (delta !== 0) return delta;
+  }
+  return 0;
+}
 
 function describe(error: unknown): string {
   return error instanceof Error ? error.message : 'Erreur inconnue.';
@@ -73,13 +100,22 @@ function validateSecrets(secrets: unknown): string | null {
  * Contrôle de forme du contrat gelé `apiVersion: 1`. Les schémas sont compilés dès
  * le chargement pour isoler les modules invalides avant tout appel du modèle.
  */
-export function validateAddonDefinition(addon: unknown): string | null {
+export function validateAddonDefinition(addon: unknown, core = coreVersion): string | null {
   if (!addon || typeof addon !== 'object') return 'aucune définition exportée.';
   const candidate = addon as Partial<AddonDefinition>;
   if (candidate.apiVersion !== 1) return `apiVersion non supportée (attendu : 1).`;
   if (typeof candidate.id !== 'string' || !idPattern.test(candidate.id))
     return 'identifiant invalide.';
   if (typeof candidate.version !== 'string') return 'version absente.';
+  if (candidate.minCoreVersion !== undefined) {
+    if (
+      typeof candidate.minCoreVersion !== 'string' ||
+      !versionPattern.test(candidate.minCoreVersion)
+    )
+      return 'version minimale de Cornelius invalide (attendu : x.y.z).';
+    if (compareVersions(core, candidate.minCoreVersion) < 0)
+      return `nécessite Cornelius ${candidate.minCoreVersion} ou plus récent (installé : ${core}).`;
+  }
   if (typeof candidate.sourceLabel !== 'string') return 'libellé de source absent.';
   if (!Number.isInteger(candidate.configVersion) || candidate.configVersion! < 1)
     return 'version de configuration absente.';
@@ -162,23 +198,56 @@ function firstSchemaError(error: unknown): string {
   return text.endsWith('.') || text.endsWith('…') ? text : text + '.';
 }
 
+interface AddonLoadOptions {
+  logs?: DiagnosticLog;
+  /** Dossier des modules externes ; `null` n'en charge aucun. Défaut : `externalAddonsRoot()`. */
+  externalRoot?: string | null;
+}
+
 /**
- * Parcourt `addons/` et charge chaque module isolément : un dossier cassé est
- * journalisé et n'empêche jamais les autres de charger.
+ * Parcourt `addons/` puis le dossier externe et charge chaque module isolément : un
+ * dossier cassé est journalisé et n'empêche jamais les autres de charger.
  */
-export async function loadAddons(options: { logs?: DiagnosticLog } = {}): Promise<AddonLoadReport> {
-  const addons: AddonDefinition[] = [];
-  const rejected: { name: string; reason: string }[] = [];
+export async function loadAddons(options: AddonLoadOptions = {}): Promise<AddonLoadReport> {
+  const report: AddonLoadReport = { addons: [], rejected: [] };
+  await loadDirectory(root, false, report, options.logs);
+  const external = options.externalRoot === undefined ? externalAddonsRoot() : options.externalRoot;
+  if (external && resolve(external) !== root) {
+    await loadDirectory(resolve(external), true, report, options.logs);
+  }
+  report.addons.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  if (report.addons.length > 0 || report.rejected.length > 0)
+    options.logs?.write('info', 'addon', 'Registre des modules chargé', {
+      loaded: report.addons.map((addon) => addon.id),
+      rejected: report.rejected,
+    });
+  return report;
+}
+
+/**
+ * Le dossier externe peut être un dépôt entier (docs/, scripts/, node_modules/) : seuls
+ * ses sous-dossiers munis d'un `index.ts` y sont des modules, les autres sont ignorés.
+ */
+async function loadDirectory(
+  directoryRoot: string,
+  external: boolean,
+  report: AddonLoadReport,
+  logs: DiagnosticLog | undefined,
+): Promise<void> {
+  const { addons, rejected } = report;
   let entries: string[] = [];
   try {
-    entries = existsSync(root) ? readdirSync(root) : [];
+    entries = existsSync(directoryRoot) ? readdirSync(directoryRoot) : [];
   } catch (error) {
-    options.logs?.write('warn', 'addon', 'Dossier des modules illisible', { error });
-    return { addons, rejected };
+    logs?.write('warn', 'addon', 'Dossier des modules illisible', {
+      directory: directoryRoot,
+      error,
+    });
+    return;
   }
   for (const name of entries.sort()) {
-    if (!idPattern.test(name)) continue;
-    const directory = resolve(root, name);
+    if (!idPattern.test(name) || name === 'node_modules') continue;
+    const directory = resolve(directoryRoot, name);
     try {
       if (!statSync(directory).isDirectory()) continue;
     } catch {
@@ -186,7 +255,14 @@ export async function loadAddons(options: { logs?: DiagnosticLog } = {}): Promis
     }
     const entry = resolve(directory, entryFile);
     if (!existsSync(entry)) {
-      rejected.push({ name, reason: `point d’entrée « ${entryFile} » absent.` });
+      if (!external) rejected.push({ name, reason: `point d’entrée « ${entryFile} » absent.` });
+      continue;
+    }
+    if (external && addons.some((addon) => addon.id === name)) {
+      rejected.push({ name, reason: 'identifiant déjà pris par un module livré avec Cornelius.' });
+      logs?.write('warn', 'addon', 'Module externe refusé : identifiant déjà pris', {
+        addonId: name,
+      });
       continue;
     }
     try {
@@ -194,34 +270,27 @@ export async function loadAddons(options: { logs?: DiagnosticLog } = {}): Promis
       const invalid = validateAddonDefinition(module.default);
       if (invalid) {
         rejected.push({ name, reason: invalid });
-        options.logs?.write('warn', 'addon', 'Module refusé par le contrat v1', {
+        logs?.write('warn', 'addon', 'Module refusé par le contrat v1', {
           addonId: name,
           reason: invalid,
+          external,
         });
         continue;
       }
       const addon = module.default as AddonDefinition;
       if (addon.id !== name) {
         rejected.push({ name, reason: `identifiant « ${addon.id} » différent du dossier.` });
-        options.logs?.write('warn', 'addon', 'Module refusé : identifiant incohérent', {
+        logs?.write('warn', 'addon', 'Module refusé : identifiant incohérent', {
           addonId: name,
           declaredId: addon.id,
+          external,
         });
         continue;
       }
       addons.push(addon);
     } catch (error) {
       rejected.push({ name, reason: describe(error) });
-      options.logs?.write('warn', 'addon', 'Module non chargé', {
-        addonId: name,
-        error,
-      });
+      logs?.write('warn', 'addon', 'Module non chargé', { addonId: name, error, external });
     }
   }
-  if (addons.length > 0 || rejected.length > 0)
-    options.logs?.write('info', 'addon', 'Registre des modules chargé', {
-      loaded: addons.map((addon) => addon.id),
-      rejected,
-    });
-  return { addons, rejected };
 }
