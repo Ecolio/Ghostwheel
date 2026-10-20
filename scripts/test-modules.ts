@@ -17,7 +17,16 @@ if (!existsSync(root)) {
 const pattern = `${relative(process.cwd(), root).split(sep).join('/') || '.'}/*/*.test.ts`;
 const result = spawnSync(
   process.execPath,
-  ['--import', 'tsx', '--import', './server/addons/core-imports.ts', '--test', pattern],
+  [
+    // node:sqlite est encore « expérimental » : l'avertissement encombrerait chaque test.
+    '--disable-warning=ExperimentalWarning',
+    '--import',
+    'tsx',
+    '--import',
+    './server/addons/core-imports.ts',
+    '--test',
+    pattern,
+  ],
   { stdio: 'inherit' },
 );
 process.exit(result.status ?? 1);

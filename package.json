@@ -17,7 +17,7 @@
     "build": "tsc --noEmit && vite build",
     "start": "node --env-file-if-exists=.env --import tsx server/index.ts",
     "check": "tsc --noEmit",
-    "test": "tsx --test \"tests/*.test.ts\" \"addons/*/*.test.ts\"",
+    "test": "tsx --disable-warning=ExperimentalWarning --test \"tests/*.test.ts\" \"addons/*/*.test.ts\"",
     "setup": "tsx scripts/setup.ts",
     "test:e2e": "playwright test",
     "test:modules": "tsx scripts/test-modules.ts",
