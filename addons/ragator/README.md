@@ -1,6 +1,6 @@
 # Module Ragator
 
-Le module Ragator pose une question à [Ragator](https://git.diy.yt/lfpoulain/ragator), le moteur de recherche citée sur les vidéos YouTube des Frères Poulain, et rapporte sa réponse avec les vidéos et l’instant qui la prouvent. Cette fiche s’adresse à la personne qui règle le miroir et à celle qui lit le code du module (identifiant `ragator`).
+Le module Ragator pose une question à [Ragator](https://github.com/lfpoulain/ragator), le moteur de recherche citée sur les vidéos YouTube des Frères Poulain, et rapporte sa réponse avec les vidéos et l’instant qui la prouvent. Cette fiche s’adresse à la personne qui règle le miroir et à celle qui lit le code du module (identifiant `ragator`).
 
 ## Ce que fait le module
 
