@@ -31,15 +31,6 @@ import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { NativeSelect, NativeSelectOption } from '../ui/native-select';
 
-// Exemples propres à chaque module : un placeholder « Bus maison » n’a pas de sens pour la
-// météo ou l’heure.
-const labelExamples: Record<string, { label: string; ref: string }> = {
-  clock: { label: 'Heure de Paris', ref: 'paris' },
-  weather: { label: 'Météo à la maison', ref: 'maison' },
-  transit: { label: 'Bus pour le travail', ref: 'travail' },
-  ragator: { label: 'Vidéos des Frères Poulain', ref: 'freres-poulain' },
-};
-
 function baseType(field: AddonConfigField): string {
   const type = Array.isArray(field.type)
     ? field.type.find((value) => value !== 'null')
@@ -158,7 +149,8 @@ export function InstanceForm({
     clearError(name);
   };
   const suffix = instance?.id ?? definition.id;
-  const example = labelExamples[definition.id] ?? { label: 'Ma source', ref: 'maison' };
+  // Exemple propre au module (`display.example`) : « Bus maison » n’a pas de sens pour l’heure.
+  const example = definition.display?.example ?? { label: 'Ma source', ref: 'maison' };
   const [initial] = useState(() =>
     JSON.stringify({ label, ref, owner, enabled, displayEnabled, form }),
   );
@@ -199,7 +191,7 @@ export function InstanceForm({
     .filter(Boolean)
     .join(' · ');
   // Laissé vide, l’identifiant est tiré du nom à l’enregistrement : la phrase le montre déjà.
-  const spoken = spokenPhrase(definition.id, slug(ref) || suggestRef(label), label);
+  const spoken = spokenPhrase(definition.display?.spoken, slug(ref) || suggestRef(label), label);
   const missingSelection = definition.search.some(
     (field) =>
       (definition.configSchema.required ?? []).includes(field.target) &&
@@ -537,9 +529,7 @@ function SearchPicker({
             onSelect({ id: '', label: '' });
           }}
         >
-          {definition.id === 'transit' && field.kind === 'route'
-            ? 'Toutes les directions'
-            : 'Effacer la sélection'}
+          {field.clearLabel ?? 'Effacer la sélection'}
         </Button>
       )}
       {selected ? (

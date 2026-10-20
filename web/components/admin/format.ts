@@ -62,27 +62,14 @@ export function duplicateRef<
   );
 }
 
-// Phrase qui désigne une source à la voix, propre à chaque module. Le mot du module répété
-// dans l’identifiant (« meteo-a-la-maison ») est retiré : on dit « la météo de maison ».
-const spokenForms: Record<string, { head: string; repeats: readonly string[] }> = {
-  weather: { head: 'la météo', repeats: ['meteo', 'temps', 'previsions'] },
-  transit: {
-    head: 'les prochains passages',
-    repeats: [
-      'bus',
-      'transport',
-      'transports',
-      'train',
-      'trains',
-      'rer',
-      'metro',
-      'tram',
-      'passages',
-    ],
-  },
-  clock: { head: 'l’heure', repeats: ['heure', 'horloge'] },
-  ragator: { head: 'les vidéos', repeats: ['videos', 'video', 'ragator'] },
-};
+/**
+ * Tournure de la phrase vocale, déclarée par le module (`display.spoken`). Le mot du module
+ * répété dans l’identifiant (« meteo-a-la-maison ») est retiré : on dit « la météo de maison ».
+ */
+export interface SpokenForm {
+  head: string;
+  repeats?: readonly string[];
+}
 
 const linkWords = new Set([
   'a',
@@ -120,19 +107,19 @@ function displayWords(ref: string, label: string | null | undefined): string[] {
  * suit l’identifiant, avec les majuscules et les accents du nom affiché quand ils correspondent.
  */
 export function spokenPhrase(
-  addonId: string,
+  form: SpokenForm | null | undefined,
   ref: string | null | undefined,
   label?: string | null,
 ): string | null {
   const words = displayWords(ref ?? '', label);
   if (words.length === 0) return null;
   const key = (word: string) => slug(word);
-  const form = spokenForms[addonId];
+  const repeats = form?.repeats ?? [];
   let rest = words;
   // « L’heure de Paris » : l’article devant le mot du module ne compte pas.
-  while (rest.length > 1 && linkWords.has(key(rest[0]!)) && form?.repeats.includes(key(rest[1]!)))
+  while (rest.length > 1 && linkWords.has(key(rest[0]!)) && repeats.includes(key(rest[1]!)))
     rest = rest.slice(1);
-  if (form && form.repeats.includes(key(rest[0]!))) {
+  if (repeats.includes(key(rest[0]!))) {
     rest = rest.slice(1);
     while (rest.length > 1 && linkWords.has(key(rest[0]!))) rest = rest.slice(1);
     if (rest.length === 0) rest = words;

@@ -214,6 +214,27 @@ const addon: AddonDefinition<TransitConfig, TransitData> = {
   apiVersion: 1,
   version: '2.1.1',
   sourceLabel: 'Île-de-France Mobilités',
+  display: {
+    name: 'Transports',
+    description: 'Prochains passages de vos lignes de bus et de train.',
+    icon: 'bus',
+    keywords: ['transports', 'bus', 'train', 'rer', 'métro', 'tram', 'passages', 'arrêt', 'ligne'],
+    example: { label: 'Bus pour le travail', ref: 'travail' },
+    spoken: {
+      head: 'les prochains passages',
+      repeats: [
+        'bus',
+        'transport',
+        'transports',
+        'train',
+        'trains',
+        'rer',
+        'metro',
+        'tram',
+        'passages',
+      ],
+    },
+  },
   secrets: [
     {
       name: 'primApiKey',
@@ -260,6 +281,7 @@ const addon: AddonDefinition<TransitConfig, TransitData> = {
         labelTarget: 'routeLabel',
         dependsOn: 'stopAreaId',
         placeholder: 'Ligne ou destination',
+        clearLabel: 'Toutes les directions',
       },
     ],
     async find(input, context) {

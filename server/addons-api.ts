@@ -212,6 +212,7 @@ export function registerAddons(
       ...instance,
       snapshot,
       error: instances.getError(instance.id),
+      preview: runtime.preview(instance),
     };
   }
 

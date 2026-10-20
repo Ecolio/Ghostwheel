@@ -2,6 +2,17 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { REF_PATTERN, refFromLabel } from '../shared/addons.js';
 import { duplicateRef, slug, spokenPhrase, typingSlug } from '../web/components/admin/format.js';
+import clock from '../addons/clock/index.js';
+import transit from '../addons/transit/index.js';
+import weather from '../addons/weather/index.js';
+
+// Tournures déclarées par les modules livrés (display.spoken) ; « autre » n'en déclare pas.
+const forms = {
+  weather: weather.display?.spoken,
+  clock: clock.display?.spoken,
+  transit: transit.display?.spoken,
+  autre: undefined,
+};
 
 const pattern = new RegExp(REF_PATTERN, 'u');
 
@@ -54,28 +65,31 @@ test('un doublon n’est signalé que pour le même propriétaire, hors de l’�
 });
 
 test('la phrase à prononcer reprend l’identifiant sans répéter le nom du module', () => {
-  assert.equal(spokenPhrase('weather', 'maison'), 'la météo de maison');
-  assert.equal(spokenPhrase('weather', 'meteo-a-la-maison'), 'la météo de maison');
-  assert.equal(spokenPhrase('clock', 'heure-de-paris'), 'l’heure de paris');
-  assert.equal(spokenPhrase('clock', 'atelier'), 'l’heure d’atelier');
-  assert.equal(spokenPhrase('transit', 'bus-pour-le-travail'), 'les prochains passages de travail');
-  assert.equal(spokenPhrase('autre', 'maison-2'), 'la source de maison 2');
-  assert.equal(spokenPhrase('weather', null), null);
-  assert.equal(spokenPhrase('weather', ''), null);
+  assert.equal(spokenPhrase(forms.weather, 'maison'), 'la météo de maison');
+  assert.equal(spokenPhrase(forms.weather, 'meteo-a-la-maison'), 'la météo de maison');
+  assert.equal(spokenPhrase(forms.clock, 'heure-de-paris'), 'l’heure de paris');
+  assert.equal(spokenPhrase(forms.clock, 'atelier'), 'l’heure d’atelier');
+  assert.equal(
+    spokenPhrase(forms.transit, 'bus-pour-le-travail'),
+    'les prochains passages de travail',
+  );
+  assert.equal(spokenPhrase(forms.autre, 'maison-2'), 'la source de maison 2');
+  assert.equal(spokenPhrase(forms.weather, null), null);
+  assert.equal(spokenPhrase(forms.weather, ''), null);
 });
 
 test('la phrase à prononcer reprend les mots du nom affiché quand ils correspondent', () => {
-  assert.equal(spokenPhrase('clock', 'heure-de-paris', 'Heure de Paris'), 'l’heure de Paris');
-  assert.equal(spokenPhrase('clock', 'l-heure-d-ete', 'L’heure d’Été'), 'l’heure d’Été');
-  assert.equal(spokenPhrase('weather', 'meteo-de-lyon', 'Météo de Lyon'), 'la météo de Lyon');
+  assert.equal(spokenPhrase(forms.clock, 'heure-de-paris', 'Heure de Paris'), 'l’heure de Paris');
+  assert.equal(spokenPhrase(forms.clock, 'l-heure-d-ete', 'L’heure d’Été'), 'l’heure d’Été');
+  assert.equal(spokenPhrase(forms.weather, 'meteo-de-lyon', 'Météo de Lyon'), 'la météo de Lyon');
   assert.equal(
-    spokenPhrase('weather', 'saint-etienne', 'Saint-Étienne'),
+    spokenPhrase(forms.weather, 'saint-etienne', 'Saint-Étienne'),
     'la météo de Saint Étienne',
   );
   // Suffixe ajouté pour éviter un doublon : le début suit le nom, la suite l’identifiant.
-  assert.equal(spokenPhrase('autre', 'maison-2', 'Maison'), 'la source de Maison 2');
+  assert.equal(spokenPhrase(forms.autre, 'maison-2', 'Maison'), 'la source de Maison 2');
   // Identifiant choisi à la main, sans rapport avec le nom : l’identifiant seul.
-  assert.equal(spokenPhrase('weather', 'maison', 'Météo de Lyon'), 'la météo de maison');
-  assert.equal(spokenPhrase('weather', 'lyon', null), 'la météo de lyon');
-  assert.equal(spokenPhrase('weather', null, 'Météo de Lyon'), null);
+  assert.equal(spokenPhrase(forms.weather, 'maison', 'Météo de Lyon'), 'la météo de maison');
+  assert.equal(spokenPhrase(forms.weather, 'lyon', null), 'la météo de lyon');
+  assert.equal(spokenPhrase(forms.weather, null, 'Météo de Lyon'), null);
 });

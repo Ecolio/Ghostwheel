@@ -4,17 +4,12 @@ import {
   Plus,
   RefreshCw,
   Trash2,
-  CloudSun,
-  Clock,
-  Bus,
-  Plug,
   Star,
   Settings2,
   KeyRound,
   ExternalLink,
   TriangleAlert,
   Webhook,
-  Clapperboard,
 } from 'lucide-react';
 import type { DevicesStatus, MirrorState, Profile } from '../../../shared/types';
 import { api, errorMessage } from '../../api';
@@ -33,6 +28,7 @@ import { WebSearchSettings } from './WebSearchSettings';
 import { CardSettings } from './CardSettings';
 import { Label } from '../ui/label';
 import { InstanceForm } from './AddonForm';
+import { addonIcon } from './addon-icons';
 import { SecretField } from './Secrets';
 import { useAdminResource } from './useAdminResource';
 import { useConfirmations, waitingConfirmations } from './useConfirmations';
@@ -56,48 +52,20 @@ import { Alert, AlertDescription } from '../ui/alert';
 
 const FAVORITES_KEY = 'cornelius.modules.favorites';
 
-function preview(instance: AddonInstanceView): string | null {
-  const data = instance.snapshot?.data;
-  if (!data) return null;
-  const days = data.days as unknown[] | undefined;
-  if (days) return `${String(data.city ?? '')} · ${plural(days.length, 'jour')}`;
-  const departures = data.departures as unknown[] | undefined;
-  if (departures)
-    return `${String(data.lineLabel ?? '')} → ${String(data.direction ?? '')} · ${plural(departures.length, 'passage')}`;
-  if (data.kind === 'status' && typeof data.videos === 'number')
-    return `${String(data.collection ?? 'Tout le corpus')} · ${plural(data.videos, 'vidéo')}`;
-  return null;
+/**
+ * Nom, description, icône et mots-clés d'un module : ceux qu'il déclare (`display`), sinon
+ * son `sourceLabel` et la prise par défaut. Livrés et externes sont traités pareil.
+ */
+function moduleDisplay(definition: AddonDefinitionView) {
+  const display = definition.display;
+  return {
+    name: display?.name ?? definition.sourceLabel,
+    description: display?.description ?? 'Source d’informations pour la conversation.',
+    icon: addonIcon(display?.icon),
+    keywords: (display?.keywords ?? []).join(' '),
+    group: display?.group ?? 'daily',
+  };
 }
-
-const moduleLabels: Record<
-  string,
-  { name: string; description: string; icon: typeof Plug; keywords: string }
-> = {
-  clock: {
-    name: 'Heure',
-    description: 'Heure locale et date, avec le fuseau horaire de votre choix.',
-    icon: Clock,
-    keywords: 'heure horloge date fuseau horaire',
-  },
-  weather: {
-    name: 'Météo',
-    description: 'Prévisions pour les lieux qui comptent pour vous.',
-    icon: CloudSun,
-    keywords: 'météo temps prévisions pluie soleil température',
-  },
-  transit: {
-    name: 'Transports',
-    description: 'Prochains passages de vos lignes de bus et de train.',
-    icon: Bus,
-    keywords: 'transports bus train rer métro tram passages arrêt ligne',
-  },
-  ragator: {
-    name: 'Ragator',
-    description: 'Réponses citées tirées des vidéos YouTube, avec l’instant qui les prouve.',
-    icon: Clapperboard,
-    keywords: 'ragator vidéos youtube recherche question frères poulain corpus',
-  },
-};
 
 type GroupId = 'daily' | 'home' | 'capabilities';
 
@@ -119,7 +87,7 @@ const moduleGroups: { id: GroupId; title: string; description: string }[] = [
   },
 ];
 
-// Ordre fixe du groupe « Au quotidien » ; un module ajouté dans addons/ vient ensuite.
+// Les modules livrés ouvrent « Au quotidien », dans cet ordre ; les autres suivent par nom.
 const dailyOrder = ['clock', 'weather', 'transit', 'ragator'];
 
 // Modules intégrés : ils ne dépendent pas d’une personne et se retrouvent par mots-clés.
@@ -252,12 +220,12 @@ export function Addons({
     matchesSearch(search, entry.name, entry.keywords) &&
     (!entry.householdOnly || owner === 'all' || owner === 'household');
   const definitionVisible = (definition: AddonDefinitionView) => {
-    const display = moduleLabels[definition.id];
+    const display = moduleDisplay(definition);
     return matchesSearch(
       search,
-      display?.name,
-      display?.keywords,
-      display?.description,
+      display.name,
+      display.keywords,
+      display.description,
       definition.sourceLabel,
       ...catalog.instances
         .filter((instance) => instance.addonId === definition.id)
@@ -270,21 +238,25 @@ export function Addons({
   const definitions = [...catalog.definitions].sort(
     (a, b) =>
       (dailyOrder.indexOf(a.id) + 1 || dailyOrder.length + 1) -
-      (dailyOrder.indexOf(b.id) + 1 || dailyOrder.length + 1),
+        (dailyOrder.indexOf(b.id) + 1 || dailyOrder.length + 1) ||
+      moduleDisplay(a).name.localeCompare(moduleDisplay(b).name, 'fr'),
   );
+  const moduleEntry = (definition: AddonDefinitionView): Entry => ({
+    id: definition.id,
+    group: moduleDisplay(definition).group,
+    builtIn: null,
+    definition,
+  });
+  // Dans « Maison », un module vient après Home Assistant et les commandes HTTP.
   const entries: Entry[] = [
-    ...definitions.map((definition): Entry => ({
-      id: definition.id,
-      group: 'daily',
-      builtIn: null,
-      definition,
-    })),
+    ...definitions.filter((d) => moduleDisplay(d).group === 'daily').map(moduleEntry),
     ...builtIns.map((entry): Entry => ({
       id: entry.id,
       group: entry.group,
       builtIn: entry,
       definition: null,
     })),
+    ...definitions.filter((d) => moduleDisplay(d).group === 'home').map(moduleEntry),
   ];
   const visible = (entry: Entry) =>
     entry.builtIn ? builtInVisible(entry.builtIn) : definitionVisible(entry.definition);
@@ -317,7 +289,7 @@ export function Addons({
       return <ImageGenerationSettings key={entry.id} {...props} status={status} run={run} />;
     }
     const definition = entry.definition;
-    const display = moduleLabels[definition.id];
+    const display = moduleDisplay(definition);
     return (
       <AddonCard
         key={entry.id}
@@ -333,7 +305,7 @@ export function Addons({
         run={run}
         onChanged={reload}
         defaultProfileId={owner === 'all' || owner === 'household' ? null : owner}
-        action={favoriteButton(entry.id, display?.name ?? definition.sourceLabel)}
+        action={favoriteButton(entry.id, display.name)}
       />
     );
   };
@@ -514,12 +486,7 @@ function AddonCard({
   onChanged: () => Promise<void>;
 }) {
   const [adding, setAdding] = useState(false);
-  const display = moduleLabels[definition.id] ?? {
-    name: definition.sourceLabel,
-    description: 'Source d’informations pour la conversation.',
-    icon: Plug,
-    keywords: '',
-  };
+  const display = moduleDisplay(definition);
   const missingSecrets = (definition.secrets ?? []).filter((secret) => !secret.configured);
   const status = moduleStatus(instances, missingSecrets.length);
   const blockedId = `module-${definition.id}-blocked`;
@@ -675,8 +642,9 @@ function InstanceRow({
   const [deleting, setDeleting] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testNote, setTestNote] = useState<{ text: string; failed: boolean } | null>(null);
-  const summary = preview(instance);
-  const spoken = spokenPhrase(definition.id, instance.ref, instance.label);
+  // Aperçu calculé par le serveur à partir de la carte du module (« 20 vélos · Gare »).
+  const summary = instance.preview ?? null;
+  const spoken = spokenPhrase(definition.display?.spoken, instance.ref, instance.label);
 
   async function test() {
     setTesting(true);

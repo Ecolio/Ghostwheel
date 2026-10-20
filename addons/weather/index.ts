@@ -113,6 +113,14 @@ const addon: AddonDefinition<WeatherConfig, WeatherData> = {
   apiVersion: 1,
   version: '1.1.0',
   sourceLabel: 'Météo Concept',
+  display: {
+    name: 'Météo',
+    description: 'Prévisions pour les lieux qui comptent pour vous.',
+    icon: 'cloud-sun',
+    keywords: ['météo', 'temps', 'prévisions', 'pluie', 'soleil', 'température'],
+    example: { label: 'Météo à la maison', ref: 'maison' },
+    spoken: { head: 'la météo', repeats: ['meteo', 'temps', 'previsions'] },
+  },
   secrets: [
     {
       name: 'meteoConceptToken',

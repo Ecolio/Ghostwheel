@@ -1,3 +1,5 @@
+import type { AddonDisplay } from '../../../shared/addons';
+
 export interface RunOptions {
   /** Demandes d’un même réglage, regroupées ; le libellé par défaut. */
   key?: string;
@@ -53,6 +55,7 @@ export interface AddonSearchFieldView {
   labelTarget?: string;
   dependsOn?: string;
   placeholder?: string;
+  clearLabel?: string;
 }
 
 export interface AddonSearchResultView {
@@ -74,6 +77,8 @@ export interface AddonDefinitionView {
   id: string;
   version: string;
   sourceLabel: string;
+  /** Présentation déclarée par le module ; null ou absente : son sourceLabel et la prise. */
+  display?: AddonDisplay | null;
   configVersion: number;
   configSchema: AddonConfigSchema;
   configDefaults: Record<string, unknown>;
@@ -117,6 +122,8 @@ export interface AddonInstanceView {
   updatedAt: number;
   snapshot: AddonSnapshotView | null;
   error: AddonErrorView | null;
+  /** Aperçu du dernier relevé, tiré de la carte du module. Absent d'un serveur plus ancien. */
+  preview?: string | null;
 }
 
 export interface AddonCatalog {

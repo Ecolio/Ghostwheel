@@ -299,6 +299,8 @@ export interface AddonSearchField {
   /** Champ de configuration qui doit être renseigné avant de chercher. */
   dependsOn?: string;
   placeholder?: string;
+  /** Libellé du bouton qui efface un choix facultatif (« Toutes les directions »). */
+  clearLabel?: string;
 }
 
 export interface AddonSearchInput {
