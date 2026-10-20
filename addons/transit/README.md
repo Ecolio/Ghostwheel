@@ -6,6 +6,7 @@ Le module Transports annonce les prochains passages à un arrêt de bus, de tram
 
 - Il répond à « mon bus ? » ou « prochain passage ? » et affiche une carte avec les trois prochains passages (« Prochain », « Suivant », « Puis »), en minutes et à l’heure prévue.
 - Sur la carte, un horaire sans temps réel s’affiche comme les autres ; à l’oral, Cornelius précise « horaire théorique » pour le prochain passage. Les passages supprimés sont comptés à l’oral.
+- Quand la ligne n’a aucun passage prévu (la nuit, une interruption), Cornelius dit « Aucun passage prévu pour le moment » plutôt qu’une panne.
 - Les horaires restent en cache une minute.
 
 ## Jeton requis
@@ -33,7 +34,7 @@ Dans **Modules → Transports → Ajouter une source**, rien ne se tape à la ma
 
 ## Outil vocal et affichage permanent
 
-L’outil s’appelle `transit__read`. Avec « Afficher en permanence sur le miroir », le miroir montre, sous le nom de la source, la ligne, la direction et trois passages au plus.
+L’outil s’appelle `transit__read`. Avec « Afficher en permanence sur le miroir », le miroir montre, sous le nom de la source, la ligne, la direction et trois passages au plus. Les minutes d’attente diminuent chaque minute, sans attendre une nouvelle collecte.
 
 ## Voir aussi
 

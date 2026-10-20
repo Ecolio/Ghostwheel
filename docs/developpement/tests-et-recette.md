@@ -75,9 +75,10 @@ Le générateur du mot d’appel est un projet séparé, avec ses propres tests 
 | `tests/*.test.ts` | Un fichier par sujet : `controller`, `live`, `api`, `storage`, `backups`, `memory*`, `vision`, `image-generation*`, `home-assistant*`, `agents*`, `addons*`, `actions*`, `opening`, `readiness`, `audio*`… |
 | `tests/helpers/` | Faux serveurs Home Assistant et Hermes ; `demo-addon/`, module de démonstration des tests. |
 | `tests/e2e/` | Parcours Playwright (`*.spec.ts`) ; `env.ts` fixe le port et le dossier des captures. |
+| `tests/e2e/modules/` | Seul dossier de modules externes des parcours (`CORNELIUS_MODULES_DIR` de `playwright.config.ts`) : le module `formulaire` exerce les listes déroulantes et les listes répétées. Un `cornelius-modules` cloné à côté n’entre pas dans les parcours. |
 | `tests/python/` | Tests `unittest` de `perception/` et `image_generation/`. |
 | `tests/recette/protocol.json` | Protocole de la recette manuelle (questions, interruptions, nombre d’approches et de passages). |
-| `addons/<id>/*.test.ts` | Tests propres à un module livré, lancés par `npm test`. Ceux des modules externes : `npm run test:modules`. |
+| `addons/<id>/*.test.ts` | Tests propres à un module livré, lancés par `npm test`. Ceux des modules externes : `npm run test:modules`. Les deux s’écrivent avec `createTestModule` de `#cornelius/testing` ([référence](../modules/reference.md#tester-un-module)). |
 
 Tests ciblés par fonction :
 

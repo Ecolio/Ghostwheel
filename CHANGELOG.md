@@ -6,6 +6,27 @@ Le fonctionnement actuel est décrit dans la [documentation](docs/README.md). Ce
 
 ## Non publié
 
+### 2026-10-20 : contrat des modules 0.2.0
+
+Cornelius passe en 0.2.0. Ces ajouts restent compatibles `apiVersion: 1` ; un module qui s’en sert déclare `minCoreVersion: '0.2.0'`.
+
+**Ajouté**
+
+- Affichage permanent recalculé à l’heure dite (`refreshAt`), sans réseau : l’horloge à chaque minute, le compte à rebours des bus, la météo à minuit.
+- Arguments typés des outils vocaux (entier borné, choix, oui-non), contrôlés par le cœur et passés aux modules : « on fait quoi samedi ? », « et le SP98 ? ».
+- Fuseau horaire du foyer donné aux modules (`CORNELIUS_TIMEZONE`, Europe/Paris par défaut).
+- Les modules se présentent eux-mêmes dans l’administration (`display`) : nom, description, icône, groupe, mots-clés, exemple et phrase vocale. L’aperçu de chaque source vient de sa carte.
+- Formulaire des sources : listes déroulantes (`enum`, `oneOf`) et listes répétées (`type: "array"`), erreurs sous chaque case.
+- Client HTTP des modules : redirections GET suivies (trois au plus, sans passage à http ni jeton renvoyé ailleurs), encodage respecté, réponse coupée signalée (`truncated`), User-Agent par défaut, cache partagé facultatif (`cacheMs`).
+- `createTestModule` dans `#cornelius/testing` : un module se teste en quelques lignes, contrat vérifié par `contract()`.
+
+**Modifié**
+
+- Un relevé vide est présenté par le module s’il sait le dire (« Aucun passage prévu »), avec le statut « empty » ; sinon la phrase générique, comme avant.
+- Fraîcheur d’un relevé bornée à 24 heures au lieu d’une.
+- Modules livrés : l’horloge, la météo (jours passés écartés, changement de jour à minuit) et les bus (compte à rebours, « aucun passage ») suivent l’heure du foyer.
+- `npm test` et `npm run test:modules` n’affichent plus l’avertissement de SQLite.
+
 ### 2026-10-20 : modules externes
 
 **Ajouté**

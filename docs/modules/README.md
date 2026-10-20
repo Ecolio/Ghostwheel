@@ -37,7 +37,9 @@ La rubrique **Modules** range les modules en trois groupes.
 | Capacités de Cornelius | Vision | Description de ce que voit la caméra, calculée sur place | [La vision locale](../fonctionnalites/vision-locale.md) |
 | Capacités de Cornelius | Génération d’image | Images créées sur cet ordinateur ou avec OpenAI | [La génération d’images](../fonctionnalites/generation-d-images.md) |
 
-Seuls Heure, Météo, Transports et Ragator reçoivent des sources. Les autres se règlent une fois pour tout le miroir.
+Heure, Météo, Transports, Ragator et les modules externes reçoivent des sources. Les autres se règlent une fois pour tout le miroir.
+
+Un module externe se présente comme un module livré : son nom, son icône, sa description et son groupe (« Au quotidien » ou « Maison ») viennent de lui. Sous chaque source, un aperçu reprend son dernier relevé (« 20 vélos · Mairie - Opéra »).
 
 En haut de l’onglet, « Sources de » montre les sources de tout le monde, du foyer ou d’une personne. « Rechercher un module ou une source » filtre la liste. Une étoile place un module en tête de son groupe, dans ce navigateur.
 
@@ -60,7 +62,9 @@ Redémarrez ensuite Cornelius : les modules ne sont lus qu’au démarrage. Un m
 ## Ajouter une source
 
 1. Dans le module, cliquez sur **Ajouter une source**.
-2. Remplissez les réglages propres au module (voir sa fiche). Une étoile signale un champ obligatoire.
+2. Remplissez les réglages propres au module (voir sa fiche). Une étoile signale un champ obligatoire. Selon le module, un réglage peut être :
+   - une liste déroulante (une zone scolaire, un carburant), avec « Aucun » ou « Tous » s’il est facultatif ;
+   - une liste à compléter, une ligne par élément (un bac et ses jours de ramassage, par exemple) : **Ajouter** ajoute une ligne, la corbeille la retire. Une erreur s’affiche sous la case concernée.
 3. Donnez un **Nom affiché**, par exemple « Heure de Paris ». Sous le champ, l’administration indique la phrase à prononcer : « Pour l’obtenir à la voix, dites : « l’heure de Paris ». »
 4. Si besoin, ouvrez **Options** :
    - **Identifiant** : le mot court qui désigne la source à la voix. Laissé vide, il est déduit du nom : accents retirés, minuscules, tirets à la place des espaces (« Heure de Paris » donne `heure-de-paris`). S’il est déjà pris pour ce module, un suffixe est ajouté (`maison-2`). Deux sources du même propriétaire ne peuvent pas avoir le même identifiant ;
@@ -118,7 +122,7 @@ Une source désactivée n’est jamais utilisée.
 
 ## L’affichage permanent
 
-Heure, Météo et Transports peuvent rester affichés sur le miroir, sans rien demander. Dans la source, activez **Afficher en permanence sur le miroir** (désactivé par défaut). La source porte alors le badge « Affichage permanent ».
+Heure, Météo, Transports et la plupart des modules externes peuvent rester affichés sur le miroir, sans rien demander. Dans la source, activez **Afficher en permanence sur le miroir** (désactivé par défaut). La source porte alors le badge « Affichage permanent ».
 
 Ce qui s’affiche, et quand :
 
@@ -132,7 +136,7 @@ Ce qui le retire :
 - le départ confirmé de la personne, la perte de sa reconnaissance, une panne de la caméra ou la fermeture de la page du miroir ;
 - le mode vie privée, dès que plusieurs personnes sont présentes : toute la zone est masquée.
 
-Les données se renouvellent seules, à la fin de leur durée de validité, tant que la source est visible. Personne devant le miroir : aucune collecte. En cas de souci, le miroir indique « Actualisation… », « Aucune donnée disponible », « Source indisponible » ou « Dernière donnée connue » avec son ancienneté. Après une panne, les nouvelles tentatives s’espacent : 30 secondes, puis 1, 2 et 4 minutes, enfin 5 minutes au plus.
+Les données se renouvellent seules, à la fin de leur durée de validité, tant que la source est visible. Ce qui dépend de l’heure suit l’heure sans attendre : l’horloge change à chaque minute, le compte à rebours des bus aussi, la météo passe au jour suivant à minuit, « Ce soir » apparaît à 17 h pour les poubelles. Les heures sont celles du foyer (`CORNELIUS_TIMEZONE`, Europe/Paris par défaut). Personne devant le miroir : aucune collecte. En cas de souci, le miroir indique « Actualisation… », « Aucune donnée disponible », « Source indisponible » ou « Dernière donnée connue » avec son ancienneté. Après une panne, les nouvelles tentatives s’espacent : 30 secondes, puis 1, 2 et 4 minutes, enfin 5 minutes au plus.
 
 ## Les commandes HTTP
 

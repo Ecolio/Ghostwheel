@@ -26,7 +26,7 @@ L’outil s’appelle `clock__read`. La date reste dite à l’oral même quand 
 
 ## Affichage permanent
 
-Activez « Afficher en permanence sur le miroir » dans la source. Le miroir montre l’heure en grand, et la date si elle est demandée. L’heure avance d’elle-même : le module ne garde en cache que ses réglages (une heure), pas l’heure. La date de relevé n’est pas affichée, sauf si la source passe en « Dernière donnée connue ».
+Activez « Afficher en permanence sur le miroir » dans la source. Le miroir montre l’heure en grand, et la date si elle est demandée. L’heure avance d’elle-même : elle se recalcule à chaque minute (à chaque seconde si les secondes sont affichées), sans nouvelle collecte ; le module ne garde en cache que ses réglages (une heure), pas l’heure. La date de relevé n’est pas affichée, sauf si la source passe en « Dernière donnée connue ».
 
 Désactiver l’affichage garde la réponse vocale. Désactiver ou supprimer la source retire aussi la réponse vocale.
 

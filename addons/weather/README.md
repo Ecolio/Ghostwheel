@@ -38,7 +38,7 @@ Il faut un code INSEE, ou bien la latitude et la longitude. Si les deux sont don
 
 ## Outil vocal et affichage permanent
 
-L’outil s’appelle `weather__read`. Avec « Afficher en permanence sur le miroir », le miroir montre les températures du jour, la commune et le temps prévu.
+L’outil s’appelle `weather__read`. Avec « Afficher en permanence sur le miroir », le miroir montre les températures du jour, la commune et le temps prévu. À minuit (heure du foyer), il passe aux prévisions du lendemain sans attendre une nouvelle collecte : un relevé de la veille ne montre jamais une journée passée.
 
 ## Voir aussi
 
