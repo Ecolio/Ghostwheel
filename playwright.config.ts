@@ -19,8 +19,9 @@ export default defineConfig({
       CORNELIUS_DATABASE: ':memory:',
       CORNELIUS_ADMIN_PASSWORD: 'admin-browser-test-only-credentials-1234',
       CORNELIUS_LOGIN_RATE_LIMIT: '200',
-      // Les parcours ne dépendent pas du dépôt cornelius-modules éventuellement cloné à côté.
-      CORNELIUS_MODULES_DIR: '.local/e2e-sans-modules',
+      // Les parcours ne dépendent pas du dépôt cornelius-modules éventuellement cloné à côté :
+      // leur seul module externe est celui d'essai du formulaire.
+      CORNELIUS_MODULES_DIR: 'tests/e2e/modules',
     },
   },
   use: {

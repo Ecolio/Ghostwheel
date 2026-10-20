@@ -35,6 +35,17 @@ export interface AddonConfigField {
   title?: string;
   description?: string;
   examples?: unknown[];
+  /** Choix proposés : une liste déroulante, valeurs affichées telles quelles. */
+  enum?: unknown[];
+  /** Choix proposés avec leur libellé : `{ const, title }`. */
+  oneOf?: { const?: unknown; title?: string }[];
+  /** Liste répétée : le schéma d’un élément (texte, choix, ou petit objet). */
+  items?: AddonConfigField;
+  minItems?: number;
+  maxItems?: number;
+  /** Propriétés d’un élément objet d’une liste, une colonne chacune. */
+  properties?: Record<string, AddonConfigField>;
+  required?: string[];
 }
 
 /** Erreur de réglage rattachée à un champ (`path` vide : le réglage entier). */

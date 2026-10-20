@@ -277,3 +277,59 @@ test('formulaire de source : champs du module d’abord, interrupteurs et liste 
   await expect(form.locator('summary').filter({ hasText: 'Options' })).toContainText('le foyer');
   await page.screenshot({ path: `${screenshots}/admin-modules-clock-form.png`, fullPage: true });
 });
+
+test('formulaire de source : listes déroulantes, choix facultatif et liste répétée', async ({
+  page,
+}) => {
+  await page.goto('/admin');
+  await page
+    .getByLabel('Mot de passe administrateur')
+    .fill('admin-browser-test-only-credentials-1234');
+  await page.getByRole('button', { name: 'Ouvrir cet espace' }).click();
+  await page.getByRole('button', { name: 'Modules', exact: true }).click();
+  // Module externe d'essai (tests/e2e/modules) : rangé dans « Maison » par son display.
+  const home = page.getByRole('region', { name: 'Maison' });
+  await home.locator('#module-formulaire > summary').click();
+  await home.getByRole('button', { name: 'Ajouter une source' }).click();
+  const form = page.locator('#module-formulaire form');
+
+  const jour = form.getByRole('combobox', { name: 'Jour', exact: true });
+  await expect(jour.locator('option')).toHaveText(['Lundi', 'Mardi']);
+  await jour.selectOption('mardi');
+  const carburant = form.getByRole('combobox', { name: 'Carburant', exact: true });
+  await expect(carburant).toHaveValue('');
+  await expect(carburant.locator('option')).toHaveText(['Tous', 'Gazole', 'SP98']);
+  await carburant.selectOption('sp98');
+
+  const bacs = form.getByRole('group', { name: 'Bacs' });
+  await expect(bacs.getByRole('textbox', { name: 'Jours' })).toHaveValue('lundi');
+  await expect(bacs.getByRole('button', { name: 'Retirer la ligne 1' })).toBeDisabled();
+  await bacs.getByRole('button', { name: 'Ajouter' }).click();
+  await bacs.getByRole('combobox', { name: 'Bac' }).nth(1).selectOption('emballages');
+  await form.getByLabel('Nom affiché').fill('Essai du formulaire');
+  // Deuxième ligne sans jours : l'erreur du serveur s'affiche sous sa cellule.
+  await form.getByRole('button', { name: 'Ajouter', exact: true }).last().click();
+  await expect(bacs.getByText('Champ obligatoire.')).toBeVisible();
+  await bacs.getByRole('textbox', { name: 'Jours' }).nth(1).fill('mercredi semaines paires');
+  await expect(bacs.getByText('Champ obligatoire.')).toBeHidden();
+  await bacs.getByRole('button', { name: 'Ajouter' }).click();
+  await expect(bacs.getByRole('button', { name: 'Ajouter' })).toBeDisabled();
+  await bacs.getByRole('button', { name: 'Retirer la ligne 3' }).click();
+  await page.screenshot({ path: `${screenshots}/admin-modules-list-form.png`, fullPage: true });
+  await form.getByRole('button', { name: 'Ajouter', exact: true }).last().click();
+  await expect(page.locator('#module-formulaire form')).toHaveCount(0);
+
+  const catalog = await (await page.request.get('/api/admin/addons')).json();
+  const saved = catalog.instances.find(
+    (instance: { addonId: string }) => instance.addonId === 'formulaire',
+  );
+  expect(saved.config).toEqual({
+    jour: 'mardi',
+    carburant: 'sp98',
+    bacs: [
+      { bac: 'verre', jours: 'lundi' },
+      { bac: 'emballages', jours: 'mercredi semaines paires' },
+    ],
+  });
+  await page.request.delete(`/api/admin/addons/instances/${saved.id}`, { headers: { origin } });
+});

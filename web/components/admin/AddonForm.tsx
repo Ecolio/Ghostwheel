@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Check, Search } from 'lucide-react';
+import { Check, Plus, Search, Trash2 } from 'lucide-react';
 import type { Profile } from '../../../shared/types';
 import { refFromLabel } from '../../../shared/addons';
 import { api, errorMessage } from '../../api';
@@ -39,7 +39,91 @@ function baseType(field: AddonConfigField): string {
 }
 
 function isNullable(field: AddonConfigField): boolean {
-  return Array.isArray(field.type) ? field.type.includes('null') : false;
+  return (
+    (Array.isArray(field.type) && field.type.includes('null')) ||
+    !!field.enum?.includes(null) ||
+    !!field.oneOf?.some((choice) => choice.const === null)
+  );
+}
+
+type Choice = { value: string; label: string };
+
+/** Choix d’une liste déroulante : `oneOf` avec libellés, sinon `enum`, sinon aucun. */
+function choicesOf(field: AddonConfigField): Choice[] | null {
+  if (field.oneOf?.length && field.oneOf.every((choice) => 'const' in choice))
+    return field.oneOf
+      .filter((choice) => choice.const !== null)
+      .map((choice) => ({
+        value: String(choice.const),
+        label: choice.title ?? String(choice.const),
+      }));
+  if (field.enum?.length)
+    return field.enum
+      .filter((value) => value !== null)
+      .map((value) => ({ value: String(value), label: String(value) }));
+  return null;
+}
+
+/** Libellé du choix « vide » d’une liste déroulante facultative. */
+function noneLabel(field: AddonConfigField): string {
+  return field.oneOf?.find((choice) => choice.const === null)?.title ?? 'Aucun';
+}
+
+/** Texte saisi vers la valeur du réglage, selon le type du champ. */
+function fromText(field: AddonConfigField, text: string): unknown {
+  const raw = text.trim();
+  const type = baseType(field);
+  if (raw === '') return isNullable(field) || type !== 'string' ? null : '';
+  if (type === 'integer') return Number(raw);
+  if (type === 'number') {
+    // « 45,75 » comme « 45.75 » ; une saisie illisible part telle quelle et le contrôle du
+    // serveur la signale sous le champ (« Nombre attendu. »).
+    const value = parseDecimal(raw);
+    return Number.isFinite(value) ? value : raw;
+  }
+  if (type === 'boolean') return raw === 'true';
+  return raw;
+}
+
+/** Valeur du réglage vers le texte affiché ; un nombre décimal avec la virgule. */
+function toText(field: AddonConfigField, value: unknown): string {
+  if (value === null || value === undefined) return '';
+  return baseType(field) === 'number' && typeof value === 'number'
+    ? decimalText(value)
+    : String(value);
+}
+
+/**
+ * Une liste répétée se garde dans le formulaire en JSON : un tableau de textes, ou de lignes
+ * `{ propriété: texte }` pour une liste d’objets.
+ */
+type ListRow = string | Record<string, string>;
+
+function itemProperties(field: AddonConfigField): [string, AddonConfigField][] | null {
+  const item = field.items ?? {};
+  return baseType(item) === 'object' ? Object.entries(item.properties ?? {}) : null;
+}
+
+function listRows(text: string): ListRow[] {
+  try {
+    const rows = JSON.parse(text || '[]') as unknown;
+    return Array.isArray(rows) ? (rows as ListRow[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function newRow(field: AddonConfigField): ListRow {
+  const blank = (cell: AddonConfigField) =>
+    baseType(cell) === 'boolean'
+      ? 'false'
+      : !isNullable(cell)
+        ? (choicesOf(cell)?.[0]?.value ?? '')
+        : '';
+  const properties = itemProperties(field);
+  return properties
+    ? Object.fromEntries(properties.map(([key, cell]) => [key, blank(cell)]))
+    : blank(field.items ?? {});
 }
 
 /** Libellé et exemple viennent du config.schema.json du module (title, examples). */
@@ -65,13 +149,22 @@ function toForm(
   const form: Record<string, string> = {};
   for (const [name, field] of Object.entries(definition.configSchema.properties ?? {})) {
     const value = config[name];
-    form[name] =
-      value === null || value === undefined
-        ? ''
-        : // Un nombre décimal s’affiche avec la virgule, comme il se saisit.
-          baseType(field) === 'number' && typeof value === 'number'
-          ? decimalText(value)
-          : String(value);
+    if (baseType(field) === 'array') {
+      const properties = itemProperties(field);
+      const items = Array.isArray(value) ? value : [];
+      form[name] = JSON.stringify(
+        items.map((item): ListRow =>
+          properties
+            ? Object.fromEntries(
+                properties.map(([key, cell]) => [
+                  key,
+                  toText(cell, (item as Record<string, unknown> | null)?.[key]),
+                ]),
+              )
+            : toText(field.items ?? {}, item),
+        ),
+      );
+    } else form[name] = toText(field, value);
   }
   return form;
 }
@@ -82,22 +175,19 @@ function toConfig(
 ): Record<string, unknown> {
   const config: Record<string, unknown> = {};
   for (const [name, field] of Object.entries(definition.configSchema.properties ?? {})) {
-    const raw = (form[name] ?? '').trim();
-    const type = baseType(field);
-    if (raw === '') {
-      config[name] = isNullable(field) || type !== 'string' ? null : '';
-    } else if (type === 'integer') {
-      config[name] = Number(raw);
-    } else if (type === 'number') {
-      // « 45,75 » comme « 45.75 » ; une saisie illisible part telle quelle et le contrôle du
-      // serveur la signale sous le champ (« Nombre attendu. »).
-      const value = parseDecimal(raw);
-      config[name] = Number.isFinite(value) ? value : raw;
-    } else if (type === 'boolean') {
-      config[name] = raw === 'true';
-    } else {
-      config[name] = raw;
-    }
+    if (baseType(field) === 'array') {
+      const properties = itemProperties(field);
+      config[name] = listRows(form[name] ?? '').map((row) =>
+        properties
+          ? Object.fromEntries(
+              properties.map(([key, cell]) => [
+                key,
+                fromText(cell, typeof row === 'string' ? '' : (row[key] ?? '')),
+              ]),
+            )
+          : fromText(field.items ?? {}, typeof row === 'string' ? row : ''),
+      );
+    } else config[name] = fromText(field, form[name] ?? '');
   }
   return config;
 }
@@ -137,11 +227,15 @@ export function InstanceForm({
   // Erreurs par champ renvoyées par le serveur ; un champ modifié perd la sienne.
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [checking, setChecking] = useState(false);
+  // Un champ modifié perd aussi les erreurs de ses lignes (« jours/0/bac »).
   const clearError = (...names: string[]) =>
     setErrors((current) => {
-      if (![...names, ''].some((name) => name in current)) return current;
+      const stale = Object.keys(current).filter(
+        (path) => path === '' || names.some((name) => path === name || path.startsWith(`${name}/`)),
+      );
+      if (stale.length === 0) return current;
       const next = { ...current };
-      for (const name of [...names, '']) delete next[name];
+      for (const path of stale) delete next[path];
       return next;
     });
   const setField = (name: string, value: string) => {
@@ -315,19 +409,31 @@ export function InstanceForm({
             key={switches ? 'switches' : 'fields'}
             className={switches ? 'grid gap-3 sm:grid-cols-2' : 'grid gap-4 sm:grid-cols-2'}
           >
-            {fields.map(([name, field]) => (
-              <ConfigField
-                key={name}
-                autoFocus={definition.search.length === 0 && name === moduleFields[0]}
-                id={`${name}-${suffix}`}
-                name={name}
-                field={field}
-                required={(definition.configSchema.required ?? []).includes(name)}
-                value={form[name] ?? ''}
-                error={errors[name]}
-                onChange={(value) => setField(name, value)}
-              />
-            ))}
+            {fields.map(([name, field]) =>
+              baseType(field) === 'array' ? (
+                <ListField
+                  key={name}
+                  id={`${name}-${suffix}`}
+                  name={name}
+                  field={field}
+                  value={form[name] ?? '[]'}
+                  errorAt={(path) => errors[path]}
+                  onChange={(value) => setField(name, value)}
+                />
+              ) : (
+                <ConfigField
+                  key={name}
+                  autoFocus={definition.search.length === 0 && name === moduleFields[0]}
+                  id={`${name}-${suffix}`}
+                  name={name}
+                  field={field}
+                  required={(definition.configSchema.required ?? []).includes(name)}
+                  value={form[name] ?? ''}
+                  error={errors[name]}
+                  onChange={(value) => setField(name, value)}
+                />
+              ),
+            )}
           </div>
         );
       })}
@@ -675,6 +781,14 @@ function ConfigField({
             </optgroup>
           ))}
         </NativeSelect>
+      ) : choicesOf(field) ? (
+        <ChoiceSelect
+          id={id}
+          field={field}
+          value={value}
+          autoFocus={autoFocus}
+          onChange={onChange}
+        />
       ) : type === 'number' ? (
         <DecimalInput
           id={id}
@@ -702,5 +816,221 @@ function ConfigField({
         />
       )}
     </Field>
+  );
+}
+
+/** Liste déroulante d’un champ à choix ; « Aucun » en tête si le champ est facultatif. */
+function ChoiceSelect({
+  id,
+  field,
+  value,
+  autoFocus = false,
+  invalid = false,
+  onChange,
+}: {
+  id: string;
+  field: AddonConfigField;
+  value: string;
+  autoFocus?: boolean;
+  invalid?: boolean;
+  onChange: (value: string) => void;
+}) {
+  const choices = choicesOf(field) ?? [];
+  // Une valeur enregistrée qui n’est plus proposée reste visible, pour être corrigée.
+  const unknown = value && !choices.some((choice) => choice.value === value);
+  return (
+    <NativeSelect
+      id={id}
+      wrapperClassName="w-full"
+      className="w-full"
+      autoFocus={autoFocus}
+      value={value}
+      aria-invalid={invalid ? true : undefined}
+      onChange={(event) => onChange(event.target.value)}
+    >
+      {(isNullable(field) || !value) && (
+        <NativeSelectOption value="">
+          {isNullable(field) ? noneLabel(field) : 'Choisir…'}
+        </NativeSelectOption>
+      )}
+      {unknown && <NativeSelectOption value={value}>{value} (non proposé)</NativeSelectOption>}
+      {choices.map((choice) => (
+        <NativeSelectOption key={choice.value} value={choice.value}>
+          {choice.label}
+        </NativeSelectOption>
+      ))}
+    </NativeSelect>
+  );
+}
+
+/** Une cellule d’une ligne de liste : choix, oui-non, nombre ou texte. */
+function CellInput({
+  id,
+  label,
+  field,
+  value,
+  error,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  field: AddonConfigField;
+  value: string;
+  error?: string;
+  onChange: (value: string) => void;
+}) {
+  const type = baseType(field);
+  const errorId = `${id}-error`;
+  return (
+    <div className="min-w-32 flex-1 space-y-1">
+      <Label htmlFor={id} className="text-xs text-muted-foreground">
+        {label}
+      </Label>
+      {choicesOf(field) ? (
+        <ChoiceSelect id={id} field={field} value={value} invalid={!!error} onChange={onChange} />
+      ) : type === 'boolean' ? (
+        <div className="flex h-9 items-center">
+          <Switch
+            id={id}
+            checked={value === 'true'}
+            aria-invalid={error ? true : undefined}
+            onCheckedChange={(checked) => onChange(checked ? 'true' : 'false')}
+          />
+        </div>
+      ) : type === 'number' ? (
+        <DecimalInput
+          id={id}
+          value={value}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={exampleOf(field)}
+        />
+      ) : (
+        <Input
+          id={id}
+          value={value}
+          inputMode={type === 'integer' ? 'numeric' : 'text'}
+          type={type === 'integer' ? 'number' : 'text'}
+          maxLength={field.maxLength}
+          min={field.minimum}
+          max={field.maximum}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={exampleOf(field) ?? (isNullable(field) ? 'Facultatif' : undefined)}
+        />
+      )}
+      {error && (
+        <p id={errorId} className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Liste répétée (`type: "array"`) : une ligne par élément, une cellule par propriété d’un
+ * élément objet, ajout et retrait dans les bornes `minItems` et `maxItems`.
+ */
+function ListField({
+  id,
+  name,
+  field,
+  value,
+  errorAt,
+  onChange,
+}: {
+  id: string;
+  name: string;
+  field: AddonConfigField;
+  value: string;
+  errorAt: (path: string) => string | undefined;
+  onChange: (value: string) => void;
+}) {
+  const rows = listRows(value);
+  const properties = itemProperties(field);
+  const item = field.items ?? {};
+  const max = field.maxItems ?? 20;
+  const min = field.minItems ?? 0;
+  const write = (next: ListRow[]) => onChange(JSON.stringify(next));
+  const setCell = (index: number, key: string | null, text: string) =>
+    write(
+      rows.map((row, i) =>
+        i !== index
+          ? row
+          : key === null
+            ? text
+            : { ...(typeof row === 'string' ? {} : row), [key]: text },
+      ),
+    );
+  const error = errorAt(name);
+  const help =
+    field.description ??
+    (max < 20 || min > 0 ? `De ${min} à ${max} ${max > 1 ? 'éléments' : 'élément'}.` : undefined);
+  return (
+    <fieldset
+      className="space-y-2 rounded-md border p-3 sm:col-span-2"
+      aria-describedby={error ? `${id}-error` : undefined}
+    >
+      <legend className="px-1 text-sm font-medium">{labelOf(name, field)}</legend>
+      {help && <p className="text-xs text-muted-foreground">{help}</p>}
+      {rows.length === 0 && (
+        <p className="text-xs text-muted-foreground">Aucun élément pour l’instant.</p>
+      )}
+      {rows.map((row, index) => (
+        <div key={index} className="flex flex-wrap items-start gap-2 border-b pb-2 last:border-b-0">
+          {properties ? (
+            properties.map(([key, cell]) => (
+              <CellInput
+                key={key}
+                id={`${id}-${index}-${key}`}
+                label={cell.title ?? key}
+                field={cell}
+                value={typeof row === 'string' ? '' : (row[key] ?? '')}
+                error={errorAt(`${name}/${index}/${key}`)}
+                onChange={(text) => setCell(index, key, text)}
+              />
+            ))
+          ) : (
+            <CellInput
+              id={`${id}-${index}`}
+              label={`${item.title ?? 'Élément'} ${index + 1}`}
+              field={item}
+              value={typeof row === 'string' ? row : ''}
+              error={errorAt(`${name}/${index}`)}
+              onChange={(text) => setCell(index, null, text)}
+            />
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="mt-5"
+            disabled={rows.length <= min}
+            aria-label={`Retirer la ligne ${index + 1}`}
+            onClick={() => write(rows.filter((_, i) => i !== index))}
+          >
+            <Trash2 />
+          </Button>
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        disabled={rows.length >= max}
+        onClick={() => write([...rows, newRow(field)])}
+      >
+        <Plus />
+        Ajouter
+      </Button>
+      {error && (
+        <p id={`${id}-error`} className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
+    </fieldset>
   );
 }
