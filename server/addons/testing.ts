@@ -23,16 +23,16 @@ export { AddonRuntime } from './runtime.js';
 export { validateAddonDefinition } from './registry.js';
 export { AddonRepository, openDatabase } from '../storage.js';
 
+/** Réponse détaillée : statut, corps, en-têtes, et corps coupé à `maxBytes` (`truncated`). */
+export interface TestResponse {
+  status: number;
+  body?: string | Record<string, unknown> | unknown[];
+  headers?: Record<string, string>;
+  truncated?: boolean;
+}
+
 /** Réponse simulée : un objet est envoyé en JSON, une chaîne telle quelle. */
-export type TestReply =
-  | string
-  | Record<string, unknown>
-  | unknown[]
-  | {
-      status: number;
-      body?: string | Record<string, unknown> | unknown[];
-      headers?: Record<string, string>;
-    };
+export type TestReply = string | Record<string, unknown> | unknown[] | TestResponse;
 
 /**
  * Table des réponses : chaque clé est cherchée dans l'adresse demandée, la première qui y
@@ -57,13 +57,7 @@ export interface TestModuleOptions {
   ref?: string;
 }
 
-function isReplyObject(
-  reply: TestReply,
-): reply is {
-  status: number;
-  body?: string | Record<string, unknown> | unknown[];
-  headers?: Record<string, string>;
-} {
+function isReplyObject(reply: TestReply): reply is TestResponse {
   return (
     typeof reply === 'object' &&
     reply !== null &&
@@ -73,16 +67,17 @@ function isReplyObject(
 }
 
 function asResponse(reply: TestReply) {
-  const { status, body, headers } = isReplyObject(reply)
+  const { status, body, headers, truncated } = isReplyObject(reply)
     ? reply
-    : { status: 200, body: reply, headers: {} };
+    : { status: 200, body: reply, headers: {}, truncated: false };
   const text = body === undefined ? '' : typeof body === 'string' ? body : JSON.stringify(body);
   return {
     status,
     headers: headers ?? {},
     text: () => text,
     json: () => JSON.parse(text) as unknown,
-    truncated: false,
+    // Une réponse coupée à maxBytes par le client du cœur, simulée.
+    truncated: truncated === true,
   };
 }
 
