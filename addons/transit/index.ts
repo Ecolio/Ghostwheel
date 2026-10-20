@@ -164,6 +164,21 @@ function present(
     .filter((departure) => !departure.cancelled && timeOf(departure) >= now)
     .sort((a, b) => timeOf(a) - timeOf(b));
   const next = upcoming[0];
+  // La source a répondu sans passage (nuit, ligne interrompue) : ce n'est pas un retard.
+  if (!next && snapshot.status === 'empty')
+    return {
+      title: 'Mes bus',
+      primaryValue: 'Aucun passage',
+      subtitle: `Ligne ${data.lineLabel} → ${data.direction}`.slice(0, 120),
+      description: null,
+      items: [],
+      summary:
+        `Aucun passage prévu pour le moment sur la ligne ${data.lineLabel} direction ${data.direction}.`.slice(
+          0,
+          500,
+        ),
+      sources: ['transit'],
+    };
   if (!next)
     return {
       title: 'Mes bus',
@@ -424,12 +439,15 @@ const addon: AddonDefinition<TransitConfig, TransitData> = {
   ambient: {
     present(snapshot, context) {
       const card = present(snapshot, context);
+      // Les minutes d'attente changent chaque minute, sans attendre la collecte suivante.
+      const minute = (Math.floor(context.now() / 60_000) + 1) * 60_000;
       return {
         layout: 'list',
         title: 'Prochains bus',
-        value: null,
+        value: card.items.length ? null : card.primaryValue,
         subtitle: card.subtitle,
         items: card.items.slice(0, 3),
+        ...(card.items.length ? { refreshAt: new Date(minute).toISOString() } : {}),
       };
     },
   },

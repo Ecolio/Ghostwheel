@@ -1,6 +1,7 @@
 import {
   AddonCollectError,
   type AddonDefinition,
+  type AddonPresentContext,
   type AddonPresentation,
   type ModuleSnapshot,
 } from '#cornelius/addons';
@@ -80,12 +81,43 @@ function asDate(value: unknown): string | null {
     : null;
 }
 
-function present(snapshot: ModuleSnapshot<WeatherData>): AddonPresentation {
+/** Jour civil du foyer, au format AAAA-MM-JJ. */
+function localDate(now: number, timeZone: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now);
+}
+
+/** Prévisions d'aujourd'hui et des jours suivants : un relevé de la veille perd son premier jour. */
+function currentDays(data: WeatherData, context: AddonPresentContext): WeatherDay[] {
+  const today = localDate(context.now(), context.timeZone);
+  const days = data.days.filter((day) => day.date >= today);
+  return days.length ? days : data.days.slice(-1);
+}
+
+/** Minuit suivant dans le fuseau du foyer : la carte permanente change alors de jour. */
+function nextMidnight(context: AddonPresentContext): string {
+  const today = localDate(context.now(), context.timeZone);
+  for (let hours = 1; hours <= 26; hours += 1) {
+    const candidate = Math.floor(context.now() / 3_600_000 + hours) * 3_600_000;
+    if (localDate(candidate, context.timeZone) !== today) return new Date(candidate).toISOString();
+  }
+  return new Date(context.now() + 86_400_000).toISOString();
+}
+
+function present(
+  snapshot: ModuleSnapshot<WeatherData>,
+  context: AddonPresentContext,
+): AddonPresentation {
   const data = snapshot.data!;
-  const today = data.days[0];
+  const days = currentDays(data, context);
+  const today = days[0];
   if (!today) throw new Error('Aucune prévision à présenter.');
-  const items = data.days.slice(1, 6).map((day) => ({
-    label: new Intl.DateTimeFormat('fr-FR', { weekday: 'long', timeZone: 'Europe/Paris' }).format(
+  const items = days.slice(1, 6).map((day) => ({
+    label: new Intl.DateTimeFormat('fr-FR', { weekday: 'long', timeZone: 'UTC' }).format(
       new Date(day.date + 'T12:00:00Z'),
     ),
     value: `${day.tmin} / ${day.tmax} °C · ${day.summary}`,
@@ -231,14 +263,16 @@ const addon: AddonDefinition<WeatherConfig, WeatherData> = {
     return { data: { city, days: kept }, source: { provider: 'meteo-concept', sourceId: city } };
   },
   ambient: {
-    present(snapshot) {
-      const card = present(snapshot);
+    present(snapshot, context) {
+      const card = present(snapshot, context);
       return {
         layout: 'metric',
         title: 'Météo',
         value: card.primaryValue,
         subtitle: card.subtitle?.slice(0, 120) ?? null,
         items: [],
+        // À minuit, la prévision du jour devient celle de la veille : la carte passe au lendemain.
+        refreshAt: nextMidnight(context),
       };
     },
   },

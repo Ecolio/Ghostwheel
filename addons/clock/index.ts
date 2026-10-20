@@ -95,6 +95,8 @@ const addon: AddonDefinition<ClockConfig, ClockData> = {
   ambient: {
     present(snapshot, context) {
       const { time, date, data } = formatClock(snapshot, context);
+      // Recalculée à la minute (ou à la seconde) suivante : l'heure affichée reste juste.
+      const step = data.showSeconds ? 1000 : 60_000;
       return {
         layout: 'metric',
         title: 'Heure',
@@ -102,6 +104,7 @@ const addon: AddonDefinition<ClockConfig, ClockData> = {
         subtitle: data.showDate ? date : null,
         items: [],
         showCollectedAt: false,
+        refreshAt: new Date((Math.floor(context.now() / step) + 1) * step).toISOString(),
       };
     },
   },
