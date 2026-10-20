@@ -98,7 +98,7 @@ Le chargeur lit `addons/`, puis le dossier des modules externes (`cornelius-modu
 
 La requête accepte `url`, `method` (`GET` par défaut, ou `POST`), `headers`, `body` (une chaîne), `timeoutMs` (4 000 par défaut), `maxBytes` (256 Kio par défaut) et `signal`. La réponse expose `status`, `headers`, `text()` et `json()`, tous deux **synchrones**. Il n’y a pas de propriété `ok`.
 
-Le client du cœur ([server/addons/http.ts](../../server/addons/http.ts)) refuse les redirections et ne filtre pas les hôtes : le module DEVRAIT fixer l’adresse du fournisseur et encoder chaque partie variable (`encodeURIComponent`). Le corps est coupé à `maxBytes`, sans erreur dédiée : une réponse coupée devient en général un JSON illisible.
+Le client du cœur ([server/addons/http.ts](../../server/addons/http.ts)) refuse les redirections (« La source renvoie vers une autre adresse : utiliser son adresse finale. ») et ne filtre pas les hôtes : le module DEVRAIT fixer l’adresse du fournisseur et encoder chaque partie variable (`encodeURIComponent`). Le corps est coupé à `maxBytes`, sans erreur dédiée : une réponse coupée devient en général un JSON illisible.
 
 Le client lève lui-même des `AddonCollectError` :
 

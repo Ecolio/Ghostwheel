@@ -69,4 +69,10 @@ test('networkFailure classe les erreurs de fetch sans réseau', () => {
   });
   assert.equal(networkFailure(reset).code, 'upstream');
   assert.equal(networkFailure(new Error('inattendue')).code, 'upstream');
+  const redirect = networkFailure(
+    new TypeError('fetch failed', { cause: new Error('unexpected redirect') }),
+  );
+  assert.equal(redirect.code, 'upstream');
+  assert.equal(redirect.retryable, false);
+  assert.match(redirect.message, /utiliser son adresse finale/u);
 });

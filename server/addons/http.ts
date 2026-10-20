@@ -90,6 +90,13 @@ export function networkFailure(error: unknown): AddonCollectError {
     return new AddonCollectError('invalid_params', invalidRequest(error.message), false);
   const cause = (error as { cause?: { code?: unknown; message?: unknown } } | null)?.cause;
   const code = typeof cause?.code === 'string' ? cause.code : '';
+  // Redirections refusées : l'adresse réglée n'est pas la bonne, réessayer n'y changera rien.
+  if (cause?.message === 'unexpected redirect')
+    return new AddonCollectError(
+      'upstream',
+      'La source renvoie vers une autre adresse : utiliser son adresse finale.',
+      false,
+    );
   if (connectFailures.has(code) || code.startsWith('ERR_TLS') || cause?.message === 'bad port')
     return new AddonCollectError('unavailable', 'Source réseau injoignable.', true);
   return new AddonCollectError('upstream', 'Connexion interrompue avant la réponse.', true);
