@@ -1,13 +1,16 @@
 import {
   AddonCollectError,
   addonScope,
+  type AddonArgumentValue,
   type AddonDefinition,
+  type AddonDisplay,
   type AmbientDisplay,
   type AddonHttpClient,
   type AddonInstance,
   type AddonPresentation,
   type AddonSearchField,
   type AddonSearchResult,
+  type AddonToolDefinition,
   type ModuleCard,
   type ModuleSnapshot,
   type ToolResult,
@@ -17,8 +20,70 @@ import type { DiagnosticLog } from '../logs.js';
 import type { AddonRepository } from '../storage.js';
 import { configFieldErrors, type ConfigFieldError } from './config-errors.js';
 
-const maxFreshMs = 60 * 60_000;
+/** Un calendrier change rarement : un relevé peut rester valable une journée. */
+const maxFreshMs = 24 * 60 * 60_000;
 const minFreshMs = 5_000;
+export const defaultTimeZone = 'Europe/Paris';
+
+type ToolArgs = Record<string, AddonArgumentValue>;
+
+/** Paramètres annoncés au modèle : ceux du module, plus ses arguments typés, facultatifs. */
+function toolParameters(tool: AddonToolDefinition): Record<string, unknown> {
+  if (!tool.arguments) return tool.parameters;
+  const base = tool.parameters as { properties?: Record<string, unknown>; required?: string[] };
+  const properties = { ...(base.properties ?? {}) };
+  const required = [...(base.required ?? [])];
+  for (const [name, arg] of Object.entries(tool.arguments)) {
+    properties[name] =
+      arg.type === 'integer'
+        ? {
+            type: ['integer', 'null'],
+            minimum: arg.minimum,
+            maximum: arg.maximum,
+            description: arg.description,
+          }
+        : arg.type === 'string'
+          ? { type: ['string', 'null'], enum: [...arg.enum, null], description: arg.description }
+          : { type: ['boolean', 'null'], description: arg.description };
+    if (!required.includes(name)) required.push(name);
+  }
+  return { ...tool.parameters, properties, required };
+}
+
+/** Arguments donnés par le modèle, contrôlés un à un ; un argument absent ou nul est omis. */
+function readArguments(
+  tool: AddonToolDefinition,
+  raw: unknown,
+): { ok: true; args: ToolArgs } | { ok: false; message: string } {
+  const args: ToolArgs = {};
+  const given = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+  for (const [name, arg] of Object.entries(tool.arguments ?? {})) {
+    const value = given[name];
+    if (value === null || value === undefined || value === '') continue;
+    if (arg.type === 'integer') {
+      const number = typeof value === 'string' && /^-?\d+$/u.test(value) ? Number(value) : value;
+      if (
+        !Number.isInteger(number) ||
+        (number as number) < arg.minimum ||
+        (number as number) > arg.maximum
+      )
+        return {
+          ok: false,
+          message: `Paramètre « ${name} » : entier de ${arg.minimum} à ${arg.maximum} attendu.`,
+        };
+      args[name] = number as number;
+    } else if (arg.type === 'string') {
+      if (typeof value !== 'string' || !arg.enum.includes(value))
+        return { ok: false, message: `Paramètre « ${name} » : valeur non proposée.` };
+      args[name] = value;
+    } else {
+      if (typeof value !== 'boolean')
+        return { ok: false, message: `Paramètre « ${name} » : oui ou non attendu.` };
+      args[name] = value;
+    }
+  }
+  return { ok: true, args };
+}
 /** Séparateur des noms d'outils Live, aligné sur les instructions de configuration.ts. */
 const toolSeparator = '__';
 
@@ -29,6 +94,8 @@ export interface AddonReadSuccess {
   presentation: AddonPresentation;
   card: ModuleCard;
   stale: boolean;
+  /** Rien à signaler, dit par le module lui-même (« rien de prévu »). */
+  empty: boolean;
 }
 
 export interface AddonReadFailure {
@@ -55,6 +122,8 @@ export interface AddonRuntimeOptions {
   secrets?: Record<string, string | undefined>;
   /** Lue à chaque appel, avant `secrets` : une clé changée dans l’administration compte aussitôt. */
   secretSource?: (name: string) => string | undefined;
+  /** Fuseau horaire du foyer, transmis aux modules (« Europe/Paris » par défaut). */
+  timeZone?: string;
 }
 
 function iso(time: number | null): string | null {
@@ -91,12 +160,19 @@ export class AddonRuntime {
     { promise: Promise<ModuleSnapshot>; signal: AbortSignal }
   >();
   private readonly now: () => number;
+  /** Fuseau du foyer, commun à tous les modules. */
+  readonly timeZone: string;
   /** Numéro des lectures à la demande, pour des snapshotId distincts sans persistance. */
   private querySequence = 0;
 
   constructor(private readonly options: AddonRuntimeOptions) {
     for (const addon of options.addons) this.addons.set(addon.id, addon);
     this.now = options.now ?? Date.now;
+    this.timeZone = options.timeZone ?? defaultTimeZone;
+  }
+
+  private presentContext(instance: AddonInstance) {
+    return { instance, now: this.now, timeZone: this.timeZone };
   }
 
   list(): AddonDefinition[] {
@@ -115,7 +191,7 @@ export class AddonRuntime {
       return addon.tools.map((tool) => ({
         name: `${addon.id}${toolSeparator}${tool.name}`,
         description: this.describeTool(addon, tool.description, sources, profileId !== null),
-        parameters: tool.parameters,
+        parameters: toolParameters(tool),
       }));
     });
   }
@@ -184,7 +260,23 @@ export class AddonRuntime {
         return { outcome, tool: this.toolResult(outcome) };
       }
     }
-    const outcome = await this.read(parsed.addonId, profileId, instanceRef, signal, query);
+    const checked = readArguments(tool, args);
+    if (!checked.ok) {
+      const outcome = fail(checked.message, {
+        code: 'invalid_params',
+        message: checked.message,
+        retryable: false,
+      });
+      return { outcome, tool: this.toolResult(outcome) };
+    }
+    const outcome = await this.read(
+      parsed.addonId,
+      profileId,
+      instanceRef,
+      signal,
+      query,
+      Object.keys(checked.args).length ? checked.args : null,
+    );
     return { outcome, tool: this.toolResult(outcome) };
   }
 
@@ -228,14 +320,37 @@ export class AddonRuntime {
       throw new Error('Type de recherche inconnu.');
     return capability.find(
       { kind: input.kind, query: input.query, values: input.values ?? {} },
-      { http: this.options.http, signal, secret: (name) => this.secret(name) },
+      {
+        http: this.options.http,
+        signal,
+        secret: (name) => this.secret(name),
+        timeZone: this.timeZone,
+      },
     );
+  }
+
+  /**
+   * Aperçu d'une source pour l'administration (« 20 vélos · Mairie - Opéra ») : valeur et
+   * sous-titre de la carte du module, calculés sans réseau sur le dernier relevé.
+   */
+  preview(instance: AddonInstance): string | null {
+    const addon = this.addons.get(instance.addonId);
+    const snapshot = this.options.instances.getSnapshot(instance);
+    if (!addon || !snapshot?.data || snapshot.dataVersion !== addon.dataVersion) return null;
+    try {
+      const card = addon.present(snapshot, this.presentContext(instance));
+      const text = [card.primaryValue, card.subtitle].filter(Boolean).join(' · ');
+      return text ? (text.length > 120 ? `${text.slice(0, 119)}…` : text) : null;
+    } catch {
+      return null;
+    }
   }
 
   definitions(): {
     id: string;
     version: string;
     sourceLabel: string;
+    display: AddonDisplay | null;
     configVersion: number;
     configSchema: Record<string, unknown>;
     configDefaults: Record<string, unknown>;
@@ -255,6 +370,7 @@ export class AddonRuntime {
       id: addon.id,
       version: addon.version,
       sourceLabel: addon.sourceLabel,
+      display: addon.display ?? null,
       configVersion: addon.configVersion,
       configSchema: addon.configSchema,
       configDefaults: addon.configDefaults,
@@ -304,16 +420,17 @@ export class AddonRuntime {
       validUntil: snapshot?.validUntil ?? null,
       content: null,
     };
-    if (!snapshot?.data || snapshot.status === 'empty') return display;
+    if (!snapshot?.data) return display;
     try {
-      const content = this.addons.get(instance.addonId)?.ambient?.present(snapshot, {
-        instance,
-        now: this.now,
-      });
-      if (!validators.ambientPresentation(content)) return { ...display, status: 'error' };
+      const content = this.addons
+        .get(instance.addonId)
+        ?.ambient?.present(snapshot, this.presentContext(instance));
+      if (!validators.ambientPresentation(content))
+        return snapshot.status === 'empty' ? display : { ...display, status: 'error' };
       return { ...display, content };
     } catch {
-      return { ...display, status: 'error' };
+      // Rien à signaler sans phrase du module : « Aucune donnée disponible », pas une erreur.
+      return snapshot.status === 'empty' ? display : { ...display, status: 'error' };
     }
   }
 
@@ -375,8 +492,9 @@ export class AddonRuntime {
   }
 
   /**
-   * Lecture d'une source. Avec `query` (outil à la demande), la collecte est propre à cette
-   * question : ni cache, ni regroupement, ni repli sur une réponse à une autre question.
+   * Lecture d'une source. Avec `query` (outil à la demande) ou des arguments typés, la
+   * collecte est propre à cet appel : ni cache, ni regroupement, ni repli sur une réponse à
+   * une autre question.
    */
   async read(
     addonId: string,
@@ -384,7 +502,9 @@ export class AddonRuntime {
     instanceRef: string | null,
     signal: AbortSignal,
     query: string | null = null,
+    args: ToolArgs | null = null,
   ): Promise<AddonReadOutcome> {
+    const onDemand = query !== null || args !== null;
     const addon = this.addons.get(addonId);
     if (!addon)
       return fail('Ce module est inconnu.', {
@@ -398,17 +518,16 @@ export class AddonRuntime {
     let snapshot: ModuleSnapshot;
     try {
       if (signal.aborted) throw new AddonCollectError('unavailable', 'Collecte annulée.', true);
-      snapshot =
-        query === null
-          ? await this.ensureSnapshot(instance, addon, signal)
-          : await this.collectQuery(instance, addon, query, signal);
+      snapshot = onDemand
+        ? await this.collectQuery(instance, addon, { query, args }, signal)
+        : await this.ensureSnapshot(instance, addon, signal);
       if (signal.aborted || !this.isCurrent(instance))
         throw new AddonCollectError('unavailable', 'Collecte annulée ou source modifiée.', true);
     } catch (error) {
       const described = this.describe(error, { addonId: addon.id, instanceId: instance.id });
       // Sans relevé enregistré, le message du module est dit tout de suite.
       return fail(
-        query === null ? 'Source indisponible.' : `Source indisponible : ${described.message}`,
+        onDemand ? `Source indisponible : ${described.message}` : 'Source indisponible.',
         described,
       );
     }
@@ -425,16 +544,19 @@ export class AddonRuntime {
         },
       );
     }
-    if (snapshot.status === 'empty')
-      return fail(
+    const empty = snapshot.status === 'empty';
+    const nothing = () =>
+      fail(
         'La source ne fournit aucune donnée utile pour le moment.',
         { code: 'unavailable', message: 'Données vides.', retryable: true },
         'empty',
       );
     let presentation: AddonPresentation;
     try {
-      presentation = addon.present(snapshot, { instance, now: this.now });
+      presentation = addon.present(snapshot, this.presentContext(instance));
     } catch (error) {
+      // Rien à signaler, et le module ne sait pas le dire : la phrase générique du cœur.
+      if (empty) return nothing();
       this.options.logs?.write('error', 'addon', 'Présentation de carte impossible', {
         addonId,
         instanceId: instance.id,
@@ -464,6 +586,7 @@ export class AddonRuntime {
     // Une carte hors contrat (titre trop long, trop de lignes…) serait refusée à l'affichage
     // alors que l'outil aurait répondu « réussi » : l'échec est dit ici, détails au journal.
     if (!validators.moduleCard(card)) {
+      if (empty) return nothing();
       this.options.logs?.write('error', 'addon', 'Carte de module non conforme', {
         addonId,
         instanceId: instance.id,
@@ -477,14 +600,14 @@ export class AddonRuntime {
         retryable: false,
       });
     }
-    return { ok: true, instance, snapshot, presentation, stale, card };
+    return { ok: true, instance, snapshot, presentation, stale, card, empty };
   }
 
   toolResult(outcome: AddonReadOutcome): ToolResult {
     if (outcome.ok) {
       return {
         schemaVersion: 1,
-        status: outcome.stale ? 'stale' : 'succeeded',
+        status: outcome.empty ? 'empty' : outcome.stale ? 'stale' : 'succeeded',
         result: {
           addonId: outcome.instance.addonId,
           instanceRef: outcome.instance.ref,
@@ -552,14 +675,14 @@ export class AddonRuntime {
   }
 
   /**
-   * Collecte d'une lecture à la demande : mêmes contrôles qu'une collecte ordinaire, mais le
-   * relevé reste en mémoire. Une erreur est levée telle quelle, sans toucher au dernier relevé.
-   * La question n'est jamais journalisée.
+   * Collecte d'une lecture à la demande (question ou arguments) : mêmes contrôles qu'une
+   * collecte ordinaire, mais le relevé reste en mémoire. Une erreur est levée telle quelle,
+   * sans toucher au dernier relevé. La question n'est jamais journalisée.
    */
   private async collectQuery(
     instance: AddonInstance,
     addon: AddonDefinition,
-    query: string,
+    request: { query: string | null; args: ToolArgs | null },
     signal: AbortSignal,
   ): Promise<ModuleSnapshot> {
     const startedAt = this.now();
@@ -578,7 +701,9 @@ export class AddonRuntime {
       now: this.now,
       signal,
       secret: (name) => this.secret(name),
-      query,
+      timeZone: this.timeZone,
+      ...(request.query !== null ? { query: request.query } : {}),
+      ...(request.args !== null ? { args: request.args } : {}),
     });
     if (signal.aborted || !this.isCurrent(instance))
       throw new AddonCollectError('unavailable', 'Collecte annulée ou source modifiée.', true);
@@ -644,6 +769,7 @@ export class AddonRuntime {
         now: this.now,
         signal,
         secret: (name) => this.secret(name),
+        timeZone: this.timeZone,
       });
       if (signal.aborted || !this.isCurrent(instance))
         throw new AddonCollectError('unavailable', 'Collecte annulée ou source modifiée.', true);

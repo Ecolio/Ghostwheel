@@ -6,6 +6,11 @@
   "required": ["layout", "title", "value", "subtitle", "items"],
   "properties": {
     "showCollectedAt": { "type": "boolean" },
+    "refreshAt": {
+      "description": "Instant où la présentation doit être recalculée, sans nouvelle collecte.",
+      "type": "string",
+      "format": "date-time"
+    },
     "layout": {
       "enum": ["metric", "list"]
     },

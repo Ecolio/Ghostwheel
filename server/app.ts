@@ -54,7 +54,7 @@ import { SatelliteHub } from './satellites.js';
 import { registerSatellites } from './satellites-api.js';
 import { SatellitePairing } from './satellites-pairing.js';
 import { AmbientModules } from './addons/ambient.js';
-import { AddonRuntime } from './addons/runtime.js';
+import { AddonRuntime, defaultTimeZone } from './addons/runtime.js';
 import { loadAddons } from './addons/registry.js';
 import { createHttpClient } from './addons/http.js';
 import { ActionExecutor, actionSecrets } from './actions.js';
@@ -220,6 +220,14 @@ export async function createApp(
     const secret = addonSecrets.get(name);
     return secret ? secretStore.get(secret.env) : undefined;
   };
+  // Fuseau du foyer donné aux modules ; un nom inconnu retombe sur celui de Paris.
+  let timeZone = config.timeZone ?? defaultTimeZone;
+  try {
+    new Intl.DateTimeFormat('fr-FR', { timeZone });
+  } catch {
+    logs.write('warn', 'addon', 'Fuseau horaire inconnu, Europe/Paris utilisé', { timeZone });
+    timeZone = defaultTimeZone;
+  }
   const addonRuntime = new AddonRuntime({
     addons,
     instances: addonInstances,
@@ -227,6 +235,7 @@ export async function createApp(
     logs,
     now,
     secretSource: addonSecret,
+    timeZone,
   });
   const actionExecutor = new ActionExecutor(actionRepository, http, logs, Date.now, () =>
     actionSecrets(

@@ -15,6 +15,8 @@ export interface AppConfig {
   primApiKey?: string;
   /** Dépôt des modules externes (CORNELIUS_MODULES_DIR) ; absent, aucun n'est chargé. */
   modulesDir?: string;
+  /** Fuseau horaire du foyer donné aux modules (CORNELIUS_TIMEZONE, Europe/Paris par défaut). */
+  timeZone?: string;
   /** Accès depuis les autres appareils du réseau local (HTTPS), en plus de la machine. */
   lan?: boolean;
   /** Annonce mDNS (_cornelius._tcp) pour les satellites audio ; vraie par défaut. */
@@ -73,6 +75,7 @@ export function loadConfig(): AppConfig & { port: number } {
     meteoConceptToken: process.env.CORNELIUS_METEO_CONCEPT_TOKEN || undefined,
     primApiKey: process.env.CORNELIUS_PRIM_API_KEY || undefined,
     modulesDir: externalAddonsRoot(),
+    timeZone: process.env.CORNELIUS_TIMEZONE?.trim() || undefined,
     adminPassword,
     databasePath:
       process.env.CORNELIUS_DATABASE === ':memory:'

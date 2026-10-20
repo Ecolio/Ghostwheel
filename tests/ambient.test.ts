@@ -58,7 +58,11 @@ function fixture(t: TestContext, definition = addon) {
     clock,
   );
   controller.setAmbientProjection((state) => ambient.view(state));
-  const unsubscribe = controller.subscribe(() => ambient.tick());
+  let publishes = 0;
+  const unsubscribe = controller.subscribe(() => {
+    publishes++;
+    ambient.tick();
+  });
   t.after(() => {
     unsubscribe();
     ambient.dispose();
@@ -119,6 +123,11 @@ function fixture(t: TestContext, definition = addon) {
       }
     },
     view: () => controller.snapshot().state.ambientDisplays,
+    /** Avance l'horloge sans observation ni publication : seul l'affichage peut republier. */
+    jump: (ms: number) => {
+      now += ms;
+    },
+    publishes: () => publishes,
   };
 }
 
@@ -294,8 +303,37 @@ test('capacité optionnelle v1 validée ; affichage invalide refusé avant publi
   assert.equal(display.status, 'error');
   assert.equal(display.content, null);
 });
-test('un succès vide est affiché sans présentation et sans collecte répétée tant qu’il est frais', async (t) => {
+test('un succès vide est présenté par le module qui sait le dire, sans collecte répétée', async (t) => {
   let presentations = 0;
+  let collects = 0;
+  const f = fixture(t, {
+    ...addon,
+    async collect() {
+      collects++;
+      return {
+        data: { name: 'demo', available: 0 },
+        empty: true,
+        source: { provider: 'test', sourceId: 'demo' },
+      };
+    },
+    ambient: {
+      present(snapshot, ctx) {
+        presentations++;
+        assert.equal(snapshot.status, 'empty');
+        return { ...addon.ambient!.present(snapshot, ctx), value: 'Rien à signaler' };
+      },
+    },
+  });
+  f.add(f.alice.id);
+  await f.recognize([f.alice.id]);
+  assert.equal(f.view()[0]?.status, 'empty');
+  assert.equal(f.view()[0]?.content?.value, 'Rien à signaler');
+  assert.ok(presentations > 0);
+  await f.advance(3000);
+  assert.equal(collects, 1, 'relevé vide encore frais : pas de nouvelle collecte');
+});
+
+test('un succès vide que le module ne sait pas dire reste « aucune donnée », sans erreur', async (t) => {
   const f = fixture(t, {
     ...addon,
     async collect() {
@@ -306,9 +344,8 @@ test('un succès vide est affiché sans présentation et sans collecte répété
       };
     },
     ambient: {
-      present(snapshot, ctx) {
-        presentations++;
-        return addon.ambient!.present(snapshot, ctx);
+      present() {
+        throw new Error('Rien à afficher.');
       },
     },
   });
@@ -316,7 +353,40 @@ test('un succès vide est affiché sans présentation et sans collecte répété
   await f.recognize([f.alice.id]);
   assert.equal(f.view()[0]?.status, 'empty');
   assert.equal(f.view()[0]?.content, null);
-  assert.equal(presentations, 0);
+});
+
+test('une présentation qui fixe refreshAt est recalculée à cet instant, sans collecte', async (t) => {
+  let presentations = 0;
+  const f = fixture(t, {
+    ...addon,
+    freshMs: 60 * 60 * 1000,
+    ambient: {
+      present(snapshot, ctx) {
+        presentations++;
+        // Bascule moins d'une seconde après le début : « 17 h » en accéléré, avant que la
+        // présence, faute d'observation, ne retombe.
+        const evening = Date.parse('2026-09-22T10:00:00.900Z');
+        return {
+          ...addon.ambient!.present(snapshot, ctx),
+          value: ctx.now() >= evening ? 'Ce soir' : 'Demain',
+          ...(ctx.now() >= evening ? {} : { refreshAt: new Date(evening).toISOString() }),
+        };
+      },
+    },
+  });
+  f.add(f.alice.id);
+  await f.recognize([f.alice.id]);
+  assert.equal(f.view()[0]?.content?.value, 'Demain');
+  const before = { presentations, publishes: f.publishes(), calls: f.calls.length };
+  f.jump(200);
+  f.ambient.tick();
+  assert.equal(f.publishes(), before.publishes, 'trop tôt : rien à republier');
+  f.jump(400);
+  f.ambient.tick();
+  assert.equal(f.publishes(), before.publishes + 1);
+  assert.equal(f.view()[0]?.content?.value, 'Ce soir');
+  assert.ok(presentations > before.presentations);
+  assert.equal(f.calls.length, before.calls, 'aucune nouvelle collecte');
 });
 
 test('les configurations modifiées pendant une collecte ne réaffichent pas les anciennes données', async (t) => {

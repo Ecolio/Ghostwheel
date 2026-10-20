@@ -16,6 +16,8 @@ export class AmbientModules {
   private jobs = new Map<string, Job>();
   private profile: string | null | undefined;
   private disposed = false;
+  /** Prochain recalcul demandé par un module (`refreshAt`), sans nouvelle collecte. */
+  private represent: number | null = null;
 
   constructor(
     private readonly runtime: AddonRuntime,
@@ -32,11 +34,22 @@ export class AmbientModules {
   /** Filtrage à chaque projection, avant toute émission HTTP ou WebSocket. */
   view(state: MirrorState): AmbientDisplay[] {
     if (this.disposed) return [];
-    return this.instances(state).map((instance) => this.runtime.ambientDisplay(instance));
+    const displays = this.instances(state).map((instance) => this.runtime.ambientDisplay(instance));
+    // L'instant le plus proche où une présentation cesse d'être juste (« ce soir » à 17 h).
+    const now = this.now();
+    const times = displays
+      .map((display) => Date.parse(display.content?.refreshAt ?? ''))
+      .filter((time) => Number.isFinite(time) && time > now);
+    this.represent = times.length ? Math.min(...times) : null;
+    return displays;
   }
 
   tick(): void {
     if (this.disposed) return;
+    if (this.represent !== null && this.represent <= this.now()) {
+      this.represent = null;
+      this.changed();
+    }
     const state = this.state();
     const profile = ambientProfile(state);
     if (profile !== this.profile) {

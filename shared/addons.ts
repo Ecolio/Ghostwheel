@@ -67,6 +67,12 @@ export interface AddonHttpRequest {
   timeoutMs?: number;
   maxBytes?: number;
   signal?: AbortSignal;
+  /**
+   * GET seulement : réponse 200 gardée en mémoire et partagée, entre sources et modules,
+   * pendant cette durée (10 minutes au plus). Pour un gros fichier commun (catalogue, état
+   * d'un réseau) lu par plusieurs sources.
+   */
+  cacheMs?: number;
 }
 
 export interface AddonHttpResponse {
@@ -74,6 +80,10 @@ export interface AddonHttpResponse {
   headers: Record<string, string>;
   text(): string;
   json(): unknown;
+  /** Vrai si le corps a été coupé à `maxBytes` : la fin manque. */
+  truncated?: boolean;
+  /** Adresse finale, après les redirections suivies. */
+  url?: string;
 }
 
 /** Fourni par le cœur. Un module ne crée jamais son propre client réseau. */
@@ -116,15 +126,26 @@ export interface AddonCollectContext<
    * à la demande, absente pour une lecture ordinaire (outil `read`, **Tester**, affichage).
    */
   query?: string;
+  /**
+   * Arguments typés d'un outil qui déclare `arguments`, déjà contrôlés par le cœur. Présents
+   * seulement quand le modèle en donne au moins un : la lecture est alors à la demande.
+   */
+  args?: Record<string, AddonArgumentValue>;
+  /** Fuseau horaire du foyer (IANA, par exemple « Europe/Paris »). */
+  timeZone: string;
 }
 
 export interface AddonCollection<TData extends Record<string, unknown> = Record<string, unknown>> {
   data: TData;
-  /** Vrai quand la source a répondu correctement sans donnée utile. */
+  /**
+   * Vrai quand la source a répondu sans rien à signaler (aucun passage, rien de prévu). Le
+   * cœur appelle quand même `present` : si le module sait le dire, sa carte et sa phrase sont
+   * utilisées ; s'il lève une exception, Cornelius dit « aucune donnée utile ».
+   */
   empty?: boolean;
   observedAt?: number | null;
   source?: AddonSource | null;
-  /** Fraîcheur propre au module, bornée par le cœur. */
+  /** Fraîcheur propre au module, bornée par le cœur (5 secondes à 24 heures). */
   freshMs?: number;
   cacheKey?: string;
 }
@@ -132,6 +153,8 @@ export interface AddonCollection<TData extends Record<string, unknown> = Record<
 export interface AddonPresentContext {
   instance: AddonInstance;
   now(): number;
+  /** Fuseau horaire du foyer (IANA, par exemple « Europe/Paris »). */
+  timeZone: string;
 }
 
 export interface AddonPresentation {
@@ -154,6 +177,12 @@ export interface AddonAmbientPresentation {
   value: string | null;
   subtitle: string | null;
   items: { label: string; value: string }[];
+  /**
+   * Instant (ISO 8601) où cette présentation cesse d'être juste sans nouvelle collecte :
+   * 17 h pour « ce soir », la fin d'un rendez-vous, minuit. Le cœur la recalcule alors, sans
+   * réseau. Absent : recalculée à la prochaine collecte.
+   */
+  refreshAt?: string;
 }
 
 export interface AmbientDisplay {
@@ -177,6 +206,86 @@ export interface AddonToolDefinition {
    * ni par le cache ni par le repli sur le dernier succès, et n'est pas enregistré.
    */
   query?: { maxLength: number };
+  /**
+   * Extension compatible v1 : arguments typés et bornés que le modèle peut donner
+   * (« la semaine prochaine », « le SP98 »). Le cœur les ajoute aux paramètres de l'outil,
+   * les contrôle, puis les passe à `collect` dans `context.args`. Un appel avec au moins un
+   * argument est une lecture à la demande : ni cache, ni repli, ni enregistrement.
+   */
+  arguments?: Record<string, AddonToolArgument>;
+}
+
+export type AddonArgumentValue = string | number | boolean;
+
+/** Argument d'outil : un entier borné, un choix dans une liste, ou oui-non. */
+export type AddonToolArgument =
+  | { type: 'integer'; description: string; minimum: number; maximum: number }
+  | { type: 'string'; description: string; enum: string[] }
+  | { type: 'boolean'; description: string };
+
+/** Icônes proposées aux modules pour l'administration (noms Lucide). */
+export const addonIcons = [
+  'bell',
+  'bike',
+  'book-open',
+  'bus',
+  'calendar',
+  'calendar-days',
+  'car',
+  'clapperboard',
+  'clock',
+  'cloud-sun',
+  'droplets',
+  'fuel',
+  'gift',
+  'graduation-cap',
+  'heart',
+  'history',
+  'house',
+  'leaf',
+  'map-pin',
+  'music',
+  'newspaper',
+  'package',
+  'party-popper',
+  'play',
+  'plug',
+  'scroll-text',
+  'shopping-cart',
+  'sun',
+  'thermometer',
+  'train-front',
+  'trash-2',
+  'tree-palm',
+  'tv',
+  'utensils',
+  'wind',
+  'zap',
+] as const;
+
+export type AddonIcon = (typeof addonIcons)[number];
+
+/**
+ * Présentation du module dans l'administration, facultative : sans elle, le module prend
+ * son `sourceLabel`, l'icône de prise et la phrase « la source de … ».
+ */
+export interface AddonDisplay {
+  /** Nom du module, 40 caractères au plus (« Météo »). */
+  name: string;
+  /** Ce que le module apporte, en une phrase de 160 caractères au plus. */
+  description: string;
+  icon?: AddonIcon;
+  /** Groupe du catalogue : « Au quotidien » (par défaut) ou « Maison ». */
+  group?: 'daily' | 'home';
+  /** Mots qui retrouvent le module dans la recherche du catalogue. */
+  keywords?: string[];
+  /** Exemple proposé pour une nouvelle source : nom affiché et identifiant. */
+  example?: { label: string; ref: string };
+  /**
+   * Phrase qui désigne une source à la voix : `head` la commence (« la météo »), les mots de
+   * `repeats` sont retirés de l'identifiant (« meteo-maison » donne « la météo de maison »).
+   */
+  spoken?: { head: string; repeats?: string[] };
 }
 
 /** Champ de recherche assistée : l'admin propose des choix, l'utilisateur ne saisit pas d'identifiant. */
@@ -208,6 +317,8 @@ export interface AddonSearchContext {
   http: AddonHttpClient;
   signal: AbortSignal;
   secret(name: string): string | undefined;
+  /** Fuseau horaire du foyer (IANA). Facultatif pour les recherches écrites avant 0.2.0. */
+  timeZone?: string;
 }
 
 export interface AddonSearchCapability {
@@ -243,6 +354,8 @@ export interface AddonDefinition<
   minCoreVersion?: string;
   /** Libellé public de la source, affiché sur les cartes. */
   sourceLabel: string;
+  /** Présentation dans l'administration, facultative et compatible v1. */
+  display?: AddonDisplay;
   /** Jetons requis, facultatif et compatible v1 : l'administration signale ceux qui manquent. */
   secrets?: AddonSecretRequirement[];
   configVersion: number;
@@ -251,7 +364,7 @@ export interface AddonDefinition<
   configMigrate?(fromVersion: number, config: unknown): TConfig;
   dataSchema: Record<string, unknown>;
   dataVersion: number;
-  /** Durée de fraîcheur d'une collecte réussie. */
+  /** Durée de fraîcheur d'une collecte réussie, bornée par le cœur de 5 secondes à 24 heures. */
   freshMs: number;
   tools: AddonToolDefinition[];
   /** Recherche assistée optionnelle (arrêts, directions) pour l'administration. */

@@ -2,7 +2,13 @@ import { readdirSync, existsSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import packageJson from '../../package.json' with { type: 'json' };
-import type { AddonDefinition, AddonSecretRequirement } from '../../shared/addons.js';
+import {
+  addonIcons,
+  type AddonDefinition,
+  type AddonDisplay,
+  type AddonSecretRequirement,
+  type AddonToolArgument,
+} from '../../shared/addons.js';
 import type { DiagnosticLog } from '../logs.js';
 import { compile } from '../../shared/validation.js';
 import './core-imports.js';
@@ -96,6 +102,85 @@ function validateSecrets(secrets: unknown): string | null {
   return null;
 }
 
+const shortText = (value: unknown, max: number) =>
+  typeof value === 'string' && value.trim().length > 0 && value.length <= max;
+
+/** Présentation dans l'administration (champ facultatif) : textes courts, icône connue. */
+function validateDisplay(display: unknown): string | null {
+  if (display === undefined) return null;
+  const d = display as Partial<AddonDisplay> | null;
+  if (!d || typeof d !== 'object') return 'présentation du module invalide.';
+  if (!shortText(d.name, 40)) return 'nom du module invalide (40 caractères au plus).';
+  if (!shortText(d.description, 160))
+    return 'description du module invalide (160 caractères au plus).';
+  if (d.icon !== undefined && !(addonIcons as readonly string[]).includes(d.icon))
+    return `icône « ${String(d.icon)} » inconnue.`;
+  if (d.group !== undefined && d.group !== 'daily' && d.group !== 'home')
+    return 'groupe du module invalide (daily ou home).';
+  if (
+    d.keywords !== undefined &&
+    (!Array.isArray(d.keywords) ||
+      d.keywords.length > 20 ||
+      !d.keywords.every((k) => shortText(k, 40)))
+  )
+    return 'mots-clés du module invalides.';
+  if (
+    d.example !== undefined &&
+    (!d.example ||
+      !shortText(d.example.label, 80) ||
+      !/^[a-z0-9-]{1,64}$/u.test(d.example.ref ?? ''))
+  )
+    return 'exemple de source invalide.';
+  if (
+    d.spoken !== undefined &&
+    (!d.spoken ||
+      !shortText(d.spoken.head, 60) ||
+      (d.spoken.repeats !== undefined &&
+        (!Array.isArray(d.spoken.repeats) ||
+          !d.spoken.repeats.every((word) => /^[a-z0-9]{1,30}$/u.test(word)))))
+  )
+    return 'phrase vocale du module invalide.';
+  return null;
+}
+
+const argumentNamePattern = /^[a-z][a-zA-Z0-9_]{0,31}$/u;
+
+/** Arguments typés d'un outil : quatre au plus, bornés, jamais `instanceRef` ni `query`. */
+function validateArguments(args: unknown): string | null {
+  if (args === undefined) return null;
+  if (!args || typeof args !== 'object' || Array.isArray(args))
+    return 'arguments d’outil invalides.';
+  const entries = Object.entries(args as Record<string, Partial<AddonToolArgument>>);
+  if (entries.length > 4) return 'quatre arguments d’outil au plus.';
+  for (const [name, arg] of entries) {
+    if (!argumentNamePattern.test(name) || name === 'instanceRef' || name === 'query')
+      return `nom d’argument « ${name} » invalide.`;
+    if (!arg || typeof arg !== 'object' || !shortText(arg.description, 200))
+      return `argument « ${name} » sans description.`;
+    if (arg.type === 'integer') {
+      const { minimum, maximum } = arg as { minimum?: unknown; maximum?: unknown };
+      if (
+        !Number.isInteger(minimum) ||
+        !Number.isInteger(maximum) ||
+        (minimum as number) > (maximum as number) ||
+        (maximum as number) - (minimum as number) > 10_000
+      )
+        return `argument « ${name} » : bornes entières attendues.`;
+    } else if (arg.type === 'string') {
+      const values = (arg as { enum?: unknown }).enum;
+      if (
+        !Array.isArray(values) ||
+        values.length < 1 ||
+        values.length > 30 ||
+        new Set(values).size !== values.length ||
+        !values.every((value) => shortText(value, 40))
+      )
+        return `argument « ${name} » : liste de choix attendue.`;
+    } else if (arg.type !== 'boolean') return `argument « ${name} » : type inconnu.`;
+  }
+  return null;
+}
+
 /**
  * Contrôle de forme du contrat gelé `apiVersion: 1`. Les schémas sont compilés dès
  * le chargement pour isoler les modules invalides avant tout appel du modèle.
@@ -149,7 +234,11 @@ export function validateAddonDefinition(addon: unknown, core = coreVersion): str
       return 'définition d’outil invalide.';
     if (toolNames.has(tool.name)) return 'nom d’outil dupliqué.';
     toolNames.add(tool.name);
+    const argsInvalid = validateArguments(tool.arguments);
+    if (argsInvalid) return argsInvalid;
   }
+  const displayInvalid = validateDisplay(candidate.display);
+  if (displayInvalid) return displayInvalid;
   if (
     candidate.ambient !== undefined &&
     (!candidate.ambient || typeof candidate.ambient.present !== 'function')
