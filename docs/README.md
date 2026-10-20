@@ -17,7 +17,7 @@ Cette page est l’index de la documentation. Elle indique par où commencer, pu
 | choisir ce qui ouvre la conversation | [Ouverture et présence](fonctionnalites/ouverture-et-presence.md), [Mot d’appel](fonctionnalites/mot-d-appel.md) |
 | parler à Cornelius depuis une autre pièce | [Les satellites audio](fonctionnalites/satellites.md) |
 | ajouter la météo, les transports ou une commande | [Les modules](modules/README.md) |
-| écrire mon propre module | [Créer un module](modules/creer-un-module.md) |
+| écrire mon propre module | [Créer un module](https://github.com/lfpoulain/cornelius-modules/blob/main/docs/creer-un-module.md), dans le dépôt cornelius-modules |
 | comprendre pourquoi rien ne se passe | [Dépannage](utilisation/depannage.md) |
 | savoir ce qui part sur Internet | [Confidentialité](reference/confidentialite.md) |
 | modifier le code | [Développer Cornelius](developpement/README.md), [Contribuer](../CONTRIBUTING.md) |
@@ -50,10 +50,10 @@ Cette page est l’index de la documentation. Elle indique par où commencer, pu
 
 ## Modules
 
-- [Les modules](modules/README.md) : sources d’informations, affichage permanent, commandes HTTP.
-- [Créer un module](modules/creer-un-module.md) : tutoriel à partir du gabarit.
+- [Les modules](modules/README.md) : sources d’informations, affichage permanent, modules externes, commandes HTTP.
 - [Référence du contrat des modules](modules/reference.md) : les règles complètes, pour les développeurs.
-- Fiches des modules fournis : [Heure](../addons/clock/README.md), [Météo](../addons/weather/README.md), [Transports](../addons/transit/README.md), et la [fiche à remplir](../addons/_template/README.md) pour un nouveau module.
+- Fiches des modules livrés : [Heure](../addons/clock/README.md), [Météo](../addons/weather/README.md), [Transports](../addons/transit/README.md), [Ragator](../addons/ragator/README.md).
+- [cornelius-modules](https://github.com/lfpoulain/cornelius-modules) : le dépôt des modules externes, avec le [tutoriel](https://github.com/lfpoulain/cornelius-modules/blob/main/docs/creer-un-module.md) et le [gabarit](https://github.com/lfpoulain/cornelius-modules/tree/main/_template) d’un nouveau module.
 
 ## Développement
 

@@ -33,6 +33,5 @@ Désactiver l’affichage garde la réponse vocale. Désactiver ou supprimer la 
 ## Voir aussi
 
 - [Les modules](../../docs/modules/README.md)
-- [Créer un module](../../docs/modules/creer-un-module.md)
 - [Référence du contrat des modules](../../docs/modules/reference.md)
 - Code : [index.ts](index.ts), [config.schema.json](config.schema.json)

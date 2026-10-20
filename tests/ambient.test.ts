@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test, { type TestContext } from 'node:test';
 import { setImmediate } from 'node:timers/promises';
-import addon from '../addons/_template/index.js';
+import addon from './helpers/demo-addon/index.js';
 import type { AddonHttpRequest } from '../shared/addons.js';
 import { SessionController } from '../server/controller.js';
 import { AddonRuntime } from '../server/addons/runtime.js';

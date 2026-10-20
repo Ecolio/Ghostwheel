@@ -35,10 +35,16 @@ function externalRepository(t: { after: (fn: () => void) => void }): string {
 test('un module externe se charge à côté des modules livrés, depuis un dépôt séparé', async (t) => {
   const root = externalRepository(t);
   copyClock(root, 'horloge');
+  // Un dossier commençant par « _ » (le gabarit _template) se copie, il ne se charge pas.
+  copyClock(root, '_template');
   const { addons, rejected } = await loadAddons({ externalRoot: root });
   const ids = addons.map((addon) => addon.id);
   assert.ok(ids.includes('horloge'));
   assert.ok(ids.includes('clock'));
+  assert.equal(
+    ids.some((id) => id.includes('template')),
+    false,
+  );
   assert.deepEqual(ids, [...ids].sort());
   // Les dossiers sans index.ts d'un dépôt externe (docs/…) ne sont pas des modules.
   assert.deepEqual(rejected, []);

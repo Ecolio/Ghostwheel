@@ -1,6 +1,13 @@
 # Référence du contrat des modules
 
-Cette page fixe le contrat `apiVersion: 1` que doit respecter un module d’informations (un « addon » dans le code). Elle s’adresse aux développeurs et aux assistants de code qui écrivent ou relisent un module. Pour une première prise en main, suivez d’abord le [tutoriel](creer-un-module.md).
+Cette page fixe le contrat `apiVersion: 1` que doit respecter un module d’informations (un « addon » dans le code). Elle s’adresse aux développeurs et aux assistants de code qui écrivent ou relisent un module. Pour une première prise en main, suivez d’abord le [tutoriel](https://github.com/lfpoulain/cornelius-modules/blob/main/docs/creer-un-module.md) du dépôt cornelius-modules.
+
+Cette page vit avec le code qu’elle décrit : toute évolution du contrat la met à jour dans le même changement. Les modules, eux, s’écrivent à deux endroits, avec les mêmes règles :
+
+| | Dossier | Quand |
+| --- | --- | --- |
+| Module externe | `<id>/` du dépôt [cornelius-modules](https://github.com/lfpoulain/cornelius-modules) | Par défaut : tout nouveau module |
+| Module livré | `addons/<id>/` de Cornelius | Seulement pour un module indispensable au premier démarrage, mis à jour avec le cœur |
 
 « DOIT » marque une règle du contrat, « DEVRAIT » une recommandation. En cas de doute, le code fait foi : [shared/addons.ts](../../shared/addons.ts) pour les types, [server/addons/registry.ts](../../server/addons/registry.ts) pour le chargement et [server/addons/runtime.ts](../../server/addons/runtime.ts) pour l’exécution.
 
@@ -8,7 +15,7 @@ Cette page fixe le contrat `apiVersion: 1` que doit respecter un module d’info
 
 | Besoin | Mécanisme |
 | --- | --- |
-| Lire une information : météo, horaires, disponibilités, agenda | Un module dans `addons/<id>/`, décrit ici |
+| Lire une information : météo, horaires, disponibilités, agenda | Un module, décrit ici |
 | Répondre à une question libre à partir d’un service | Un module avec un [outil à la demande](#loutil-à-la-demande) |
 | Déclencher un effet : allumer une lampe, ouvrir un portail | Une [commande HTTP](README.md#les-commandes-http), réglée dans l’administration, sans code |
 | Piloter les appareils de Home Assistant | L’intégration [Home Assistant](../fonctionnalites/home-assistant.md) |
@@ -318,12 +325,14 @@ Une nouvelle `dataVersion` force une collecte, et l’ancien relevé n’est plu
 
 ## Annexe : consigne pour un assistant de code
 
+Pour un module externe, utilisez plutôt la consigne du [tutoriel](https://github.com/lfpoulain/cornelius-modules/blob/main/docs/creer-un-module.md#avec-un-assistant-de-code) de cornelius-modules. Celle-ci sert à un module livré :
+
 ```text
-Crée un module Cornelius pour [besoin], identifiant [id] (minuscules, chiffres, « _ »).
-Lis docs/modules/reference.md, docs/modules/creer-un-module.md, shared/addons.ts,
-server/addons/runtime.ts, server/addons/registry.ts et le module fourni le plus proche
-(addons/clock, addons/weather ou addons/transit ; addons/ragator pour une question libre).
-Pars d'une copie de addons/_template, sans garder son fournisseur fictif.
+Crée un module livré de Cornelius pour [besoin], identifiant [id] (minuscules, chiffres,
+« _ »). Lis docs/modules/reference.md, shared/addons.ts, server/addons/runtime.ts,
+server/addons/registry.ts et le module livré le plus proche (addons/clock, addons/weather
+ou addons/transit ; addons/ragator pour une question libre). Pars d'une copie de
+../cornelius-modules/_template dans addons/[id], sans garder son fournisseur fictif.
 
 Source réelle : [documentation de l'API, adresses autorisées, format des réponses].
 Réglages : [champs, titres, descriptions, valeurs par défaut].
@@ -343,9 +352,9 @@ Indique ce qui est testé et ce qui reste à essayer avec le vrai fournisseur et
 
 ## Voir aussi
 
-- [Créer un module](creer-un-module.md)
+- [Créer un module](https://github.com/lfpoulain/cornelius-modules/blob/main/docs/creer-un-module.md), dans cornelius-modules
 - [Les modules](README.md)
 - [Architecture](../developpement/architecture.md)
 - [Tests et recette](../developpement/tests-et-recette.md)
 - [Configuration](../reference/configuration.md)
-- Code : [shared/addons.ts](../../shared/addons.ts), [server/addons/](../../server/addons/), [addons/_template](../../addons/_template/)
+- Code : [shared/addons.ts](../../shared/addons.ts), [server/addons/](../../server/addons/), [gabarit](https://github.com/lfpoulain/cornelius-modules/tree/main/_template)

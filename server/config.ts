@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { externalAddonsRoot } from './addons/registry.js';
 
 export interface AppConfig {
   databasePath: string;
@@ -12,6 +13,8 @@ export interface AppConfig {
   loginRateLimit?: number;
   meteoConceptToken?: string;
   primApiKey?: string;
+  /** Dépôt des modules externes (CORNELIUS_MODULES_DIR) ; absent, aucun n'est chargé. */
+  modulesDir?: string;
   /** Accès depuis les autres appareils du réseau local (HTTPS), en plus de la machine. */
   lan?: boolean;
   /** Annonce mDNS (_cornelius._tcp) pour les satellites audio ; vraie par défaut. */
@@ -69,6 +72,7 @@ export function loadConfig(): AppConfig & { port: number } {
     imageGenerationToken: process.env.CORNELIUS_IMAGE_GENERATION_TOKEN || undefined,
     meteoConceptToken: process.env.CORNELIUS_METEO_CONCEPT_TOKEN || undefined,
     primApiKey: process.env.CORNELIUS_PRIM_API_KEY || undefined,
+    modulesDir: externalAddonsRoot(),
     adminPassword,
     databasePath:
       process.env.CORNELIUS_DATABASE === ':memory:'

@@ -73,7 +73,7 @@ La caméra, les visages et l’écoute du mot d’appel restent sur l’ordinate
     </td>
     <td valign="top">
       <h4>🧩 Il s’enrichit</h4>
-      Des modules simples à écrire ajoutent de nouvelles informations et de nouveaux outils vocaux.
+      Des modules ajoutent de nouvelles informations et de nouveaux outils vocaux. Les modules externes vivent dans <a href="https://github.com/lfpoulain/cornelius-modules">cornelius-modules</a> et se mettent à jour à part.
     </td>
   </tr>
 </table>
@@ -168,7 +168,7 @@ Toute la documentation part de [l’index](docs/README.md).
 | **Installer** | [Linux](docs/installation/linux.md) · [Windows](docs/installation/windows.md) · [Carte graphique](docs/installation/gpu.md) |
 | **Utiliser** | [Le miroir](docs/utilisation/miroir.md) · [L’administration](docs/utilisation/administration.md) · [Dépannage](docs/utilisation/depannage.md) |
 | **Fonctionnalités** | [Ouverture et présence](docs/fonctionnalites/ouverture-et-presence.md) · [Mot d’appel](docs/fonctionnalites/mot-d-appel.md) · [Mémoire](docs/fonctionnalites/memoire.md) · [Home Assistant](docs/fonctionnalites/home-assistant.md) · [Agents Hermes](docs/fonctionnalites/agents-hermes.md) · [Vision locale](docs/fonctionnalites/vision-locale.md) · [Images](docs/fonctionnalites/generation-d-images.md) |
-| **Modules** | [Les utiliser](docs/modules/README.md) · [En créer un](docs/modules/creer-un-module.md) |
+| **Modules** | [Les utiliser](docs/modules/README.md) · [Le contrat](docs/modules/reference.md) · [En créer un](https://github.com/lfpoulain/cornelius-modules/blob/main/docs/creer-un-module.md) (dépôt cornelius-modules) |
 | **Développer** | [Développement](docs/developpement/README.md) · [Architecture](docs/developpement/architecture.md) · [Contribuer](CONTRIBUTING.md) · [Historique](CHANGELOG.md) |
 | **Référence** | [Configuration](docs/reference/configuration.md) · [Confidentialité](docs/reference/confidentialite.md) · [Licences](docs/reference/licences.md) · [Glossaire](docs/reference/glossaire.md) |
 

@@ -1,8 +1,15 @@
 # Les modules
 
-Les modules apportent à Cornelius des informations (l’heure, la météo, les prochains passages) et des commandes (ouvrir le portail, lancer une scène). Cette page explique comment les régler dans l’administration. Elle s’adresse à la personne qui prépare le miroir pour le foyer.
+Les modules apportent à Cornelius des informations (l’heure, la météo, les prochains passages) et des commandes (ouvrir le portail, lancer une scène). Cette page explique comment les installer et les régler dans l’administration. Elle s’adresse à la personne qui prépare le miroir pour le foyer.
 
-Pour écrire un nouveau module, voir [Créer un module](creer-un-module.md).
+Les modules viennent de deux endroits :
+
+| | Où | Mis à jour |
+| --- | --- | --- |
+| **Modules livrés** : Heure, Météo, Transports, Ragator | `addons/`, dans Cornelius | avec Cornelius |
+| **Modules externes** : Vacances et jours fériés… | le dépôt [cornelius-modules](https://github.com/lfpoulain/cornelius-modules), cloné à côté de Cornelius | à part, par `git pull` (voir [Modules externes](#modules-externes)) |
+
+Pour écrire un module, tout se passe dans [cornelius-modules](https://github.com/lfpoulain/cornelius-modules) : [tutoriel](https://github.com/lfpoulain/cornelius-modules/blob/main/docs/creer-un-module.md), gabarit et commandes de test. Les règles du contrat sont dans la [référence](reference.md), ici, car elles décrivent le code de Cornelius.
 
 ## Les notions
 
@@ -168,8 +175,8 @@ Le secret n’est jamais enregistré dans la base. Tant qu’il manque, la comma
 
 ## Voir aussi
 
-- [Créer un module](creer-un-module.md)
 - [Référence du contrat des modules](reference.md)
+- [cornelius-modules](https://github.com/lfpoulain/cornelius-modules) : modules externes, [tutoriel](https://github.com/lfpoulain/cornelius-modules/blob/main/docs/creer-un-module.md) et gabarit
 - [L’administration](../utilisation/administration.md)
 - [Le miroir](../utilisation/miroir.md)
 - [Home Assistant](../fonctionnalites/home-assistant.md)

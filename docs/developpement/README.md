@@ -117,7 +117,7 @@ web/                 interface React (miroir et administration)
   audio/             micro, WebRTC, son d’ouverture, mot d’appel, mesures
 perception/          worker Python : caméra, visages, détection de parole, vision, mot d’appel
 image_generation/    worker Python de génération d’images et son installateur
-addons/              modules : clock, weather, transit, et _template (gabarit, non chargé)
+addons/              modules livrés : clock, weather, transit, ragator (les autres : cornelius-modules)
 schemas/             contrats JSON ; examples/ : un exemple valide par contrat
 scripts/             lancement, arrêt, installation, recette et mesures
 tests/               tests TypeScript ; e2e/ navigateur ; python/ ; recette/protocol.json
@@ -183,6 +183,6 @@ Une page décrit l’état actuel, sans date ni historique. Une valeur par défa
 - [Tests et recette](tests-et-recette.md)
 - [Les prompts](prompts.md)
 - [Feuille de route](feuille-de-route.md)
-- [Créer un module](../modules/creer-un-module.md)
+- [Référence des modules](../modules/reference.md)
 - [Configuration](../reference/configuration.md)
 - [Contribuer](../../CONTRIBUTING.md)

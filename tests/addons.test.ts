@@ -86,8 +86,6 @@ test('le registre découvre les modules du dossier addons et applique le contrat
   // Au moins les modules livrés : un module ajouté dans addons/ ne doit pas casser ce test.
   const ids = addonRegistry.map((addon) => addon.id);
   for (const id of ['clock', 'transit', 'weather']) assert.ok(ids.includes(id), id);
-  // Le gabarit addons/_template sert à copier un module : il n’est jamais chargé.
-  assert.equal(ids.includes('_template') || ids.includes('template'), false);
   assert.equal(
     addonRegistry.every((addon) => addon.apiVersion === 1 && addon.id.length > 0),
     true,

@@ -196,7 +196,7 @@ export async function createApp(
   const addonInstances = new AddonRepository(db);
   const actionRepository = new ActionRepository(db);
   const http = createHttpClient();
-  const { addons, rejected } = await loadAddons({ logs });
+  const { addons, rejected } = await loadAddons({ logs, externalRoot: config.modulesDir ?? null });
   if (rejected.length > 0)
     logs.write('warn', 'addon', 'Modules ignorés au démarrage', {
       rejected: rejected.map((item) => item.name),

@@ -1,4 +1,7 @@
-/** Exemple pédagogique : remplacer le fournisseur fictif avant toute installation. */
+/**
+ * Module de démonstration des tests (parking relié à un fournisseur fictif), jamais chargé
+ * par le registre. Le gabarit des nouveaux modules vit dans le dépôt cornelius-modules.
+ */
 import { AddonCollectError, type AddonDefinition } from '#cornelius/addons';
 import { compile } from '#cornelius/validation';
 import configSchema from './config.schema.json' with { type: 'json' };

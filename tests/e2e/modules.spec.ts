@@ -227,7 +227,7 @@ test('les modules sont rangés en trois groupes et se trouvent sans accents, mot
     .locator('summary')
     .getByRole('heading', { level: 3 })
     .allTextContents();
-  expect(titles).toEqual(['Heure', 'Météo', 'Transports']);
+  expect(titles).toEqual(['Heure', 'Météo', 'Transports', 'Ragator']);
   await page.screenshot({ path: `${screenshots}/admin-modules-groups.png`, fullPage: true });
 
   const search = page.getByLabel('Rechercher un module ou une source');

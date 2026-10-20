@@ -73,11 +73,11 @@ Le générateur du mot d’appel est un projet séparé, avec ses propres tests 
 | Dossier ou fichier | Contenu |
 |---|---|
 | `tests/*.test.ts` | Un fichier par sujet : `controller`, `live`, `api`, `storage`, `backups`, `memory*`, `vision`, `image-generation*`, `home-assistant*`, `agents*`, `addons*`, `actions*`, `opening`, `readiness`, `audio*`… |
-| `tests/helpers/` | Faux serveurs Home Assistant et Hermes. |
+| `tests/helpers/` | Faux serveurs Home Assistant et Hermes ; `demo-addon/`, module de démonstration des tests. |
 | `tests/e2e/` | Parcours Playwright (`*.spec.ts`) ; `env.ts` fixe le port et le dossier des captures. |
 | `tests/python/` | Tests `unittest` de `perception/` et `image_generation/`. |
 | `tests/recette/protocol.json` | Protocole de la recette manuelle (questions, interruptions, nombre d’approches et de passages). |
-| `addons/<id>/*.test.ts` | Tests propres à un module, lancés par `npm test` (voir `addons/_template/addon.test.ts`). |
+| `addons/<id>/*.test.ts` | Tests propres à un module livré, lancés par `npm test`. Ceux des modules externes : `npm run test:modules`. |
 
 Tests ciblés par fonction :
 

@@ -15,6 +15,7 @@ Le fonctionnement actuel est décrit dans la [documentation](docs/README.md). Ce
 
 **Modifié**
 
+- Le tutoriel « Créer un module » et le gabarit `_template` passent dans [cornelius-modules](https://github.com/lfpoulain/cornelius-modules), où s’écrivent les nouveaux modules. Cornelius garde la page d’utilisation des modules et la référence du contrat.
 - Les modules importent le contrat par `#cornelius/addons` et `#cornelius/validation`, et leurs tests le cœur par `#cornelius/testing`, au lieu de chemins `../../shared/` et `../../server/`.
 
 ### 2026-10-19 : satellites audio
