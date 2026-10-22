@@ -6,6 +6,7 @@ import type { AdmissionSound } from './admission-sound.js';
 import type { GreetingMode, SilenceClose } from './conversation.js';
 import type { AmbientDisplay, ModuleCard } from './addons.js';
 import type { Opening } from './opening.js';
+import type { ScreensaverState } from './screensaver.js';
 
 export type { ModuleCard };
 
@@ -115,6 +116,8 @@ export interface MirrorState {
   advancedAudioBuffer: boolean;
   /** Taille de l’orbe sur le miroir, en pourcentage (100 : taille d’origine). Absent : 100. */
   orbScale?: number;
+  /** Écran de veille (peintures et photos) ; absent des anciens serveurs : désactivé. */
+  screensaver?: ScreensaverState;
   /** Voix de Cornelius (GPT-Live) ; absente des anciens serveurs. */
   speechVoice?: string;
   /** Module « Cartes » ; absent des anciens serveurs (3 cartes, raccourcies, 60 s). */

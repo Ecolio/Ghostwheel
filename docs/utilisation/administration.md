@@ -139,6 +139,15 @@ Chaque texte compte 4 000 caractères au plus. Enregistrer s’applique aussitô
 - **Voix de Cornelius** : l’une des 22 voix de GPT-Live. Cedar (par défaut) et Marin sont conseillées pour le français ; les autres peuvent garder un léger accent anglais. La nouvelle voix s’entend à la conversation suivante.
 - **Taille de l’orbe** : de 50 à 150 % de sa taille d’origine, appliquée en direct sur le miroir ; « Revenir à 100 % » la remet à l’origine.
 
+## Écran de veille
+
+*Au quotidien.* Les peintures et les photos affichées quand personne n’est devant le miroir. Voir [L’écran de veille](miroir.md#lécran-de-veille).
+
+- **Afficher des images au repos** : désactivé par défaut. Sans image, l’écran reste noir.
+- **Changer d’image toutes les** : 30 s, 1, 5 (par défaut) ou 15 minutes, ou 1 heure.
+- **Revenir aux images après** : 5 s, 30 s (par défaut), 1 ou 5 minutes sans personne devant le miroir.
+- **Images** : « Ajouter des photos » (JPEG, PNG ou WebP, 25 Mo au plus chacune, plusieurs à la fois) et « Télécharger 19 peintures » : une sélection de peintures célèbres du domaine public (Van Gogh, Monet, Hokusai, Vermeer…), prises sur Wikimedia Commons. Chaque image se retire avec sa corbeille ; une peinture retirée revient avec « Compléter les peintures ».
+
 ## Modules
 
 *Au quotidien.* Les sources de ses réponses et les commandes qu’il peut lancer.

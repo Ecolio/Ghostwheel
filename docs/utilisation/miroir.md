@@ -16,7 +16,7 @@ Choisissez une adresse et gardez-la. `http://127.0.0.1:3000/` et `http://localho
 
 ## Ce qu’on voit
 
-L’écran est noir, pour laisser passer le reflet. De haut en bas :
+L’écran est noir, pour laisser passer le reflet, sauf si l’[écran de veille](#lécran-de-veille) affiche des peintures quand personne n’est là. De haut en bas :
 
 - en haut, le nom « cornelius / », une ligne d’état quand quelque chose bloque, et les informations permanentes ;
 - au centre, l’orbe, et sous lui ce que fait Cornelius pendant une conversation ;
@@ -101,6 +101,17 @@ En bas de l’écran, une pastille par personne détectée :
 Une pastille violette « Image en création » (ou « Illustration en cours ») s’ajoute pendant que Cornelius crée une image. Voir [La génération d’images](../fonctionnalites/generation-d-images.md).
 
 Les prénoms des personnes reconnues sont donc visibles par tous ceux qui voient l’écran.
+
+### L’écran de veille
+
+Plutôt que de rester noir, le miroir peut afficher des peintures et vos photos quand personne n’est devant lui, comme un cadre d’art. Il est désactivé par défaut ; il s’active et se remplit dans l’administration, rubrique « Écran de veille ».
+
+- **Quand.** Les images arrivent après un délai sans personne devant le miroir (30 s par défaut), sans conversation ni carte affichée. Elles changent à intervalle régulier (toutes les 5 minutes par défaut), par un long fondu, dans un ordre mélangé.
+- **À l’écran.** Rien d’autre ne s’affiche : ni nom, ni informations permanentes. Une image aux proportions de l’écran le remplit ; les autres s’y posent comme une toile, sur un fond tiré de leur propre flou. Le titre et l’auteur d’une peinture s’écrivent discrètement en bas à droite.
+- **Quand quelqu’un arrive.** L’orbe réapparaît devant l’image, qui se grise puis s’enroule et s’effondre dans l’orbe, jusqu’à laisser le fond noir. Le reste de l’écran revient ensuite.
+- **Avec « Cornelius » ouvert à tout le monde.** La caméra reste éteinte en veille : les images restent jusqu’au mot d’appel.
+
+Si l’ordinateur demande de réduire les animations, l’image apparaît et disparaît par un simple fondu.
 
 ## Activer la voix
 

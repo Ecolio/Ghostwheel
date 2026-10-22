@@ -37,6 +37,12 @@ import { adminPasswordMigration } from './admin-password.js';
 import { secretsMigration } from './secrets.js';
 import { trustedDevicesMigration } from './trusted-devices.js';
 import { satellitesMigration } from './satellites-store.js';
+import { screensaverMigration } from './screensaver.js';
+import {
+  DEFAULT_SCREENSAVER,
+  isScreensaverSettings,
+  type ScreensaverSettings,
+} from '../shared/screensaver.js';
 import { rotateMigrationBackups } from './backups.js';
 
 import type { Profile } from '../shared/types.js';
@@ -365,6 +371,8 @@ export const migrations: readonly string[] = [
   INSERT OR IGNORE INTO image_generation_provider (id) VALUES (1);`,
   // Satellites audio : micro et haut-parleur d’une autre pièce, associés dans l’administration.
   satellitesMigration,
+  // Écran de veille : peintures et photos quand personne n’est devant le miroir.
+  screensaverMigration,
 ];
 
 /** The server owns this connection. Backups include WAL changes via SQLite itself. */
@@ -611,6 +619,26 @@ export class SessionPreferences {
   }
   setOrbScale(scale: number): void {
     this.db.prepare('UPDATE display_preferences SET orb_scale = ? WHERE id = 1').run(scale);
+  }
+  getScreensaver(): ScreensaverSettings {
+    const row = this.db
+      .prepare(
+        'SELECT enabled, interval_ms, return_delay_ms FROM screensaver_preferences WHERE id = 1',
+      )
+      .get();
+    const settings = {
+      enabled: row?.enabled === 1,
+      intervalMs: Number(row?.interval_ms),
+      returnDelayMs: Number(row?.return_delay_ms),
+    };
+    return isScreensaverSettings(settings) ? settings : { ...DEFAULT_SCREENSAVER };
+  }
+  setScreensaver(settings: ScreensaverSettings): void {
+    this.db
+      .prepare(
+        'UPDATE screensaver_preferences SET enabled = ?, interval_ms = ?, return_delay_ms = ? WHERE id = 1',
+      )
+      .run(Number(settings.enabled), settings.intervalMs, settings.returnDelayMs);
   }
   getAdvancedAudioBuffer(): boolean {
     return (

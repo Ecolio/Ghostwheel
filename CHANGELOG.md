@@ -6,6 +6,13 @@ Le fonctionnement actuel est décrit dans la [documentation](docs/README.md). Ce
 
 ## Non publié
 
+### 2026-10-22 : écran de veille
+
+**Ajouté**
+
+- Écran de veille du miroir : des peintures et vos photos plein écran quand personne n’est devant lui, à la façon d’un cadre d’art. Quand une personne arrive, l’orbe réapparaît devant l’image, qui se grise, s’enroule et s’effondre dans l’orbe en laissant paraître le noir.
+- Rubrique « Écran de veille » de l’administration : activation, rythme des images, délai de retour, envoi de photos et sélection de 19 peintures du domaine public à télécharger (Wikimedia Commons).
+
 ### 2026-10-20 : contrat des modules 0.2.0
 
 Cornelius passe en 0.2.0. Ces ajouts restent compatibles `apiVersion: 1` ; un module qui s’en sert déclare `minCoreVersion: '0.2.0'`.
