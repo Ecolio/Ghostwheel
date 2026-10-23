@@ -6,6 +6,17 @@ Le fonctionnement actuel est décrit dans la [documentation](docs/README.md). Ce
 
 ## Non publié
 
+### 2026-10-23 : réglages du micro
+
+**Ajouté**
+
+- Micro et haut-parleurs : interrupteurs « Réduction du bruit du navigateur » et « Gain automatique du micro », propres au navigateur du miroir. L’annulation d’écho reste toujours active.
+- « Tester le micro » : niveau du micro pendant dix secondes, et ce que le navigateur a vraiment appliqué.
+
+**Modifié**
+
+- Consigne d’interruption de GPT-Live alignée sur le guide d’OpenAI : il s’arrête dès qu’on le coupe, même au milieu d’une phrase ou pendant l’attente d’un résultat.
+
 ### 2026-10-23 : envoi par e-mail
 
 **Ajouté**

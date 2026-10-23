@@ -46,7 +46,7 @@ Une même règle vaut dans toutes les rubriques :
 
 Si vous quittez une rubrique avec des modifications non enregistrées, l’administration demande : « Des modifications ne sont pas enregistrées. Quitter cette rubrique sans les enregistrer ? ».
 
-Les réglages sont gardés sur le serveur et conservés après un redémarrage. Seul le choix du micro et des haut-parleurs est propre au navigateur.
+Les réglages sont gardés sur le serveur et conservés après un redémarrage. Seuls le choix du micro et des haut-parleurs, la réduction du bruit et le gain automatique sont propres au navigateur.
 
 ## Mise en route
 
@@ -74,7 +74,12 @@ Carte « Audio de ce navigateur » :
 
 - **Autoriser et vérifier le microphone** : demande l’autorisation au navigateur, puis affiche « Micro autorisé ». Le micro n’est allumé que le temps de la vérification, qui attend la fin d’une conversation en cours.
 - **Microphone** et **Haut-parleurs** : « Périphérique par défaut » au départ. Un appareil débranché reste proposé comme « Périphérique enregistré (à reconnecter) ».
+- **Réduction du bruit du navigateur** (activée par défaut) : GPT-Live ignore déjà le bruit ambiant. Si Cornelius vous comprend mal, essayez sans : ce filtre peut abîmer la voix.
+- **Gain automatique du micro** (activé par défaut) : relève le micro dans les silences, et avec lui la voix de Cornelius qui revient par le haut-parleur. S’il s’entend lui-même ou se laisse mal couper, essayez sans, et réglez le volume du micro dans le système.
 - **Tester le haut-parleur** : joue le son « Carillon ».
+- **Tester le micro** : ouvre le micro dix secondes avec ces réglages et montre son niveau. La barre doit bien bouger quand vous parlez à votre distance habituelle, sans rester collée au bout. Dessous, « Appliqué par le navigateur » dit si l’annulation d’écho, la réduction du bruit et le gain automatique sont vraiment actifs.
+
+L’annulation d’écho reste toujours active : Cornelius écoute pendant qu’il parle, et c’est elle qui retire sa propre voix du micro. Elle retire seulement le son joué par ce navigateur, et le retire mieux quand les haut-parleurs sont la sortie par défaut du système, à distance du micro et pas tournés vers lui. GPT-Live n’a, de son côté, aucun réglage d’écoute : il décide seul quand la personne parle, a fini ou le coupe.
 
 Ce choix appartient au navigateur où il est fait, et à l’adresse utilisée. Faites-le dans le navigateur qui affiche le miroir.
 
