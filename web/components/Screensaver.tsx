@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  SCREENSAVER_EFFECTS,
+  SCREENSAVER_RANDOM_EFFECTS,
   type ScreensaverEffect,
   type ScreensaverImage,
   type ScreensaverTransition,
@@ -65,12 +65,15 @@ export function Screensaver({
   revision,
   intervalMs,
   transition,
+  durationMs,
   onSceneChange,
 }: {
   active: boolean;
   revision: string;
   intervalMs: number;
   transition: ScreensaverTransition;
+  /** Durée de la disparition de l’image ; le retour prend 1,6 fois plus. */
+  durationMs: number;
   onSceneChange: (scene: ScreensaverScene) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -83,6 +86,7 @@ export function Screensaver({
     setImages: (images: ScreensaverImage[]) => void;
     setInterval: (ms: number) => void;
     setTransition: (transition: ScreensaverTransition) => void;
+    setDuration: (ms: number) => void;
   } | null>(null);
   const sceneChanged = useRef(onSceneChange);
   sceneChanged.current = onSceneChange;
@@ -108,6 +112,7 @@ export function Screensaver({
     let wanted = false;
     let interval = intervalMs;
     let style = transition;
+    let duration = durationMs;
     let effect: ScreensaverEffect = 'vortex';
     let slideshow: ReturnType<typeof setTimeout> | null = null;
     let loading = false;
@@ -273,13 +278,15 @@ export function Screensaver({
      * Transition du prochain mouvement. Un mouvement qui en interrompt un autre (la personne
      * repart avant la fin) garde la même, pour repartir de l’image telle qu’elle est.
      */
-    const chooseEffect = (fresh: boolean): 'none' | 'fade' | ScreensaverEffect => {
+    const chooseEffect = (fresh: boolean): 'none' | 'reduced' | ScreensaverEffect => {
       if (style === 'none') return 'none';
-      if (motion.matches) return 'fade';
+      if (motion.matches) return 'reduced';
       if (fresh)
         effect =
           style === 'random'
-            ? SCREENSAVER_EFFECTS[Math.floor(Math.random() * SCREENSAVER_EFFECTS.length)]!
+            ? SCREENSAVER_RANDOM_EFFECTS[
+                Math.floor(Math.random() * SCREENSAVER_RANDOM_EFFECTS.length)
+              ]!
             : style;
       return effect;
     };
@@ -295,26 +302,32 @@ export function Screensaver({
         setCaption(image);
       }
       const kind = chooseEffect(fresh);
-      // Départ : la toile repliée dans l’orbe endormie, grise ; ou rien, pour un simple fondu.
+      // Départ : la toile repliée dans l’orbe endormie, grise (en noir pour le fondu) ; ou
+      // rien, pour un fondu réduit ou sans transition.
       if (fresh)
         Object.assign(
           values,
-          kind === 'fade' || kind === 'none'
+          kind === 'reduced' || kind === 'none'
             ? { progress: 0, gray: 0, veil: kind === 'none' ? 1 : 0, mix: 0 }
-            : { progress: 1, gray: 1, veil: 1, mix: 0 },
+            : { progress: 1, gray: kind === 'fade' ? 0 : 1, veil: 1, mix: 0 },
         );
       changeStage('entering');
+      // Le retour prend 1,6 fois la durée de l’effet : la peinture s’installe sans hâte.
+      const length = duration * 1.6;
       if (kind === 'none') {
         for (const key of ['progress', 'gray', 'veil'] as const)
           animate(key, key === 'veil' ? 1 : 0, 0);
-      } else if (kind === 'fade') {
+      } else if (kind === 'reduced') {
         animate('progress', 0, 0);
         animate('gray', 0, 0);
         animate('veil', 1, 900);
+      } else if (kind === 'fade') {
+        animate('veil', 1, 0);
+        animate('progress', 0, length, 0, easeInOut);
       } else {
         animate('veil', 1, 200);
-        animate('progress', 0, 1_600, 0, easeOut);
-        animate('gray', 0, 1_200, 900, easeInOut);
+        animate('progress', 0, length, 0, easeOut);
+        animate('gray', 0, length * 0.75, length * 0.55, easeInOut);
       }
       run();
     };
@@ -326,14 +339,22 @@ export function Screensaver({
       const kind = chooseEffect(fresh);
       if (kind === 'none') {
         animate('veil', 0, 0);
-      } else if (kind === 'fade') {
+      } else if (kind === 'reduced') {
         animate('gray', 1, 250);
         animate('veil', 0, 500);
+      } else if (kind === 'fade') {
+        animate('progress', 1, duration, 0, easeInOut);
       } else {
-        // La toile se grise d’un coup, puis l’orbe l’efface en accélérant : l’orbe doit être
-        // seul à l’écran en à peine plus d’une seconde.
-        animate('gray', 1, 280, 0, easeOut);
-        animate('progress', 1, 1_050, 100, kind === 'vortex' ? easeIn : easeInOut);
+        // La toile se grise d’un coup, puis l’orbe l’efface en accélérant, le tout dans la
+        // durée réglée.
+        animate('gray', 1, Math.min(280, duration * 0.28), 0, easeOut);
+        animate(
+          'progress',
+          1,
+          duration * 0.9,
+          duration * 0.1,
+          kind === 'vortex' ? easeIn : easeInOut,
+        );
       }
       run();
     };
@@ -360,6 +381,9 @@ export function Screensaver({
       setTransition(value) {
         style = value;
       },
+      setDuration(ms) {
+        duration = ms;
+      },
     };
     const resized = () => {
       if (stage !== 'off') paint();
@@ -373,7 +397,7 @@ export function Screensaver({
       if (slideshow) clearTimeout(slideshow);
       renderer?.dispose();
     };
-    // intervalMs et transition ne sont lus qu’au départ ; setInterval et setTransition suivent.
+    // intervalMs, transition et durationMs ne sont lus qu’au départ ; les setters suivent.
   }, []);
 
   useEffect(() => {
@@ -389,6 +413,7 @@ export function Screensaver({
   }, [revision]);
   useEffect(() => engine.current?.setInterval(intervalMs), [intervalMs]);
   useEffect(() => engine.current?.setTransition(transition), [transition]);
+  useEffect(() => engine.current?.setDuration(durationMs), [durationMs]);
   useEffect(() => engine.current?.wake(active), [active]);
 
   return (

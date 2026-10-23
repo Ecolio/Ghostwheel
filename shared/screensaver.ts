@@ -10,6 +10,8 @@ export interface ScreensaverSettings {
   returnDelayMs: number;
   /** Passage de l’image à l’orbe, et retour. */
   transition: ScreensaverTransition;
+  /** Durée de la disparition de l’image ; son retour prend un peu moins du double. */
+  durationMs: number;
   /** Ce qui fait revenir l’orbe. */
   wake: ScreensaverWake;
 }
@@ -17,11 +19,21 @@ export interface ScreensaverSettings {
 /**
  * vortex : l’image s’enroule et s’effondre dans l’orbe. embers : elle se consume depuis l’orbe.
  * ripple : une onde partie de l’orbe l’emporte. mosaic : elle se défait en carreaux aspirés
- * vers l’orbe. curtain : elle s’ouvre en deux comme un rideau. random : l’une d’elles au hasard,
+ * vers l’orbe. curtain : elle s’ouvre en deux comme un rideau. fade : elle s’éteint vers le noir,
+ * sans se griser. random : l’un des effets animés au hasard,
  * à chaque fois. none : l’image disparaît d’un coup.
  */
-export const SCREENSAVER_EFFECTS = ['vortex', 'embers', 'ripple', 'mosaic', 'curtain'] as const;
+export const SCREENSAVER_EFFECTS = [
+  'vortex',
+  'embers',
+  'ripple',
+  'mosaic',
+  'curtain',
+  'fade',
+] as const;
 export type ScreensaverEffect = (typeof SCREENSAVER_EFFECTS)[number];
+/** « Au hasard » tire parmi les effets animés ; le fondu reste un choix délibéré. */
+export const SCREENSAVER_RANDOM_EFFECTS = SCREENSAVER_EFFECTS.filter((effect) => effect !== 'fade');
 export const SCREENSAVER_TRANSITIONS = [...SCREENSAVER_EFFECTS, 'random', 'none'] as const;
 export type ScreensaverTransition = (typeof SCREENSAVER_TRANSITIONS)[number];
 
@@ -41,19 +53,21 @@ export const DEFAULT_SCREENSAVER: ScreensaverSettings = {
   intervalMs: 300_000,
   returnDelayMs: 30_000,
   transition: 'vortex',
+  durationMs: 1_000,
   wake: 'presence',
 };
 
 /** Durées proposées d’un geste dans l’administration. */
 export const SCREENSAVER_INTERVALS_MS = [30_000, 60_000, 300_000, 900_000, 3_600_000];
 export const SCREENSAVER_RETURN_DELAYS_MS = [5_000, 30_000, 60_000, 300_000];
+export const SCREENSAVER_DURATIONS_MS = [500, 1_000, 1_500, 2_000, 3_000];
+export const SCREENSAVER_DURATION_MIN_MS = 300;
+export const SCREENSAVER_DURATION_MAX_MS = 5_000;
 
 export function isScreensaverSettings(value: unknown): value is ScreensaverSettings {
   if (!value || typeof value !== 'object') return false;
-  const { enabled, intervalMs, returnDelayMs, transition, wake, ...rest } = value as Record<
-    string,
-    unknown
-  >;
+  const { enabled, intervalMs, returnDelayMs, transition, durationMs, wake, ...rest } =
+    value as Record<string, unknown>;
   return (
     Object.keys(rest).length === 0 &&
     (SCREENSAVER_TRANSITIONS as readonly unknown[]).includes(transition) &&
@@ -62,6 +76,9 @@ export function isScreensaverSettings(value: unknown): value is ScreensaverSetti
     Number.isInteger(intervalMs) &&
     (intervalMs as number) >= SCREENSAVER_INTERVAL_MIN_MS &&
     (intervalMs as number) <= SCREENSAVER_INTERVAL_MAX_MS &&
+    Number.isInteger(durationMs) &&
+    (durationMs as number) >= SCREENSAVER_DURATION_MIN_MS &&
+    (durationMs as number) <= SCREENSAVER_DURATION_MAX_MS &&
     Number.isInteger(returnDelayMs) &&
     (returnDelayMs as number) >= 0 &&
     (returnDelayMs as number) <= SCREENSAVER_RETURN_DELAY_MAX_MS

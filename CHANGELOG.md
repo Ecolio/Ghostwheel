@@ -12,8 +12,8 @@ Le fonctionnement actuel est décrit dans la [documentation](docs/README.md). Ce
 
 - Écran de veille du miroir : des peintures et vos photos plein écran quand personne n’est devant lui, à la façon d’un cadre d’art. Quand une personne arrive, l’orbe réapparaît devant l’image, qui se grise, s’enroule et s’effondre dans l’orbe en laissant paraître le noir.
 - Rubrique « Écran de veille » de l’administration : activation, rythme des images, délai de retour, envoi de photos et sélection de 19 peintures du domaine public à télécharger (Wikimedia Commons).
-- Cinq transitions au choix (Aspiration, Cendres, Onde, Mosaïque, Rideau), « Au hasard » et « Sans transition ». La disparition de l’image dure un peu plus d’une seconde.
-- L’orbe revient au passage d’une personne, ou au réveil de Cornelius : selon ce qui ouvre la conversation (présence, regard, mot « Cornelius »), réservé aux personnes reconnues si l’ouverture l’est.
+- Transitions au choix (Aspiration, Cendres, Onde, Mosaïque, Rideau, Fondu), « Au hasard » et « Sans transition », avec leur durée réglable (1 s par défaut).
+- L’orbe revient au moindre mouvement, ou selon le réveil de Cornelius : selon ce qui ouvre la conversation (présence, regard, mot « Cornelius »), réservé aux personnes reconnues si l’ouverture l’est.
 
 ### 2026-10-20 : contrat des modules 0.2.0
 

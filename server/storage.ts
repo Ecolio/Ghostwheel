@@ -37,7 +37,11 @@ import { adminPasswordMigration } from './admin-password.js';
 import { secretsMigration } from './secrets.js';
 import { trustedDevicesMigration } from './trusted-devices.js';
 import { satellitesMigration } from './satellites-store.js';
-import { screensaverChoicesMigration, screensaverMigration } from './screensaver.js';
+import {
+  screensaverChoicesMigration,
+  screensaverDurationMigration,
+  screensaverMigration,
+} from './screensaver.js';
 import {
   DEFAULT_SCREENSAVER,
   SCREENSAVER_TRANSITIONS,
@@ -377,6 +381,8 @@ export const migrations: readonly string[] = [
   screensaverMigration,
   // Écran de veille : transition choisie et ce qui fait revenir l’orbe (validés par le code).
   screensaverChoicesMigration,
+  // Écran de veille : durée de l’effet de transition.
+  screensaverDurationMigration,
 ];
 
 /** The server owns this connection. Backups include WAL changes via SQLite itself. */
@@ -627,8 +633,9 @@ export class SessionPreferences {
   getScreensaver(): ScreensaverSettings {
     const row = this.db
       .prepare(
-        `SELECT enabled, interval_ms, return_delay_ms, transition, wake
-         FROM screensaver_preferences JOIN screensaver_choices USING (id) WHERE id = 1`,
+        `SELECT enabled, interval_ms, return_delay_ms, transition, wake, duration_ms
+         FROM screensaver_preferences JOIN screensaver_choices USING (id)
+           JOIN screensaver_duration USING (id) WHERE id = 1`,
       )
       .get();
     // Une transition ou un réveil inconnu (retiré depuis) retombe sur la valeur par défaut seul.
@@ -639,6 +646,7 @@ export class SessionPreferences {
       intervalMs: Number(row?.interval_ms),
       returnDelayMs: Number(row?.return_delay_ms),
       transition: known(SCREENSAVER_TRANSITIONS, row?.transition, DEFAULT_SCREENSAVER.transition),
+      durationMs: Number(row?.duration_ms),
       wake: known(SCREENSAVER_WAKES, row?.wake, DEFAULT_SCREENSAVER.wake),
     };
     return isScreensaverSettings(settings) ? settings : { ...DEFAULT_SCREENSAVER };
@@ -652,6 +660,9 @@ export class SessionPreferences {
     this.db
       .prepare('UPDATE screensaver_choices SET transition = ?, wake = ? WHERE id = 1')
       .run(settings.transition, settings.wake);
+    this.db
+      .prepare('UPDATE screensaver_duration SET duration_ms = ? WHERE id = 1')
+      .run(settings.durationMs);
   }
   getAdvancedAudioBuffer(): boolean {
     return (

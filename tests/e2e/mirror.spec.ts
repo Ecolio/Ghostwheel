@@ -709,6 +709,7 @@ function screensaverState(
     intervalMs: 60_000,
     returnDelayMs: 0,
     transition: 'vortex',
+    durationMs: 1_000,
     wake,
     imageCount: 1,
     revision: 'essai',

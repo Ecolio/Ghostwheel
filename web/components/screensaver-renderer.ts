@@ -127,6 +127,10 @@ const fragmentShader = /* glsl */ `
       if (local > 0.0)
         visible = 1.0 - smoothstep(cell * 0.5 * size - 1.5, cell * 0.5 * size, max(abs(offset.x), abs(offset.y)));
       color = shade(middle + offset / max(size, 0.001), t) * (1.0 + local * 0.9);
+    } else if (uEffect == 5) {
+      // Fondu : la toile s’éteint vers le noir, en gardant ses couleurs.
+      color = shade(p, t);
+      visible = 1.0 - t;
     } else if (uEffect == 4) {
       // Rideau : la toile s’ouvre en deux depuis l’orbe, chaque moitié glisse vers son bord.
       float shift = t * (max(uCenter.x, uViewport.x - uCenter.x) + 40.0);
@@ -162,6 +166,7 @@ const effectIndex: Record<ScreensaverEffect, number> = {
   ripple: 2,
   mosaic: 3,
   curtain: 4,
+  fade: 5,
 };
 
 export interface ScreensaverFrame {

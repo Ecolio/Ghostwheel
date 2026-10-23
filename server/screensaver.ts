@@ -36,6 +36,13 @@ export const screensaverChoicesMigration = `CREATE TABLE IF NOT EXISTS screensav
 ) STRICT;
 INSERT OR IGNORE INTO screensaver_choices (id) VALUES (1);`;
 
+/** Durée de l’effet de transition, réglée dans l’administration. */
+export const screensaverDurationMigration = `CREATE TABLE IF NOT EXISTS screensaver_duration (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  duration_ms INTEGER NOT NULL DEFAULT 1000 CHECK (duration_ms BETWEEN 300 AND 5000)
+) STRICT;
+INSERT OR IGNORE INTO screensaver_duration (id) VALUES (1);`;
+
 const extensions: Record<ScreensaverImageType, string> = {
   'image/jpeg': '.jpg',
   'image/png': '.png',

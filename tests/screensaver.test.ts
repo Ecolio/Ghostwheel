@@ -79,6 +79,9 @@ test('formats reconnus aux premiers octets, réglages bornés', () => {
   assert.equal(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, extra: true }), false);
   assert.equal(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, transition: 'fondu' }), false);
   assert.equal(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, wake: 'jamais' }), false);
+  assert.equal(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, durationMs: 100 }), false);
+  assert.equal(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, durationMs: 9_000 }), false);
+  assert.ok(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, transition: 'fade' }));
 });
 
 test('écran de veille : réglages diffusés au miroir, images envoyées puis retirées', async (t) => {
@@ -93,6 +96,7 @@ test('écran de veille : réglages diffusés au miroir, images envoyées puis re
     intervalMs: 60_000,
     returnDelayMs: 5_000,
     transition: 'embers',
+    durationMs: 1_500,
     wake: 'opening',
   };
   const patch = (payload: Record<string, unknown>) =>
@@ -215,6 +219,7 @@ test('réglages relus de la base, transition inconnue ramenée à la valeur par 
     intervalMs: 900_000,
     returnDelayMs: 60_000,
     transition: 'curtain',
+    durationMs: 2_000,
     wake: 'opening',
   } as const;
   preferences.setScreensaver(chosen);
@@ -259,6 +264,11 @@ test('réveil de l’orbe : au passage, ou selon ce qui ouvre la conversation', 
   assert.equal(screensaverWoken(mirror('opening', 'presence', passing), 'idle'), true);
   assert.equal(screensaverWoken(mirror('opening', 'voice', looking), 'idle'), false);
   assert.equal(screensaverWoken(mirror('opening', 'voice', []), 'connecting'), true);
+  // Deux personnes, aucun profil actif : le serveur voit le regard sans l’attribuer à l’une
+  // d’elles. C’est ce regard-là qui ouvre la conversation, il réveille aussi l’orbe.
+  const two = mirror('opening', 'gaze', [person, { ...person, trackId: 'two' }]);
+  two.presence.state = 'engaged';
+  assert.equal(screensaverWoken(two, 'idle'), true);
   // Réservée au foyer : seule une personne reconnue réveille l’orbe.
   assert.equal(screensaverWoken(mirror('opening', 'gaze', looking, 'members'), 'idle'), false);
   assert.equal(

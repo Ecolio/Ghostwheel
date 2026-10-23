@@ -6,6 +6,7 @@ import {
   SCREENSAVER_IMAGE_TYPES,
   SCREENSAVER_INTERVALS_MS,
   SCREENSAVER_RETURN_DELAYS_MS,
+  SCREENSAVER_DURATIONS_MS,
   type ScreensaverImage,
   type ScreensaverSettings as Settings,
   type ScreensaverTransition,
@@ -30,6 +31,11 @@ export function durationLabel(ms: number): string {
   if (seconds < 60) return seconds + ' s';
   if (seconds < 3600) return Math.round(seconds / 60) + ' min';
   return Math.round(seconds / 3600) + ' h';
+}
+
+/** « 0,5 s », « 1 s », « 1,5 s ». */
+export function secondsLabel(ms: number): string {
+  return (ms / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' s';
 }
 
 function durationOptions(presets: number[], saved: number): ChoiceOption<string>[] {
@@ -65,18 +71,27 @@ export const transitionOptions: ChoiceOption<ScreensaverTransition>[] = [
     label: 'Rideau',
     description: 'L’image s’ouvre en deux derrière l’orbe, chaque moitié glisse vers son bord.',
   },
-  { value: 'random', label: 'Au hasard', description: 'Une des cinq, différente à chaque fois.' },
+  {
+    value: 'fade',
+    label: 'Fondu',
+    description: 'L’image s’éteint doucement vers le noir, sans se griser.',
+  },
+  {
+    value: 'random',
+    label: 'Au hasard',
+    description: 'Un des cinq effets animés, différent à chaque fois.',
+  },
   { value: 'none', label: 'Sans transition', description: 'L’image disparaît d’un coup.' },
 ];
 
-/** Ce qui réveille Cornelius, dit pour l’écran de veille. */
+/** Ce qui réveille Cornelius (« Quand il écoute »), dit pour l’écran de veille. */
 function openingWake(opening: Opening): string {
   const who = opening.audience === 'members' ? ' reconnue' : '';
   return opening.trigger === 'voice'
-    ? 'Au mot « Cornelius », quand la conversation s’ouvre : l’image reste tant qu’on passe sans l’appeler.'
+    ? 'Réglé sur le mot « Cornelius » : l’image reste jusqu’à ce qu’on l’appelle.'
     : opening.trigger === 'gaze'
-      ? `Quand une personne${who} regarde le miroir : l’image reste tant qu’on passe sans le regarder.`
-      : `Quand une personne${who} se présente devant le miroir.`;
+      ? `Réglé sur le regard : l’image reste jusqu’à ce qu’une personne${who} regarde le miroir.`
+      : `Réglé sur la présence : l’image part dès qu’une personne${who} se présente.`;
 }
 
 /** Écran de veille : activation et rythme, puis les images proposées au miroir. */
@@ -88,17 +103,18 @@ export function ScreensaverSettings({ state, run }: { state: MirrorState; run: R
         returnDelayMs: state.screensaver.returnDelayMs,
         transition: state.screensaver.transition,
         wake: state.screensaver.wake,
+        durationMs: state.screensaver.durationMs,
       }
     : DEFAULT_SCREENSAVER;
   const wakeOptions: ChoiceOption<ScreensaverWake>[] = [
     {
       value: 'presence',
-      label: 'Au passage d’une personne',
+      label: 'Au moindre mouvement',
       description: 'Dès qu’une personne passe devant le miroir, même sans s’arrêter.',
     },
     {
       value: 'opening',
-      label: 'Au réveil de Cornelius',
+      label: 'Selon le réveil de Cornelius',
       description: openingWake(currentOpening(state)),
     },
   ];
@@ -147,15 +163,17 @@ export function ScreensaverSettings({ state, run }: { state: MirrorState; run: R
             onValueChange={(wake) =>
               save(
                 wake === 'presence'
-                  ? 'L’orbe revient au passage d’une personne.'
-                  : 'L’orbe revient au réveil de Cornelius.',
+                  ? 'L’orbe revient au moindre mouvement.'
+                  : 'L’orbe revient selon le réveil de Cornelius.',
                 { wake },
               )
             }
           />
           <p id="screensaver-wake-help" className="text-xs leading-relaxed text-muted-foreground">
-            Ce qui réveille Cornelius se règle dans « Quand il écoute ». Une conversation qui
-            s’ouvre fait toujours revenir l’orbe.
+            « Selon le réveil de Cornelius » suit « Quand il écoute » : présence, regard ou mot «
+            Cornelius », et seulement les personnes reconnues si l’ouverture leur est réservée.
+            Changer ce réglage-là change aussi l’écran de veille. Une conversation qui s’ouvre fait
+            toujours revenir l’orbe.
           </p>
           <ChoiceGroup
             legend="Transition"
@@ -176,6 +194,29 @@ export function ScreensaverSettings({ state, run }: { state: MirrorState; run: R
           >
             La même transition, jouée à l’envers, fait revenir les images. Si l’ordinateur demande
             de réduire les animations, c’est toujours un simple fondu.
+          </p>
+          <ChoiceGroup
+            legend="Durée de l’effet"
+            compact
+            disabled={!saved.enabled || saved.transition === 'none'}
+            value={String(saved.durationMs)}
+            options={[
+              ...SCREENSAVER_DURATIONS_MS,
+              ...(SCREENSAVER_DURATIONS_MS.includes(saved.durationMs) ? [] : [saved.durationMs]),
+            ].map((ms) => ({ value: String(ms), label: secondsLabel(ms) }))}
+            describedBy="screensaver-duration-help"
+            onValueChange={(value) =>
+              save(`Durée de l’effet : ${secondsLabel(Number(value))}.`, {
+                durationMs: Number(value),
+              })
+            }
+          />
+          <p
+            id="screensaver-duration-help"
+            className="text-xs leading-relaxed text-muted-foreground"
+          >
+            Temps que met l’image à disparaître quand l’orbe revient. Son retour prend un peu plus
+            longtemps, pour s’installer sans hâte.
           </p>
           <ChoiceGroup
             legend="Changer d’image toutes les"
