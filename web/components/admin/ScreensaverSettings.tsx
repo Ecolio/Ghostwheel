@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Download, ImagePlus, Trash2 } from 'lucide-react';
+import { Check, Download, ImagePlus, Trash2 } from 'lucide-react';
 import {
   DEFAULT_SCREENSAVER,
   SCREENSAVER_IMAGE_MAX_BYTES,
@@ -295,12 +295,67 @@ export function ScreensaverSettings({ state, run }: { state: MirrorState; run: R
   );
 }
 
+/** Filtres de la grille : de quoi retirer d’un coup toutes les horizontales, par exemple. */
+type ImageFilter = 'all' | 'collection' | 'upload' | 'portrait' | 'landscape';
+
+/** Sens d’une image : un écart de moins de 5 % compte pour carré, ni l’un ni l’autre. */
+export function imageShape(image: ScreensaverImage): 'portrait' | 'landscape' | 'square' | null {
+  if (!image.width || !image.height) return null;
+  if (image.height > image.width * 1.05) return 'portrait';
+  if (image.width > image.height * 1.05) return 'landscape';
+  return 'square';
+}
+
+const imageFilters: {
+  value: ImageFilter;
+  label: string;
+  keep: (image: ScreensaverImage) => boolean;
+}[] = [
+  { value: 'all', label: 'Toutes', keep: () => true },
+  { value: 'collection', label: 'Peintures', keep: (image) => image.origin === 'collection' },
+  { value: 'upload', label: 'Vos photos', keep: (image) => image.origin === 'upload' },
+  { value: 'portrait', label: 'Verticales', keep: (image) => imageShape(image) === 'portrait' },
+  {
+    value: 'landscape',
+    label: 'Horizontales',
+    keep: (image) => imageShape(image) === 'landscape',
+  },
+];
+
 function ScreensaverImages({ run }: { run: RunAction }) {
   const load = useCallback(() => api.screensaver(), []);
   const resource = useAdminResource(load);
   const { data, reload } = resource;
   const input = useRef<HTMLInputElement>(null);
-  const [removing, setRemoving] = useState<ScreensaverImage | null>(null);
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [filter, setFilter] = useState<ImageFilter>('all');
+  const [confirming, setConfirming] = useState(false);
+  // Une image retirée ailleurs (autre onglet) quitte aussi la sélection.
+  useEffect(() => {
+    if (!data) return;
+    setSelected((current) => {
+      const kept = new Set(data.images.filter((image) => current.has(image.id)).map((i) => i.id));
+      return kept.size === current.size ? current : kept;
+    });
+  }, [data]);
+  const toggle = (id: string) =>
+    setSelected((current) => {
+      const next = new Set(current);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+  const removeSelected = () => {
+    const ids = [...selected];
+    void run(
+      ids.length > 1 ? `${ids.length} images retirées.` : 'Image retirée.',
+      () => api.removeScreensaverImages(ids),
+      { key: 'screensaver-remove', payload: ids },
+    ).then((done) => {
+      setConfirming(false);
+      if (done) setSelected(new Set());
+      void reload();
+    });
+  };
   const downloading = data?.collection.downloading === true;
   // Téléchargement en cours : relire l’avancement jusqu’à la fin.
   useEffect(() => {
@@ -388,55 +443,149 @@ function ScreensaverImages({ run }: { run: RunAction }) {
             description: 'Ajoutez vos photos, ou téléchargez les peintures proposées.',
           }}
         >
-          {(view) => (
-            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {view.images.map((image) => (
-                <li key={image.id} className="overflow-hidden rounded-lg border bg-muted/30">
-                  <img
-                    src={image.url}
-                    alt=""
-                    loading="lazy"
-                    className="aspect-video w-full bg-black object-contain"
-                  />
-                  <div className="flex items-start justify-between gap-2 p-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm" title={image.title}>
-                        {image.title}
-                      </p>
-                      {image.credit && (
-                        <p className="truncate text-xs text-muted-foreground">{image.credit}</p>
-                      )}
-                    </div>
+          {(view) => {
+            const shown = view.images.filter(
+              imageFilters.find((entry) => entry.value === filter)!.keep,
+            );
+            const allShown = shown.length > 0 && shown.every((image) => selected.has(image.id));
+            const paintings = view.images.filter((image) => image.origin === 'collection').length;
+            return (
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2" role="group" aria-label="Afficher seulement">
+                  {imageFilters.map((entry) => {
+                    const count = view.images.filter(entry.keep).length;
+                    if (!count && entry.value !== 'all' && entry.value !== filter) return null;
+                    return (
+                      <Button
+                        key={entry.value}
+                        size="sm"
+                        variant={filter === entry.value ? 'secondary' : 'ghost'}
+                        aria-pressed={filter === entry.value}
+                        onClick={() => setFilter(entry.value)}
+                      >
+                        {entry.label} ({count})
+                      </Button>
+                    );
+                  })}
+                </div>
+                {/* Reste en vue pendant le défilement : la sélection et sa confirmation. */}
+                <div className="sticky top-0 z-10 space-y-3 rounded-lg border bg-card p-3 shadow-sm">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="mr-auto text-sm" role="status">
+                      {selected.size
+                        ? plural(selected.size, 'image sélectionnée', 'images sélectionnées')
+                        : 'Cochez les images à retirer.'}
+                    </p>
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0"
-                      aria-label={`Retirer l’image ${image.title}`}
-                      title="Retirer cette image"
-                      onClick={() => setRemoving(image)}
+                      size="sm"
+                      variant="outline"
+                      disabled={shown.length === 0}
+                      onClick={() =>
+                        setSelected((current) => {
+                          const next = new Set(current);
+                          for (const image of shown)
+                            if (allShown) next.delete(image.id);
+                            else next.add(image.id);
+                          return next;
+                        })
+                      }
+                    >
+                      {allShown
+                        ? 'Désélectionner ces images'
+                        : `Tout sélectionner (${shown.length})`}
+                    </Button>
+                    {selected.size > 0 && (
+                      <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+                        Aucune
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="danger-outline"
+                      disabled={selected.size === 0}
+                      aria-label={`Retirer les ${selected.size} images sélectionnées`}
+                      onClick={() => setConfirming(true)}
                     >
                       <Trash2 aria-hidden="true" />
+                      Retirer ({selected.size})
                     </Button>
                   </div>
-                </li>
-              ))}
-            </ul>
-          )}
+                  {confirming && selected.size > 0 && (
+                    <ConfirmAction
+                      message={
+                        (selected.size > 1
+                          ? `Retirer ces ${selected.size} images de l’écran de veille ? Les fichiers sont effacés de cet ordinateur.`
+                          : 'Retirer cette image de l’écran de veille ? Le fichier est effacé de cet ordinateur.') +
+                        (paintings
+                          ? ' Une peinture retirée peut revenir avec « Compléter les peintures ».'
+                          : '')
+                      }
+                      confirmLabel="Retirer"
+                      onCancel={() => setConfirming(false)}
+                      onConfirm={removeSelected}
+                    />
+                  )}
+                </div>
+                {shown.length === 0 && (
+                  <p className="text-sm text-muted-foreground">Aucune image dans ce filtre.</p>
+                )}
+                <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {shown.map((image) => {
+                    const checked = selected.has(image.id);
+                    return (
+                      <li key={image.id}>
+                        <label
+                          className={
+                            'relative block cursor-pointer overflow-hidden rounded-lg border bg-muted/30 transition-shadow has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring ' +
+                            (checked ? 'border-destructive ring-2 ring-destructive/60' : '')
+                          }
+                        >
+                          <input
+                            type="checkbox"
+                            className="sr-only"
+                            checked={checked}
+                            aria-label={`Sélectionner ${image.title}`}
+                            onChange={() => toggle(image.id)}
+                          />
+                          <img
+                            src={image.url}
+                            alt=""
+                            loading="lazy"
+                            className={
+                              'aspect-video w-full bg-black object-contain transition-opacity ' +
+                              (checked ? 'opacity-60' : '')
+                            }
+                          />
+                          <span
+                            aria-hidden="true"
+                            className={
+                              'absolute left-2 top-2 flex size-6 items-center justify-center rounded-md border-2 ' +
+                              (checked
+                                ? 'border-destructive bg-destructive text-white'
+                                : 'border-white/80 bg-black/40')
+                            }
+                          >
+                            {checked && <Check className="size-4" />}
+                          </span>
+                          <span className="block min-w-0 p-2">
+                            <span className="block truncate text-sm" title={image.title}>
+                              {image.title}
+                            </span>
+                            {image.credit && (
+                              <span className="block truncate text-xs text-muted-foreground">
+                                {image.credit}
+                              </span>
+                            )}
+                          </span>
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          }}
         </ResourceState>
-        {removing && (
-          <ConfirmAction
-            message={`Retirer « ${removing.title} » de l’écran de veille ? Le fichier est effacé de cet ordinateur.`}
-            confirmLabel="Retirer"
-            onCancel={() => setRemoving(null)}
-            onConfirm={() => {
-              const image = removing;
-              void run('Image retirée.', () => api.removeScreensaverImage(image.id)).then(() => {
-                setRemoving(null);
-                void reload();
-              });
-            }}
-          />
-        )}
       </CardContent>
     </Card>
   );

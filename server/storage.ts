@@ -42,6 +42,7 @@ import {
   screensaverDurationMigration,
   screensaverLayoutMigration,
   screensaverMigration,
+  screensaverSizesMigration,
 } from './screensaver.js';
 import {
   DEFAULT_SCREENSAVER,
@@ -387,6 +388,8 @@ export const migrations: readonly string[] = [
   screensaverDurationMigration,
   // Écran de veille : image entière, posée comme une toile ou plein écran.
   screensaverLayoutMigration,
+  // Écran de veille : dimensions des images, pour les trier par sens.
+  screensaverSizesMigration,
 ];
 
 /** The server owns this connection. Backups include WAL changes via SQLite itself. */

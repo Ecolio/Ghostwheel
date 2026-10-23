@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test, { type TestContext } from 'node:test';
 import { createApp } from '../server/app.js';
-import { imageType, titleFromName } from '../server/screensaver.js';
+import { imageSize, imageType, titleFromName } from '../server/screensaver.js';
 import { openDatabase, SessionPreferences } from '../server/storage.js';
 import { screensaverCollection } from '../server/screensaver-collection.js';
 import {
@@ -83,6 +83,45 @@ test('formats reconnus aux premiers octets, réglages bornés', () => {
   assert.equal(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, durationMs: 9_000 }), false);
   assert.ok(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, transition: 'fade' }));
   assert.equal(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, fit: 'stretch' }), false);
+});
+
+/** En-tête JPEG minimal : une orientation EXIF facultative, puis les dimensions (SOF0). */
+function jpegHeader(width: number, height: number, orientation?: number): Buffer {
+  const parts = [Buffer.from([0xff, 0xd8])];
+  if (orientation) {
+    // TIFF petit-boutiste : un répertoire d’une entrée, l’orientation (0x0112).
+    const tiff = Buffer.alloc(26);
+    tiff.write('II', 0, 'ascii');
+    tiff.writeUInt16LE(42, 2);
+    tiff.writeUInt32LE(8, 4);
+    tiff.writeUInt16LE(1, 8);
+    tiff.writeUInt16LE(0x0112, 10);
+    tiff.writeUInt16LE(3, 12);
+    tiff.writeUInt32LE(1, 14);
+    tiff.writeUInt16LE(orientation, 18);
+    const body = Buffer.concat([Buffer.from('Exif\0\0', 'binary'), tiff]);
+    const head = Buffer.from([0xff, 0xe1, 0, 0]);
+    head.writeUInt16BE(body.length + 2, 2);
+    parts.push(head, body);
+  }
+  const frame = Buffer.from([0xff, 0xc0, 0, 17, 8, 0, 0, 0, 0, 3]);
+  frame.writeUInt16BE(height, 5);
+  frame.writeUInt16BE(width, 7);
+  parts.push(frame, Buffer.alloc(16));
+  return Buffer.concat(parts);
+}
+
+test('dimensions lues dans l’en-tête, rotation des photos de téléphone comprise', () => {
+  assert.deepEqual(imageSize(jpegHeader(4000, 3000)), { width: 4000, height: 3000 });
+  // Orientation 6 : photo prise en portrait, enregistrée couchée.
+  assert.deepEqual(imageSize(jpegHeader(4000, 3000, 6)), { width: 3000, height: 4000 });
+  assert.deepEqual(imageSize(jpegHeader(4000, 3000, 3)), { width: 4000, height: 3000 });
+  const png = Buffer.alloc(32);
+  png.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  png.writeUInt32BE(720, 16);
+  png.writeUInt32BE(1280, 20);
+  assert.deepEqual(imageSize(png), { width: 720, height: 1280 });
+  assert.equal(imageSize(jpeg), null, 'en-tête sans dimensions');
 });
 
 test('écran de veille : réglages diffusés au miroir, images envoyées puis retirées', async (t) => {
@@ -281,4 +320,44 @@ test('réveil de l’orbe : au passage, ou selon ce qui ouvre la conversation', 
     ),
     true,
   );
+});
+
+test('retrait groupé : une seule demande pour plusieurs images, les autres restent', async (t) => {
+  const f = await fixture(t);
+  const upload = (body: Buffer) =>
+    f.app.inject({
+      method: 'POST',
+      url: '/api/admin/screensaver/images',
+      headers: { ...f.headers, 'content-type': 'image/jpeg', 'x-file-name': 'photo.jpg' },
+      payload: body,
+    });
+  await upload(jpegHeader(4000, 3000));
+  await upload(jpegHeader(4000, 3000, 6));
+  const added = await upload(jpegHeader(1000, 1000));
+  const images = added.json<ScreensaverView>().images;
+  assert.deepEqual(
+    images.map((image) => [image.width, image.height]),
+    [
+      [4000, 3000],
+      [3000, 4000],
+      [1000, 1000],
+    ],
+  );
+  const remove = (payload: Record<string, unknown>) =>
+    f.app.inject({
+      method: 'POST',
+      url: '/api/admin/screensaver/images/remove',
+      headers: f.headers,
+      payload,
+    });
+  assert.equal((await remove({ ids: [] })).statusCode, 400);
+  assert.equal((await remove({ ids: [1, 2] })).statusCode, 400);
+  const left = await remove({ ids: [images[0]!.id, images[1]!.id, 'inconnue'] });
+  assert.equal(left.statusCode, 200, left.body);
+  assert.deepEqual(
+    left.json<ScreensaverView>().images.map((image) => image.id),
+    [images[2]!.id],
+  );
+  assert.equal(readdirSync(f.root).length, 1);
+  assert.equal((await f.state()).screensaver?.imageCount, 1);
 });

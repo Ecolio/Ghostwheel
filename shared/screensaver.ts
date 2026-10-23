@@ -112,6 +112,9 @@ export interface ScreensaverImage {
   /** Artiste et date pour une peinture de la collection ; vide pour une photo envoyée. */
   credit: string;
   origin: 'upload' | 'collection';
+  /** Dimensions affichées (rotation des photos comprise) ; null si l’en-tête est illisible. */
+  width: number | null;
+  height: number | null;
 }
 
 export interface ScreensaverCollectionStatus {

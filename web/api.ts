@@ -294,6 +294,8 @@ export const api = {
     request<ScreensaverView>('/api/admin/screensaver/images/' + encodeURIComponent(id), {
       method: 'DELETE',
     }),
+  removeScreensaverImages: (ids: string[]) =>
+    post<ScreensaverView>('/api/admin/screensaver/images/remove', { ids }),
   installScreensaverCollection: () =>
     post<ScreensaverView>('/api/admin/screensaver/collection', {}),
   advancedAudioBuffer: (enabled: boolean) =>

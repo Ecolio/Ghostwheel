@@ -47,6 +47,22 @@ export function registerScreensaver(
       return library.view();
     },
   );
+  app.post<{ Body: { ids?: unknown } }>(
+    '/api/admin/screensaver/images/remove',
+    admin,
+    async (request, reply) => {
+      const ids = request.body?.ids;
+      if (
+        !Array.isArray(ids) ||
+        ids.length === 0 ||
+        ids.length > 300 ||
+        !ids.every((id) => typeof id === 'string')
+      )
+        return reply.code(400).send({ error: 'Images à retirer invalides.' });
+      library.removeMany(ids);
+      return library.view();
+    },
+  );
   app.post('/api/admin/screensaver/collection', admin, async () => {
     void library.installCollection();
     return library.view();
