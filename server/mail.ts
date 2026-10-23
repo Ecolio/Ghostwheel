@@ -157,15 +157,22 @@ export class Mailer {
     if (!this.ready()) return [];
     const recipients = this.store.recipients().slice(0, MAIL_RECIPIENTS_MAX);
     const names = recipients.map((recipient) => recipient.name);
-    const mine = profileId !== null && recipients.some((r) => r.profileId === profileId);
+    // Adresses de la personne qui parle, dans l'ordre de la liste : la première répond à « moi ».
+    const mine = recipients.filter((r) => profileId !== null && r.profileId === profileId);
     return [
       {
         name: toolName,
         description:
           'Envoyer par e-mail, sur le téléphone d’une personne du foyer, une image créée par Cornelius ou un court message (« envoie-moi cette image », « envoie l’image du phare à Baptiste », « envoie-moi l’adresse »).' +
           ` Destinataires possibles : ${names.join(', ')}.` +
-          (mine
-            ? ' recipient « moi » : la personne qui parle.'
+          (mine.length
+            ? ` recipient « moi » : la personne qui parle (${mine[0]!.name}).` +
+              (mine.length > 1
+                ? ` Ses autres adresses, quand elle les nomme (« sur mon adresse du travail ») : ${mine
+                    .slice(1)
+                    .map((r) => r.name)
+                    .join(', ')}.`
+                : '')
             : ' recipient « moi » seulement si la personne qui parle a été reconnue et figure dans la liste ; sinon, demande à qui envoyer.') +
           ' image : true pour joindre une image ; position et search null pour celle affichée, position 1 pour la plus récente, 2 l’avant-dernière, ou search : quelques mots de son sujet. message : texte court de l’e-mail, ou null. subject : objet court, ou null.' +
           ' N’invente jamais d’adresse ni de destinataire. Un résultat unknown ne doit jamais être renvoyé automatiquement.',

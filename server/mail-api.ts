@@ -83,11 +83,7 @@ export function registerMail(
       return `« ${name} » est déjà dans la liste.`;
     const address = mailAddressError(input.address);
     if (address) return address;
-    if (input.profileId !== null) {
-      if (!profiles.get(input.profileId)) return 'Profil inconnu.';
-      if (others.some((recipient) => recipient.profileId === input.profileId))
-        return 'Ce profil a déjà son adresse dans la liste.';
-    }
+    if (input.profileId !== null && !profiles.get(input.profileId)) return 'Profil inconnu.';
     return null;
   };
   const clean = (input: Pick<MailRecipient, 'name' | 'address' | 'profileId'>) => ({

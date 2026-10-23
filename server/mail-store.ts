@@ -31,6 +31,22 @@ CREATE TABLE IF NOT EXISTS mail_recipients (
   created_at INTEGER NOT NULL
 ) STRICT;`;
 
+/**
+ * Plusieurs adresses pour un même profil (personnelle, travail) : la contrainte d'unicité du
+ * profil disparaît. L'ordre est gardé : « envoie-moi » vise la première adresse du profil.
+ */
+export const mailRecipientsMigration = `CREATE TABLE mail_recipients_v2 (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  address TEXT NOT NULL,
+  profile_id TEXT REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at INTEGER NOT NULL
+) STRICT;
+INSERT INTO mail_recipients_v2 (id, name, address, profile_id, created_at)
+  SELECT id, name, address, profile_id, created_at FROM mail_recipients ORDER BY created_at, rowid;
+DROP TABLE mail_recipients;
+ALTER TABLE mail_recipients_v2 RENAME TO mail_recipients;`;
+
 const recipientOf = (row: Record<string, unknown>): MailRecipient => ({
   id: String(row.id),
   name: String(row.name),

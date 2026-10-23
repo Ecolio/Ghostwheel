@@ -39,13 +39,15 @@ Le plus simple est une boîte dédiée au miroir, par exemple `cornelius.maison@
 
 ## Les destinataires
 
-Sous **Destinataires**, une ligne par personne :
+Sous **Destinataires**, une ligne par adresse :
 
-- **Nom dit à la voix** : « Baptiste », « Mamie ». Deux noms ne peuvent pas être identiques, sans tenir compte des accents ni des majuscules. « Moi » est réservé.
+- **Nom** : celui que vous dites pour demander l’envoi. Avec « Baptiste », on dit « envoie l’image à Baptiste ». Cornelius ne connaît que ces noms ; il retrouve l’adresse sur l’ordinateur. Deux lignes ne peuvent pas porter le même nom, sans tenir compte des accents ni des majuscules. « Moi » est réservé.
 - **Adresse e-mail** : celle que la personne lit sur son téléphone.
-- **Profil relié** (facultatif) : quand Cornelius reconnaît ce profil, « envoie-moi » vise cette adresse. Sans profil, « envoie-la à Mamie » fonctionne, mais pas « envoie-moi ».
+- **Profil relié** (facultatif) : quand Cornelius reconnaît ce profil, « envoie-moi » vise sa première adresse. Sans profil, « envoie-la à Mamie » fonctionne, mais pas « envoie-moi ». Choisir le profil en premier remplit le nom.
 
-**Envoyer un essai** envoie un e-mail d’essai à la personne. La liste compte vingt destinataires au plus, et un profil n’y a qu’une adresse. Supprimer un profil supprime aussi son adresse.
+Un profil peut avoir plusieurs adresses, chacune sous son nom : « Artus » pour l’adresse personnelle, « Artus travail » pour l’autre. « Envoie-moi » prend la première de la liste ; « envoie-la sur mon adresse du travail » ou « envoie-la à Artus travail » prend l’autre.
+
+**Envoyer un essai** envoie un e-mail d’essai à l’adresse. La liste compte vingt adresses au plus. Supprimer un profil supprime aussi ses adresses.
 
 ## Activer
 

@@ -182,6 +182,27 @@ test('à quelqu’un d’autre, par son nom, sans accent ni majuscule ; par suje
   assert.equal(f.fake.sent.length, 1);
 });
 
+test('plusieurs adresses pour une personne : « moi » prend la première, les autres par leur nom', async (t) => {
+  const f = fixture(t);
+  f.configure();
+  f.store.addRecipient({
+    name: 'Artus travail',
+    address: 'artus@travail.example.test',
+    profileId: f.artus.id,
+  });
+  const [tool] = f.mailer.tools(f.artus.id);
+  assert.match(tool!.description, /« moi » : la personne qui parle \(Artus\)\./u);
+  assert.match(tool!.description, /Ses autres adresses, .*: Artus travail\./u);
+  const [other] = f.mailer.tools(f.baptiste.id);
+  assert.doesNotMatch(other!.description, /Ses autres adresses/u);
+  await f.mailer.run(f.input(f.artus.id), f.args());
+  await f.mailer.run(f.input(f.artus.id, 'appel-2'), f.args({ recipient: 'artus travail' }));
+  assert.deepEqual(
+    f.fake.sent.map((message) => message.to.address),
+    ['artus@example.test', 'artus@travail.example.test'],
+  );
+});
+
 test('« moi » exige une personne reconnue qui a son adresse', async (t) => {
   const f = fixture(t);
   f.configure();
@@ -390,12 +411,19 @@ test('administration : réglages, mot de passe, destinataires, essai ; rien sur 
     [{ name: 'baptiste', address: 'b2@example.test', profileId: null }, /déjà dans la liste/u],
     [{ name: 'Moi', address: 'moi@example.test', profileId: null }, /« Moi »/u],
     [{ name: 'Léa', address: 'lea', profileId: null }, /Adresse e-mail invalide/u],
-    [{ name: 'Léa', address: 'lea@example.test', profileId }, /déjà son adresse/u],
   ] as const) {
     const refused = await call('POST', '/api/admin/mail/recipients', payload);
     assert.equal(refused.statusCode, 400);
     assert.match(refused.json().error, message);
   }
+  // Une deuxième adresse pour le même profil, sous un autre nom.
+  const work = await call('POST', '/api/admin/mail/recipients', {
+    name: 'Baptiste travail',
+    address: 'baptiste@travail.example.test',
+    profileId,
+  });
+  assert.equal(work.statusCode, 200, work.body);
+  assert.equal(work.json().recipients.length, 2);
   const recipientId = added.json().recipients[0].id as string;
 
   const verify = (await call('POST', '/api/admin/mail/test', { recipientId: null })).json();

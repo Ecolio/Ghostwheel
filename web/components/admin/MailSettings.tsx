@@ -7,6 +7,7 @@ import {
   type MailSettings as MailServerSettings,
   type MailView,
 } from '../../../shared/mail';
+import { profileNameKey } from '../../../shared/profile-names';
 import type { Profile } from '../../../shared/types';
 import { api, errorMessage } from '../../api';
 import { Alert, AlertDescription } from '../ui/alert';
@@ -58,7 +59,7 @@ function ProfileSelect({
   );
 }
 
-/** Une ligne de la liste : nom dit à la voix, adresse, profil relié ; essai et retrait. */
+/** Une ligne de la liste : nom à dire, adresse, profil relié ; essai et retrait. */
 function RecipientRow({
   recipient,
   profiles,
@@ -82,7 +83,7 @@ function RecipientRow({
   return (
     <li className="space-y-3 rounded-lg border p-4">
       <div className="grid gap-3 sm:grid-cols-3">
-        <Field id={`${id}-name`} label="Nom dit à la voix">
+        <Field id={`${id}-name`} label="Nom">
           <Input
             id={`${id}-name`}
             value={draft.name}
@@ -100,7 +101,11 @@ function RecipientRow({
             onChange={(event) => setDraft({ ...draft, address: event.target.value })}
           />
         </Field>
-        <Field id={`${id}-profile`} label="Profil relié" help="« Envoie-moi » vise ce profil.">
+        <Field
+          id={`${id}-profile`}
+          label="Profil relié"
+          help="« Envoie-moi » : la première adresse de ce profil."
+        >
           <ProfileSelect
             id={`${id}-profile`}
             value={draft.profileId}
@@ -246,6 +251,9 @@ export function MailSettings({
     setServerError(null);
     setDraft({ ...form, ...patch });
   };
+  const taken = (name: string) =>
+    current.recipients.some((r) => profileNameKey(r.name) === profileNameKey(name));
+  const addedProfile = profiles.find((profile) => profile.id === added.profileId) ?? null;
   const show = (next: MailView) => {
     setView(next);
     setCheck(null);
@@ -470,8 +478,10 @@ export function MailSettings({
             Destinataires
           </h4>
           <p className="text-sm text-muted-foreground">
-            Seules ces personnes peuvent recevoir un e-mail de Cornelius, appelées par leur nom.
-            Relier un profil permet de dire « envoie-moi » quand Cornelius reconnaît la personne.
+            Seules ces adresses peuvent recevoir un e-mail de Cornelius. Le nom est celui que vous
+            dites : « envoie l’image à Baptiste ». Relier un profil permet de dire « envoie-moi »
+            quand Cornelius reconnaît la personne ; une deuxième adresse du même profil prend un
+            autre nom, par exemple « Artus travail ».
           </p>
         </div>
         {current.recipients.length > 0 && (
@@ -494,25 +504,35 @@ export function MailSettings({
                 <ProfileSelect
                   id="mail-new-profile"
                   value={added.profileId}
-                  profiles={profiles.filter(
-                    (profile) => !current.recipients.some((r) => r.profileId === profile.id),
-                  )}
+                  profiles={profiles}
                   onChange={(profileId) => {
                     const profile = profiles.find((entry) => entry.id === profileId);
                     setAddError(null);
+                    // Le nom du profil se propose seulement s’il n’est pas déjà dans la liste.
                     setAdded({
                       ...added,
                       profileId,
-                      name: added.name.trim() ? added.name : (profile?.name ?? ''),
+                      name:
+                        added.name.trim() || !profile || taken(profile.name)
+                          ? added.name
+                          : profile.name,
                     });
                   }}
                 />
               </Field>
-              <Field id="mail-new-name" label="Nom dit à la voix">
+              <Field
+                id="mail-new-name"
+                label="Nom"
+                help="Celui que vous dites : « envoie l’image à Baptiste »."
+              >
                 <Input
                   id="mail-new-name"
                   value={added.name}
-                  placeholder="ex. Baptiste"
+                  placeholder={
+                    addedProfile && taken(addedProfile.name)
+                      ? `ex. ${addedProfile.name} travail`
+                      : 'ex. Baptiste'
+                  }
                   maxLength={40}
                   onChange={(event) => {
                     setAddError(null);
