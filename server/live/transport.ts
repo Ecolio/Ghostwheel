@@ -88,6 +88,25 @@ export interface ImageGenerationToolBridge {
   recall?(args: unknown, profileId: string | null): { tool: ToolResult; card: ImageCard | null };
 }
 
+export interface MailToolBridge {
+  tools(profileId?: string | null): {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+  }[];
+  handles(name: string): boolean;
+  run(
+    input: {
+      profileId: string | null;
+      profileName: string | null;
+      interactionId: string | null;
+      callId: string | null;
+      shownImageId: string | null;
+    },
+    args: unknown,
+  ): Promise<ToolResult>;
+}
+
 interface ActiveSession {
   scope: Scope;
   abort: AbortController;
@@ -251,6 +270,7 @@ export class LiveTransport implements SessionTransport {
       homeAssistant?: Pick<HomeAssistant, 'tools' | 'handles' | 'run'>;
       agents?: Pick<Agents, 'tools' | 'handles' | 'run' | 'received'>;
       imageGeneration?: ImageGenerationToolBridge;
+      mail?: MailToolBridge;
       personality?: (profileId: string | null) => PersonalityPreferences;
     } = {},
     private readonly now: () => number = Date.now,
@@ -443,6 +463,7 @@ export class LiveTransport implements SessionTransport {
       ...(this.integrations.homeAssistant?.tools(profileId !== null) ?? []),
       ...(this.integrations.agents?.tools(profileId) ?? []),
       ...(this.integrations.imageGeneration?.tools() ?? []),
+      ...(this.integrations.mail?.tools(profileId) ?? []),
       // Mode voix compris : la caméra s’allume pendant la conversation pour regarder.
       ...(this.vision?.tools() ?? []),
       ...(this.memory?.tools() ?? []),
@@ -1104,6 +1125,11 @@ export class LiveTransport implements SessionTransport {
         void this.runAction(active, delegation, item.call_id, args);
         return;
       }
+      if (this.integrations.mail?.handles(name)) {
+        this.beginTool(active, delegation);
+        void this.runMail(active, delegation, item.call_id, args);
+        return;
+      }
       if (this.integrations.addons?.parseTool(name)) {
         this.beginTool(active, delegation);
         void this.runAddon(active, delegation, countKey, item.call_id, name, args);
@@ -1434,6 +1460,38 @@ export class LiveTransport implements SessionTransport {
         error,
       });
       tool = failureToolResult('Action indisponible.');
+    }
+    this.sendItem(active, callId, tool);
+    this.finishTool(active, delegation);
+  }
+  private async runMail(active: ActiveSession, delegation: string, callId: string, args: unknown) {
+    const state = this.controller.snapshot().state;
+    // « Cette image » : la carte image affichée dans cette conversation, s’il y en a une.
+    const shown = state.cards
+      .map((card) =>
+        card.content.cardType === 'image'
+          ? /^\/api\/generated-images\/([a-f0-9-]{36})\.webp$/u.exec(card.content.imageUrl)?.[1]
+          : undefined,
+      )
+      .find(Boolean);
+    let tool: ToolResult;
+    try {
+      tool = await this.integrations.mail!.run(
+        {
+          profileId: state.activeProfile?.id ?? null,
+          profileName: state.activeProfile?.name ?? null,
+          interactionId: active.scope.interactionId,
+          callId,
+          shownImageId: shown ?? null,
+        },
+        args,
+      );
+    } catch (error) {
+      this.logs?.write('warn', 'mail', 'Envoi d’e-mail interrompu', {
+        interactionId: active.scope.interactionId,
+        error,
+      });
+      tool = failureToolResult('Envoi par e-mail indisponible.');
     }
     this.sendItem(active, callId, tool);
     this.finishTool(active, delegation);

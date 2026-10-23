@@ -59,6 +59,10 @@ import { loadAddons } from './addons/registry.js';
 import { createHttpClient } from './addons/http.js';
 import { ActionExecutor, actionSecrets } from './actions.js';
 import { registerAddons } from './addons-api.js';
+import { Mailer, type MailTransport } from './mail.js';
+import { registerMail } from './mail-api.js';
+import { MailRepository } from './mail-store.js';
+import { MAIL_PASSWORD_SECRET } from '../shared/mail.js';
 import { HomeAssistant } from './home-assistant.js';
 import { HomeAssistantRepository } from './home-assistant-store.js';
 import { registerHomeAssistant } from './home-assistant-api.js';
@@ -147,6 +151,8 @@ export async function createApp(
     openaiImageCreator?: (apiKey: string) => OpenAIImageCreator;
     /** Relance le serveur (fourni par server/index.ts ; absent des tests). */
     restart?: () => void;
+    /** Envoi des e-mails (remplacé dans les tests, sans serveur SMTP réel). */
+    mailTransport?: MailTransport;
   } = {},
 ) {
   const now = options.now ?? Date.now;
@@ -214,6 +220,7 @@ export async function createApp(
     'CORNELIUS_ADMIN_PASSWORD',
     'CORNELIUS_PERCEPTION_TOKEN',
     'CORNELIUS_IMAGE_GENERATION_TOKEN',
+    MAIL_PASSWORD_SECRET,
   ]);
   const addonSecrets = new Map(
     addons.flatMap((addon) =>
@@ -262,6 +269,15 @@ export async function createApp(
       ? mkdtempSync(join(tmpdir(), 'cornelius-images-'))
       : resolve('data', 'generated-images'),
   );
+  const mailRepository = new MailRepository(db, now);
+  const mailer = new Mailer(
+    mailRepository,
+    () => secretStore.get(MAIL_PASSWORD_SECRET),
+    imageGeneration,
+    logs,
+    now,
+    options.mailTransport,
+  );
   const agents = new Agents(new AgentRepository(db, now), new HermesClient(http, now), now);
   const initialKey = openaiKey();
   const makeImageCreator = options.openaiImageCreator ?? createOpenAIImageCreator;
@@ -280,6 +296,7 @@ export async function createApp(
       homeAssistant,
       agents,
       imageGeneration,
+      mail: mailer,
       personality: (id) => personality.get(id),
     },
     now,
@@ -677,6 +694,25 @@ export async function createApp(
     profiles,
     requireAdmin,
   });
+  // L’outil vocal suit le serveur et la liste des destinataires : la conversation est relancée.
+  let mailTools = JSON.stringify(mailer.tools(null));
+  const mailChanged = () => {
+    const next = JSON.stringify(mailer.tools(null));
+    if (next === mailTools) return;
+    mailTools = next;
+    controller.restart('Réglage d’e-mail modifié.');
+  };
+  secretStore.onChange((name) => {
+    if (name === MAIL_PASSWORD_SECRET) mailChanged();
+  });
+  registerMail(app, {
+    mailer,
+    store: mailRepository,
+    profiles,
+    secrets: secretStore,
+    requireAdmin,
+    onChanged: mailChanged,
+  });
   registerAddons(app, {
     runtime: addonRuntime,
     actions: actionExecutor,
@@ -930,6 +966,14 @@ export async function createApp(
         url: 'https://platform.openai.com/api-keys',
         note: null,
       },
+      {
+        ...describe(MAIL_PASSWORD_SECRET),
+        group: 'providers' as const,
+        label: 'Mot de passe SMTP',
+        usedBy: 'Envoi par e-mail',
+        url: null,
+        note: 'Le mot de passe du compte d’envoi, ou un mot de passe d’application (Gmail, iCloud). Le reste se règle dans Modules → E-mail.',
+      },
       ...[
         ...new Map([...addonSecrets.values()].map((secret) => [secret.env, secret])).values(),
       ].map((secret) => ({
@@ -1017,6 +1061,7 @@ export async function createApp(
       ...homeAssistant.tools(profileId !== null),
       ...agents.tools(profileId),
       ...imageGeneration.tools(),
+      ...mailer.tools(profileId),
       ...vision.tools(),
       ...memory.tools(),
     ];

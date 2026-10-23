@@ -35,6 +35,7 @@ import { agentsMigration } from './agents-store.js';
 import { addonRefsMigration } from './addons/migrations.js';
 import { adminPasswordMigration } from './admin-password.js';
 import { secretsMigration } from './secrets.js';
+import { mailMigration } from './mail-store.js';
 import { trustedDevicesMigration } from './trusted-devices.js';
 import { satellitesMigration } from './satellites-store.js';
 import {
@@ -396,6 +397,8 @@ export const migrations: readonly string[] = [
     source TEXT NOT NULL DEFAULT 'server' CHECK (source IN ('server', 'browser'))
   ) STRICT;
   INSERT OR IGNORE INTO camera_source (id) VALUES (1);`,
+  // Envoi par e-mail : serveur SMTP du foyer et destinataires, hors de la table des profils.
+  mailMigration,
 ];
 
 /** The server owns this connection. Backups include WAL changes via SQLite itself. */
