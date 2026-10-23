@@ -124,6 +124,85 @@ export const screensaverCollection: readonly CollectionPainting[] = [
     title: 'La Jeune Fille à la perle',
     credit: 'Johannes Vermeer, vers 1665',
   },
+  // Peintures verticales : elles remplissent un miroir en portrait.
+  {
+    key: 'vinci-joconde',
+    file: 'Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg',
+    title: 'La Joconde',
+    credit: 'Léonard de Vinci, vers 1503',
+  },
+  {
+    key: 'vinci-hermine',
+    file: 'Lady_with_an_Ermine_-_Leonardo_da_Vinci_-_Google_Art_Project.jpg',
+    title: 'La Dame à l’hermine',
+    credit: 'Léonard de Vinci, vers 1490',
+  },
+  {
+    key: 'raphael-madone',
+    file: 'Raphael_-_The_Sistine_Madonna_-_Google_Arts_&_Culture.jpg',
+    title: 'La Madone Sixtine',
+    credit: 'Raphaël, vers 1512',
+  },
+  {
+    key: 'rembrandt-autoportrait',
+    file: 'Rembrandt_Self-portrait_(Kenwood).jpg',
+    title: 'Autoportrait aux deux cercles',
+    credit: 'Rembrandt, vers 1665',
+  },
+  {
+    key: 'vermeer-ruelle',
+    file: "Johannes_Vermeer_-_Gezicht_op_huizen_in_Delft,_bekend_als_'Het_straatje'_-_Google_Art_Project.jpg",
+    title: 'La Ruelle',
+    credit: 'Johannes Vermeer, vers 1658',
+  },
+  {
+    key: 'vermeer-laitiere',
+    file: 'Johannes_Vermeer_-_Het_melkmeisje_-_Google_Art_Project.jpg',
+    title: 'La Laitière',
+    credit: 'Johannes Vermeer, vers 1658',
+  },
+  {
+    key: 'fragonard-escarpolette',
+    file: 'Fragonard,_The_Swing.jpg',
+    title: 'L’Escarpolette',
+    credit: 'Jean-Honoré Fragonard, vers 1767',
+  },
+  {
+    key: 'hiroshige-averse',
+    file: 'Hiroshige,_Sudden_shower_over_Shin-Ōhashi_bridge_and_Atake,_1857.jpg',
+    title: 'Averse soudaine sur le pont Shin-Ōhashi',
+    credit: 'Utagawa Hiroshige, 1857',
+  },
+  {
+    key: 'renoir-soeurs',
+    file: 'Pierre-Auguste_Renoir_-_Two_Sisters_(On_the_Terrace)_-_Google_Art_Project.jpg',
+    title: 'Les Deux Sœurs (Sur la terrasse)',
+    credit: 'Pierre-Auguste Renoir, 1881',
+  },
+  {
+    key: 'van-gogh-autoportrait',
+    file: 'Vincent_van_Gogh_-_Self-Portrait_-_Google_Art_Project_(454045).jpg',
+    title: 'Autoportrait',
+    credit: 'Vincent van Gogh, 1887',
+  },
+  {
+    key: 'van-gogh-tournesols',
+    file: 'Vincent_van_Gogh_-_Sunflowers_-_VGM_F458.jpg',
+    title: 'Les Tournesols',
+    credit: 'Vincent van Gogh, 1889',
+  },
+  {
+    key: 'monet-rouen',
+    file: 'Claude_Monet_-_Rouen_Cathedral,_West_Façade_-_Google_Art_Project.jpg',
+    title: 'La Cathédrale de Rouen, le portail',
+    credit: 'Claude Monet, 1894',
+  },
+  {
+    key: 'klimt-adele',
+    file: 'Klimt_-_ABBII_Portrait.jpg',
+    title: 'Portrait d’Adele Bloch-Bauer II',
+    credit: 'Gustav Klimt, 1912',
+  },
 ];
 
 export function collectionUrl(painting: CollectionPainting): string {

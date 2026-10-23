@@ -82,6 +82,7 @@ test('formats reconnus aux premiers octets, réglages bornés', () => {
   assert.equal(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, durationMs: 100 }), false);
   assert.equal(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, durationMs: 9_000 }), false);
   assert.ok(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, transition: 'fade' }));
+  assert.equal(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, fit: 'stretch' }), false);
 });
 
 test('écran de veille : réglages diffusés au miroir, images envoyées puis retirées', async (t) => {
@@ -98,6 +99,7 @@ test('écran de veille : réglages diffusés au miroir, images envoyées puis re
     transition: 'embers',
     durationMs: 1_500,
     wake: 'opening',
+    fit: 'whole',
   };
   const patch = (payload: Record<string, unknown>) =>
     f.app.inject({ method: 'PATCH', url: '/api/admin/screensaver', headers: f.headers, payload });
@@ -221,6 +223,7 @@ test('réglages relus de la base, transition inconnue ramenée à la valeur par 
     transition: 'curtain',
     durationMs: 2_000,
     wake: 'opening',
+    fit: 'fill',
   } as const;
   preferences.setScreensaver(chosen);
   assert.deepEqual(preferences.getScreensaver(), chosen);

@@ -14,7 +14,17 @@ export interface ScreensaverSettings {
   durationMs: number;
   /** Ce qui fait revenir l’orbe. */
   wake: ScreensaverWake;
+  /** Place de l’image à l’écran, jamais étirée. */
+  fit: ScreensaverFit;
 }
+
+/**
+ * whole : l’image entière, de bord à bord, des bandes noires sur les côtés restants. canvas :
+ * posée comme une toile sur son propre flou, sauf si ses proportions sont voisines de l’écran
+ * (elle le remplit alors). fill : elle remplit l’écran, quitte à en couper les bords.
+ */
+export const SCREENSAVER_FITS = ['whole', 'canvas', 'fill'] as const;
+export type ScreensaverFit = (typeof SCREENSAVER_FITS)[number];
 
 /**
  * vortex : l’image s’enroule et s’effondre dans l’orbe. embers : elle se consume depuis l’orbe.
@@ -55,6 +65,7 @@ export const DEFAULT_SCREENSAVER: ScreensaverSettings = {
   transition: 'vortex',
   durationMs: 1_000,
   wake: 'presence',
+  fit: 'canvas',
 };
 
 /** Durées proposées d’un geste dans l’administration. */
@@ -66,12 +77,13 @@ export const SCREENSAVER_DURATION_MAX_MS = 5_000;
 
 export function isScreensaverSettings(value: unknown): value is ScreensaverSettings {
   if (!value || typeof value !== 'object') return false;
-  const { enabled, intervalMs, returnDelayMs, transition, durationMs, wake, ...rest } =
+  const { enabled, intervalMs, returnDelayMs, transition, durationMs, wake, fit, ...rest } =
     value as Record<string, unknown>;
   return (
     Object.keys(rest).length === 0 &&
     (SCREENSAVER_TRANSITIONS as readonly unknown[]).includes(transition) &&
     (SCREENSAVER_WAKES as readonly unknown[]).includes(wake) &&
+    (SCREENSAVER_FITS as readonly unknown[]).includes(fit) &&
     typeof enabled === 'boolean' &&
     Number.isInteger(intervalMs) &&
     (intervalMs as number) >= SCREENSAVER_INTERVAL_MIN_MS &&

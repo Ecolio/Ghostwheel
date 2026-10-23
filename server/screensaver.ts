@@ -43,6 +43,13 @@ export const screensaverDurationMigration = `CREATE TABLE IF NOT EXISTS screensa
 ) STRICT;
 INSERT OR IGNORE INTO screensaver_duration (id) VALUES (1);`;
 
+/** Place des images à l’écran, validée par le code. */
+export const screensaverLayoutMigration = `CREATE TABLE IF NOT EXISTS screensaver_layout (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  fit TEXT NOT NULL DEFAULT 'canvas'
+) STRICT;
+INSERT OR IGNORE INTO screensaver_layout (id) VALUES (1);`;
+
 const extensions: Record<ScreensaverImageType, string> = {
   'image/jpeg': '.jpg',
   'image/png': '.png',

@@ -9,6 +9,7 @@ import {
   SCREENSAVER_DURATIONS_MS,
   type ScreensaverImage,
   type ScreensaverSettings as Settings,
+  type ScreensaverFit,
   type ScreensaverTransition,
   type ScreensaverWake,
 } from '../../../shared/screensaver';
@@ -84,6 +85,25 @@ export const transitionOptions: ChoiceOption<ScreensaverTransition>[] = [
   { value: 'none', label: 'Sans transition', description: 'L’image disparaît d’un coup.' },
 ];
 
+export const fitOptions: ChoiceOption<ScreensaverFit>[] = [
+  {
+    value: 'whole',
+    label: 'Entière, de bord à bord',
+    description: 'L’image entière touche deux bords de l’écran ; des bandes noires complètent.',
+  },
+  {
+    value: 'canvas',
+    label: 'Comme une toile',
+    description:
+      'Posée sur son propre flou, avec une ombre ; plein écran si ses proportions sont proches.',
+  },
+  {
+    value: 'fill',
+    label: 'Plein écran',
+    description: 'L’image remplit tout l’écran, quitte à en couper les bords.',
+  },
+];
+
 /** Ce qui réveille Cornelius (« Quand il écoute »), dit pour l’écran de veille. */
 function openingWake(opening: Opening): string {
   const who = opening.audience === 'members' ? ' reconnue' : '';
@@ -104,6 +124,7 @@ export function ScreensaverSettings({ state, run }: { state: MirrorState; run: R
         transition: state.screensaver.transition,
         wake: state.screensaver.wake,
         durationMs: state.screensaver.durationMs,
+        fit: state.screensaver.fit,
       }
     : DEFAULT_SCREENSAVER;
   const wakeOptions: ChoiceOption<ScreensaverWake>[] = [
@@ -217,6 +238,22 @@ export function ScreensaverSettings({ state, run }: { state: MirrorState; run: R
           >
             Temps que met l’image à disparaître quand l’orbe revient. Son retour prend un peu plus
             longtemps, pour s’installer sans hâte.
+          </p>
+          <ChoiceGroup
+            legend="Affichage des images"
+            disabled={!saved.enabled}
+            value={saved.fit}
+            options={fitOptions}
+            describedBy="screensaver-fit-help"
+            onValueChange={(fit) =>
+              save(`Images : ${fitOptions.find((option) => option.value === fit)?.label}.`, {
+                fit,
+              })
+            }
+          />
+          <p id="screensaver-fit-help" className="text-xs leading-relaxed text-muted-foreground">
+            Une image n’est jamais étirée. Les peintures verticales conviennent à un miroir en
+            portrait, les horizontales à un écran en paysage.
           </p>
           <ChoiceGroup
             legend="Changer d’image toutes les"

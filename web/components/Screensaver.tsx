@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   SCREENSAVER_RANDOM_EFFECTS,
   type ScreensaverEffect,
+  type ScreensaverFit,
   type ScreensaverImage,
   type ScreensaverTransition,
 } from '../../shared/screensaver';
@@ -66,6 +67,7 @@ export function Screensaver({
   intervalMs,
   transition,
   durationMs,
+  fit,
   onSceneChange,
 }: {
   active: boolean;
@@ -74,6 +76,7 @@ export function Screensaver({
   transition: ScreensaverTransition;
   /** Durée de la disparition de l’image ; le retour prend 1,6 fois plus. */
   durationMs: number;
+  fit: ScreensaverFit;
   onSceneChange: (scene: ScreensaverScene) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -87,6 +90,7 @@ export function Screensaver({
     setInterval: (ms: number) => void;
     setTransition: (transition: ScreensaverTransition) => void;
     setDuration: (ms: number) => void;
+    setFit: (fit: ScreensaverFit) => void;
   } | null>(null);
   const sceneChanged = useRef(onSceneChange);
   sceneChanged.current = onSceneChange;
@@ -113,6 +117,7 @@ export function Screensaver({
     let interval = intervalMs;
     let style = transition;
     let duration = durationMs;
+    let placement = fit;
     let effect: ScreensaverEffect = 'vortex';
     let slideshow: ReturnType<typeof setTimeout> | null = null;
     let loading = false;
@@ -164,7 +169,7 @@ export function Screensaver({
           size = { width, height, ratio: devicePixelRatio };
           renderer.resize(width, height, devicePixelRatio);
         }
-        renderer.render({ width, height, center: middle, effect, ...values });
+        renderer.render({ width, height, center: middle, effect, fit: placement, ...values });
         return;
       }
       const layer = fallbackRef.current;
@@ -384,6 +389,10 @@ export function Screensaver({
       setDuration(ms) {
         duration = ms;
       },
+      setFit(value) {
+        placement = value;
+        if (stage !== 'off') paint();
+      },
     };
     const resized = () => {
       if (stage !== 'off') paint();
@@ -397,7 +406,7 @@ export function Screensaver({
       if (slideshow) clearTimeout(slideshow);
       renderer?.dispose();
     };
-    // intervalMs, transition et durationMs ne sont lus qu’au départ ; les setters suivent.
+    // intervalMs, transition, durationMs et fit ne sont lus qu’au départ ; les setters suivent.
   }, []);
 
   useEffect(() => {
@@ -414,10 +423,11 @@ export function Screensaver({
   useEffect(() => engine.current?.setInterval(intervalMs), [intervalMs]);
   useEffect(() => engine.current?.setTransition(transition), [transition]);
   useEffect(() => engine.current?.setDuration(durationMs), [durationMs]);
+  useEffect(() => engine.current?.setFit(fit), [fit]);
   useEffect(() => engine.current?.wake(active), [active]);
 
   return (
-    <div className="mirror-screensaver" data-scene={scene} aria-hidden="true">
+    <div className="mirror-screensaver" data-scene={scene} data-fit={fit} aria-hidden="true">
       <canvas ref={canvasRef} hidden={fallback !== null} />
       {fallback && (
         <div ref={fallbackRef} className="mirror-screensaver-fallback">

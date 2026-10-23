@@ -237,6 +237,7 @@ export function Mirror({ connection }: { connection: MirrorConnection }) {
           intervalMs={screensaver?.intervalMs ?? 300_000}
           transition={screensaver?.transition ?? 'vortex'}
           durationMs={screensaver?.durationMs ?? 1_000}
+          fit={screensaver?.fit ?? 'canvas'}
           onSceneChange={setScreensaverScene}
         />
       )}

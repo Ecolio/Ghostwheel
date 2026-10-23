@@ -711,6 +711,7 @@ function screensaverState(
     transition: 'vortex',
     durationMs: 1_000,
     wake,
+    fit: 'canvas',
     imageCount: 1,
     revision: 'essai',
   };

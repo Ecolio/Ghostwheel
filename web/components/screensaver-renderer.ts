@@ -11,7 +11,7 @@ import {
   Vector3,
   WebGLRenderer,
 } from 'three';
-import type { ScreensaverEffect } from '../../shared/screensaver';
+import type { ScreensaverEffect, ScreensaverFit } from '../../shared/screensaver';
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -34,6 +34,7 @@ const fragmentShader = /* glsl */ `
   uniform vec2 uNextSize;
   uniform float uMix;
   uniform int uEffect;
+  uniform int uFit;
   uniform float uProgress;
   uniform float uGray;
   uniform float uVeil;
@@ -62,15 +63,18 @@ const fragmentShader = /* glsl */ `
     return value;
   }
 
-  // Une image aux proportions voisines de l’écran le remplit ; les autres s’y posent comme une
-  // toile, avec une ombre, sur un fond tiré de leur propre flou (mipmaps).
+  // Jamais étirée. uFit 0 : entière, de bord à bord, sur du noir. 2 : remplit l’écran, bords
+  // coupés. 1 : une image aux proportions voisines de l’écran le remplit ; les autres s’y
+  // posent comme une toile, avec une ombre, sur un fond tiré de leur propre flou (mipmaps).
   vec3 painting(sampler2D tex, vec2 size, vec2 p) {
     vec2 view = uViewport;
     float cover = max(view.x / size.x, view.y / size.y);
     float contain = min(view.x / size.x, view.y / size.y);
-    float fit = cover / contain < 1.22 ? cover : contain * 0.9;
+    float fit = uFit == 0 ? contain : uFit == 2 ? cover : cover / contain < 1.22 ? cover : contain * 0.9;
     vec2 local = (p - view * 0.5) / (size * fit);
-    vec3 backdrop = texture2D(tex, (p - view * 0.5) / (size * cover * 1.1) + 0.5, 6.5).rgb * 0.3;
+    vec3 backdrop = uFit == 0
+      ? vec3(0.0)
+      : texture2D(tex, (p - view * 0.5) / (size * cover * 1.1) + 0.5, 6.5).rgb * 0.3;
     vec2 outside = max(abs(p - view * 0.5) - size * fit * 0.5, 0.0);
     backdrop *= 1.0 - 0.6 * exp(-length(outside) / (0.03 * min(view.x, view.y)));
     float pixel = 1.0 / min(size.x * fit, size.y * fit);
@@ -159,6 +163,9 @@ const fragmentShader = /* glsl */ `
   }
 `;
 
+/** Numéro de chaque placement dans le shader. */
+const fitIndex: Record<ScreensaverFit, number> = { whole: 0, canvas: 1, fill: 2 };
+
 /** Numéro de chaque transition dans le shader. */
 const effectIndex: Record<ScreensaverEffect, number> = {
   vortex: 0,
@@ -174,6 +181,7 @@ export interface ScreensaverFrame {
   height: number;
   center: { x: number; y: number };
   effect: ScreensaverEffect;
+  fit: ScreensaverFit;
   progress: number;
   gray: number;
   veil: number;
@@ -204,6 +212,7 @@ export function createScreensaverRenderer(canvas: HTMLCanvasElement) {
     uNextSize: { value: new Vector2(1, 1) },
     uMix: { value: 0 },
     uEffect: { value: 0 },
+    uFit: { value: 1 },
     uProgress: { value: 0 },
     uGray: { value: 0 },
     uVeil: { value: 1 },
@@ -259,6 +268,7 @@ export function createScreensaverRenderer(canvas: HTMLCanvasElement) {
       uniforms.uNext.value = textures.next ?? textures.current;
       uniforms.uMix.value = textures.next ? frame.mix : 0;
       uniforms.uEffect.value = effectIndex[frame.effect];
+      uniforms.uFit.value = fitIndex[frame.fit];
       uniforms.uProgress.value = frame.progress;
       uniforms.uGray.value = frame.gray;
       uniforms.uVeil.value = frame.veil;

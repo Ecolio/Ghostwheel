@@ -542,6 +542,9 @@ body {
   height: 100%;
   object-fit: contain;
 }
+.mirror-screensaver[data-fit='fill'] .mirror-screensaver-fallback img {
+  object-fit: cover;
+}
 .mirror-screensaver-fallback img.is-next {
   opacity: var(--screensaver-mix, 0);
 }
