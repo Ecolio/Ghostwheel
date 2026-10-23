@@ -38,6 +38,7 @@ Pour couper tout envoi vers OpenAI, utilisez **Bloquer OpenAI** (voir plus bas).
 - les consignes de Cornelius, le style du foyer et, si la personne est reconnue, son prénom, son style et ses repères (**Personnaliser Cornelius → Ce que Cornelius reçoit** montre ce texte) ;
 - les descriptions de la caméra, si la vision est active ;
 - les résultats des modules, des commandes, de Home Assistant et des agents, et les souvenirs consultés quand une question porte sur eux ;
+- les noms des destinataires d’e-mail et le résultat d’un envoi, jamais leurs adresses ;
 - les recherches sur le web, faites par OpenAI, si **Modules → Web → Autoriser la recherche web** est activé.
 
 Les conversations sont ouvertes avec l’option `store: false` d’OpenAI, qui demande de ne pas conserver la réponse pour la consulter ensuite. Cette option ne dit rien des autres règles de conservation d’OpenAI : voir les conditions de votre compte.
@@ -52,6 +53,7 @@ Les conversations sont ouvertes avec l’option `store: false` d’OpenAI, qui d
 - **Les commandes** (**Modules → Commandes HTTP**) envoient leur requête à l’adresse que vous avez saisie.
 - **Home Assistant** reçoit les commandes des appareils autorisés, à l’adresse de votre installation.
 - **Les agents** (Hermes) reçoivent la demande confiée par la personne reconnue, à l’adresse de votre agent.
+- **Les e-mails** (**Modules → E-mail**) partent par le serveur de messagerie réglé (Gmail, iCloud, votre fournisseur…), vers les seuls destinataires de la liste, avec l’image demandée en pièce jointe ou le court message dicté. Une photo de la caméra n’est jamais envoyée. Voir [L’envoi par e-mail](../fonctionnalites/envoi-par-e-mail.md).
 - **Les modèles** sont téléchargés depuis leurs sites (GitHub, Hugging Face) lors de leur installation.
 - **Les peintures de l’écran de veille** sont téléchargées depuis Wikimedia Commons, seulement quand vous cliquez sur « Télécharger les peintures ». Vos photos ne quittent jamais l’ordinateur.
 
@@ -63,13 +65,14 @@ Tout est sur l’ordinateur du miroir, dans le dossier `data/` (voir [Configurat
 |---|---|
 | Profils, signatures des visages, souvenirs, style et repères, sources et commandes, réglages | la base `data/cornelius.sqlite` |
 | Jeton Home Assistant et jeton de connexion de chaque agent | la base, **sans chiffrement** |
+| Réglages d’envoi d’e-mail et adresses des destinataires | la base ; jamais diffusées au miroir ni données à la conversation. Supprimer un profil supprime son adresse. |
 | Copies de sécurité de la base | à côté de la base, `cornelius.sqlite.backup-v…sqlite` |
 | Journal technique | `data/logs/cornelius.log` |
 | Trois dernières images créées | `data/generated-images/`, vidé à chaque démarrage |
 | Images de l’écran de veille (vos photos et les peintures) | `data/screensaver/` ; leur titre dans la base |
 | Mot de passe de l’administration | le fichier `.env` au départ ; s’il est changé dans **Mise en route**, une empreinte (scrypt) dans la base, jamais le mot de passe lui-même |
 | Secrets des commandes (`CORNELIUS_SECRET_*`) | le fichier `.env`, jamais dans la base |
-| Clé OpenAI, jetons Météo et Transports | la base locale s’ils sont saisis dans l’administration (ils y passent avant ceux de `.env`), sinon le fichier `.env`. L’administration n’en montre que les quatre derniers caractères, et le journal les masque. |
+| Clé OpenAI, jetons Météo et Transports, mot de passe SMTP | la base locale s’ils sont saisis dans l’administration (ils y passent avant ceux de `.env`), sinon le fichier `.env`. L’administration n’en montre que les quatre derniers caractères, et le journal les masque. |
 
 Sous Linux, la base, ses copies, `.env` et le journal ne sont lisibles que par leur propriétaire.
 

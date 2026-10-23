@@ -17,6 +17,7 @@ Cette page est l’index de la documentation. Elle indique par où commencer, pu
 | choisir ce qui ouvre la conversation | [Ouverture et présence](fonctionnalites/ouverture-et-presence.md), [Mot d’appel](fonctionnalites/mot-d-appel.md) |
 | parler à Cornelius depuis une autre pièce | [Les satellites audio](fonctionnalites/satellites.md) |
 | ajouter la météo, les transports ou une commande | [Les modules](modules/README.md) |
+| recevoir une image du miroir sur mon téléphone | [L’envoi par e-mail](fonctionnalites/envoi-par-e-mail.md) |
 | écrire mon propre module | [Créer un module](https://github.com/lfpoulain/cornelius-modules/blob/main/docs/creer-un-module.md), dans le dépôt cornelius-modules |
 | comprendre pourquoi rien ne se passe | [Dépannage](utilisation/depannage.md) |
 | savoir ce qui part sur Internet | [Confidentialité](reference/confidentialite.md) |
@@ -45,6 +46,7 @@ Cette page est l’index de la documentation. Elle indique par où commencer, pu
 - [La mémoire](fonctionnalites/memoire.md) : ce que Cornelius retient et comment le gérer.
 - [La vision locale](fonctionnalites/vision-locale.md) : décrire ce qui se trouve devant le miroir, sans envoyer d’image.
 - [La génération d’images](fonctionnalites/generation-d-images.md) : dessiner une image à la voix, sur l’ordinateur.
+- [L’envoi par e-mail](fonctionnalites/envoi-par-e-mail.md) : envoyer une image ou un message sur le téléphone d’une personne du foyer.
 - [Home Assistant](fonctionnalites/home-assistant.md) : lumières, prises et capteurs de la maison.
 - [Les agents Hermes](fonctionnalites/agents-hermes.md) : confier des demandes longues à un agent personnel.
 

@@ -6,6 +6,20 @@ Le fonctionnement actuel est décrit dans la [documentation](docs/README.md). Ce
 
 ## Non publié
 
+### 2026-10-23 : envoi par e-mail
+
+**Ajouté**
+
+- Module natif **E-mail** (groupe « Capacités de Cornelius ») : « envoie-moi cette image », « envoie l’image du phare à Baptiste », « envoie-moi l’adresse ». L’image affichée, ou l’une des trois dernières, part en pièce jointe ; un court message part sans image.
+- Compte d’envoi SMTP chiffré (TLS ou STARTTLS), avec les réglages de Gmail, iCloud, Orange, Free, SFR et OVH en un clic, « Tester la connexion » et un e-mail d’essai par destinataire. Mot de passe `CORNELIUS_SMTP_PASSWORD`, aussi dans « Clés et jetons » ; les espaces d’un mot de passe d’application sont retirés.
+- Destinataires fixés dans l’administration, reliés ou non à un profil : la conversation ne connaît que leurs noms, jamais leurs adresses, qui ne sont pas diffusées au miroir. « Envoie-moi » vise la personne reconnue ; une image d’une personne ne part que pour elle ; vingt e-mails par heure au plus ; un envoi incertain n’est jamais répété.
+- Client SMTP sans dépendance (`server/smtp.ts`), testé contre un faux serveur local chiffré.
+
+**Modifié**
+
+- Les identifiants `agents`, `home_assistant`, `http`, `image`, `mail`, `memory`, `ui`, `vision` et `web` sont réservés aux outils du cœur : un module qui en prend un est refusé.
+- Les tests unitaires des modules ne chargent plus le dépôt `cornelius-modules` voisin.
+
 ### 2026-10-23 : caméra à l’envers
 
 **Ajouté**

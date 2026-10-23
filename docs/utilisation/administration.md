@@ -64,7 +64,7 @@ La carte « Avant la première conversation » (« Tout est prêt » une fois fi
 8. **Mot de passe administrateur** : à changer dans la carte du même nom, plus bas, s’il vaut encore celui de départ.
 9. **Accès à OpenAI** : bouton « Autoriser OpenAI » s’il a été bloqué.
 
-La liste se met à jour d’elle-même. Sous elle : la carte **Clés et jetons** (clé OpenAI et jetons des modules, pris en compte sans redémarrage), la carte **Mot de passe administrateur** et la carte **Accès depuis le réseau local**. Le parcours complet est décrit dans [Premier démarrage](../installation/premier-demarrage.md).
+La liste se met à jour d’elle-même. Sous elle : la carte **Clés et jetons** (clé OpenAI, mot de passe SMTP et jetons des modules, pris en compte sans redémarrage), la carte **Mot de passe administrateur** et la carte **Accès depuis le réseau local**. Le parcours complet est décrit dans [Premier démarrage](../installation/premier-demarrage.md).
 
 ## Micro et haut-parleurs
 
@@ -166,7 +166,8 @@ Une seule liste, en trois groupes : un module peut aussi bien donner des informa
   - « Cartes » : « Cartes à l’écran » (1 à 4, 3 par défaut), « Disparition après » (30 s, 1 minute par défaut, 2 ou 5 minutes) et « Raccourcir les cartes au second plan » (activé par défaut : une carte passée sur le côté garde son titre, sa valeur et deux lignes) ;
   - « Web » : « Autoriser la recherche web » (activé par défaut). Les sources s’affichent sur la carte ;
   - « Vision » : la description de ce que voit la caméra, calculée sur cet ordinateur, en trois étapes (« Choisir le modèle », « Installer », « Activer »). « Quand regarder » : « Jamais », « Au début de la conversation, puis sur demande » (par défaut) ou « Uniquement sur demande ». « Calcul » : automatique, carte graphique ou processeur. Voir [La vision locale](../fonctionnalites/vision-locale.md) ;
-  - « Génération d’image » : « Où créer les images », sur ce PC (quatre modèles, de « Léger » à « Très précis », installés sur cet ordinateur en trois étapes) ou avec OpenAI (la même clé que la conversation, un modèle GPT Image et une qualité au choix, rien à installer). « Autoriser la création d’images », « Charger le modèle dès le démarrage » et « Illustrer automatiquement les cartes », tous trois désactivés par défaut. Voir [La génération d’images](../fonctionnalites/generation-d-images.md).
+  - « Génération d’image » : « Où créer les images », sur ce PC (quatre modèles, de « Léger » à « Très précis », installés sur cet ordinateur en trois étapes) ou avec OpenAI (la même clé que la conversation, un modèle GPT Image et une qualité au choix, rien à installer). « Autoriser la création d’images », « Charger le modèle dès le démarrage » et « Illustrer automatiquement les cartes », tous trois désactivés par défaut. Voir [La génération d’images](../fonctionnalites/generation-d-images.md) ;
+  - « E-mail » : le compte d’envoi (boutons Gmail, iCloud, Orange, Free, SFR, OVH, puis « Serveur SMTP », « Port », « Chiffrement », « Adresse d’envoi », « Mot de passe »), « Tester la connexion », les « Destinataires » (nom dit à la voix, adresse, profil relié, « Envoyer un essai ») et « Autoriser l’envoi par e-mail » (désactivé par défaut). Voir [L’envoi par e-mail](../fonctionnalites/envoi-par-e-mail.md).
 
 Voir [Les modules](../modules/README.md).
 
