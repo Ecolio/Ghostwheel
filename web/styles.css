@@ -523,6 +523,10 @@ body {
   inset: 0;
   pointer-events: none;
 }
+/* Un glissement du doigt retire la peinture : le navigateur ne doit pas le prendre pour un défilement. */
+.mirror-page:is([data-screensaver='on'], [data-screensaver='entering']) {
+  touch-action: none;
+}
 .mirror-screensaver[data-scene='off'] {
   visibility: hidden;
 }

@@ -103,6 +103,58 @@ function useScreensaverActive(wanted: boolean, delayMs: number) {
   return active && wanted;
 }
 
+/** Glissement qui retire la peinture : au moins 12 % du plus petit côté, en moins d’une seconde. */
+const SWIPE_RATIO = 0.12;
+const SWIPE_MS = 1_000;
+/** Temps sans geste avant que la peinture puisse revenir (s’ajoute au délai de retour). */
+const SWIPE_HOLD_MS = 60_000;
+
+/**
+ * Vrai pendant SWIPE_HOLD_MS après un glissement (souris pressée ou doigt) sur la peinture ;
+ * chaque nouveau geste prolonge l’attente. `listening` limite l’écoute aux moments où la
+ * peinture est à l’écran ou retenue.
+ */
+function useScreensaverSwipe(listening: boolean) {
+  const [dismissed, setDismissed] = useState(false);
+  const [lastGesture, setLastGesture] = useState(0);
+  useEffect(() => {
+    if (!listening && !dismissed) return;
+    let start: { id: number; x: number; y: number; time: number } | null = null;
+    const down = (event: PointerEvent) => {
+      start = { id: event.pointerId, x: event.clientX, y: event.clientY, time: event.timeStamp };
+      if (dismissed) setLastGesture(performance.now());
+    };
+    const move = (event: PointerEvent) => {
+      if (!start || start.id !== event.pointerId) return;
+      if (event.timeStamp - start.time > SWIPE_MS) return void (start = null);
+      const distance = Math.hypot(event.clientX - start.x, event.clientY - start.y);
+      if (distance < Math.min(innerWidth, innerHeight) * SWIPE_RATIO) return;
+      start = null;
+      setDismissed(true);
+      setLastGesture(performance.now());
+    };
+    const up = (event: PointerEvent) => {
+      if (start?.id === event.pointerId) start = null;
+    };
+    addEventListener('pointerdown', down);
+    addEventListener('pointermove', move);
+    addEventListener('pointerup', up);
+    addEventListener('pointercancel', up);
+    return () => {
+      removeEventListener('pointerdown', down);
+      removeEventListener('pointermove', move);
+      removeEventListener('pointerup', up);
+      removeEventListener('pointercancel', up);
+    };
+  }, [listening, dismissed]);
+  useEffect(() => {
+    if (!dismissed) return;
+    const timer = setTimeout(() => setDismissed(false), SWIPE_HOLD_MS);
+    return () => clearTimeout(timer);
+  }, [dismissed, lastGesture]);
+  return dismissed;
+}
+
 export function Mirror({ connection }: { connection: MirrorConnection }) {
   const { state, fresh, now, interrupted, reconnect } = connection;
   const preparation = useSyncExternalStore(subscribeAudioPreparation, audioPreparation);
@@ -184,8 +236,13 @@ export function Mirror({ connection }: { connection: MirrorConnection }) {
   // présente : sa venue le fait revenir.
   const screensaver = state?.screensaver;
   const [screensaverScene, setScreensaverScene] = useState<ScreensaverScene>('off');
+  // Un glissement de souris ou de doigt sur la peinture la retire, le temps de s’en servir.
+  const screensaverSwiped = useScreensaverSwipe(
+    screensaverScene === 'on' || screensaverScene === 'entering',
+  );
   const screensaverActive = useScreensaverActive(
     !!screensaver?.enabled &&
+      !screensaverSwiped &&
       screensaver.imageCount > 0 &&
       // Un état brièvement ancien (resynchronisation) garde la peinture ; une coupure de plus
       // de 5 s (connectionLost) la retire pour laisser voir la ligne d’état.

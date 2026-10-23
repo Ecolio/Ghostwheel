@@ -753,6 +753,31 @@ test('écran de veille : une peinture quand personne n’est là, l’orbe revie
   }
 });
 
+test('écran de veille : un glissement de souris retire la peinture', async ({ page }) => {
+  const fixture = await mirrorFixture(page, (state) => {
+    state.presence = { ...state.presence, state: 'absent', peopleCount: 0, people: [] };
+    state.screensaver = screensaverState('presence');
+  });
+  await routeScreensaverImages(page);
+  try {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto('/');
+    const mirror = page.locator('.mirror-page');
+    await expect(mirror).toHaveAttribute('data-screensaver', 'on');
+    // Un clic sans glisser ne suffit pas.
+    await page.mouse.click(640, 360);
+    await expect(mirror).toHaveAttribute('data-screensaver', 'on');
+    await page.mouse.move(400, 360);
+    await page.mouse.down();
+    await page.mouse.move(800, 360, { steps: 8 });
+    await page.mouse.up();
+    await expect(mirror).toHaveAttribute('data-screensaver', 'off');
+    await expect(page.locator('.orb-fullscreen')).toHaveCSS('opacity', '1');
+  } finally {
+    fixture.close();
+  }
+});
+
 test('écran de veille calé sur le réveil de Cornelius : un passant ne le retire pas, un regard si', async ({
   page,
 }) => {
