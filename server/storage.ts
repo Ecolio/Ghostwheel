@@ -390,6 +390,12 @@ export const migrations: readonly string[] = [
   screensaverLayoutMigration,
   // Écran de veille : dimensions des images, pour les trier par sens.
   screensaverSizesMigration,
+  // Source indépendante du périphérique local : le retour au serveur retrouve son choix.
+  `CREATE TABLE IF NOT EXISTS camera_source (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    source TEXT NOT NULL DEFAULT 'server' CHECK (source IN ('server', 'browser'))
+  ) STRICT;
+  INSERT OR IGNORE INTO camera_source (id) VALUES (1);`,
 ];
 
 /** The server owns this connection. Backups include WAL changes via SQLite itself. */

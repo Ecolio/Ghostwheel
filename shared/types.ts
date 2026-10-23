@@ -170,6 +170,7 @@ export interface HeartbeatEvent {
   sentAt: number;
 }
 export interface CameraStatus {
+  source?: import('./camera.js').CameraSource;
   devices: { id: string; label: string }[];
   selectedId: string | null;
   changing: boolean;
@@ -394,7 +395,8 @@ export interface DevicesEvent {
   status: DevicesStatus;
 }
 
-export type ServerEvent = StateEvent | HeartbeatEvent | DevicesEvent;
+export type ServerEvent =
+  StateEvent | HeartbeatEvent | DevicesEvent | import('./camera.js').BrowserCameraConfig;
 
 export type MirrorCommand =
   | { type: 'start' }

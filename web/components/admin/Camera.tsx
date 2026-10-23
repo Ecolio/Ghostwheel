@@ -82,61 +82,93 @@ export function Camera({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex flex-wrap items-end gap-3">
-          <Field className="min-w-56 flex-1" id="camera" label="Caméra">
-            <NativeSelect
-              id="camera"
-              wrapperClassName="w-full"
-              className="w-full"
-              value={connected ? selected : ''}
-              disabled={busy}
-              aria-describedby={blocker || note ? 'camera-blocker' : undefined}
-              onChange={(event) => setSelected(event.target.value)}
-            >
-              <NativeSelectOption value="" disabled>
-                {!connected
-                  ? 'Aucune caméra : le service caméra n’est pas lancé'
-                  : starting
-                    ? 'Allumage de la caméra…'
-                    : camera?.devices.length
-                      ? 'Choisir une caméra'
-                      : 'Aucune caméra détectée'}
-              </NativeSelectOption>
-              {camera?.devices.map((device) => (
-                <NativeSelectOption key={device.id} value={device.id}>
-                  {device.label}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </Field>
-          <Button
-            disabled={busy || !selected || selected === camera?.selectedId}
-            onClick={() => {
-              void run('Changement de caméra demandé.', () =>
-                request('/api/admin/camera/select', {
-                  method: 'POST',
-                  body: JSON.stringify({ id: selected }),
+        <Field id="camera-source" label="Emplacement de la caméra">
+          <NativeSelect
+            id="camera-source"
+            value={camera?.source ?? 'server'}
+            disabled={!!status?.perception.enrollingProfileId}
+            onChange={(event) =>
+              void run('Source de la caméra enregistrée.', () =>
+                request('/api/admin/camera/source', {
+                  method: 'PUT',
+                  body: JSON.stringify({ source: event.target.value }),
                 }),
-              );
-            }}
+              )
+            }
           >
-            {camera?.changing ? 'Connexion…' : 'Utiliser cette caméra'}
-          </Button>
-          <Button
-            variant="outline"
-            disabled={busy}
-            onClick={() => {
-              void run('Recherche des caméras demandée.', () =>
-                request('/api/admin/camera/refresh', { method: 'POST' }),
-              );
-            }}
-          >
-            Actualiser la liste
-          </Button>
-        </div>
+            <NativeSelectOption value="server">Sur le serveur Cornelius</NativeSelectOption>
+            <NativeSelectOption value="browser">
+              Sur l’appareil qui affiche le miroir
+            </NativeSelectOption>
+          </NativeSelect>
+        </Field>
+        {camera?.source === 'browser' && (
+          <p className="text-sm text-muted-foreground">
+            Ouvrez le miroir en HTTPS sur cet appareil, puis activez sa caméra. Les images
+            traversent le réseau local chiffré et sont analysées par le service de perception du
+            serveur. La caméra se choisit sur le miroir ; le serveur doit toujours exécuter la
+            perception.
+          </p>
+        )}
+
+        {camera?.source !== 'browser' && (
+          <div className="flex flex-wrap items-end gap-3">
+            <Field className="min-w-56 flex-1" id="camera" label="Caméra">
+              <NativeSelect
+                id="camera"
+                wrapperClassName="w-full"
+                className="w-full"
+                value={connected ? selected : ''}
+                disabled={busy}
+                aria-describedby={blocker || note ? 'camera-blocker' : undefined}
+                onChange={(event) => setSelected(event.target.value)}
+              >
+                <NativeSelectOption value="" disabled>
+                  {!connected
+                    ? 'Aucune caméra : le service caméra n’est pas lancé'
+                    : starting
+                      ? 'Allumage de la caméra…'
+                      : camera?.devices.length
+                        ? 'Choisir une caméra'
+                        : 'Aucune caméra détectée'}
+                </NativeSelectOption>
+                {camera?.devices.map((device) => (
+                  <NativeSelectOption key={device.id} value={device.id}>
+                    {device.label}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </Field>
+            <Button
+              disabled={busy || !selected || selected === camera?.selectedId}
+              onClick={() => {
+                void run('Changement de caméra demandé.', () =>
+                  request('/api/admin/camera/select', {
+                    method: 'POST',
+                    body: JSON.stringify({ id: selected }),
+                  }),
+                );
+              }}
+            >
+              {camera?.changing ? 'Connexion…' : 'Utiliser cette caméra'}
+            </Button>
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => {
+                void run('Recherche des caméras demandée.', () =>
+                  request('/api/admin/camera/refresh', { method: 'POST' }),
+                );
+              }}
+            >
+              Actualiser la liste
+            </Button>
+          </div>
+        )}
         {camera?.mode && (
           <CameraModeSettings
             mode={camera.mode}
+            browser={camera.source === 'browser'}
             actual={camera.actual ?? null}
             disabled={busy || !camera.selectedId}
             run={run}
@@ -198,11 +230,13 @@ export function Camera({
 /** Résolution et cadence : le conseil du jour sous chaque liste, et ce que la caméra a accepté. */
 function CameraModeSettings({
   mode,
+  browser,
   actual,
   disabled,
   run,
 }: {
   mode: CameraMode;
+  browser: boolean;
   actual: { width: number; height: number; fps: number | null } | null;
   disabled: boolean;
   run: RunAction;
@@ -223,7 +257,7 @@ function CameraModeSettings({
     actual &&
     (actual.width !== mode.width ||
       actual.height !== mode.height ||
-      (actual.fps !== null && actual.fps !== mode.fps));
+      (!browser && actual.fps !== null && actual.fps !== mode.fps));
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-3">
@@ -252,28 +286,34 @@ function CameraModeSettings({
             ))}
           </NativeSelect>
         </Field>
-        <Field
-          className="min-w-56 flex-1"
-          id="camera-fps"
-          label="Images par seconde"
-          help={rate.hint}
-        >
-          <NativeSelect
+        {browser ? (
+          <p className="text-sm text-muted-foreground">
+            Caméra du navigateur : 10 images par seconde au maximum.
+          </p>
+        ) : (
+          <Field
+            className="min-w-56 flex-1"
             id="camera-fps"
-            wrapperClassName="w-full"
-            className="w-full"
-            value={String(mode.fps)}
-            disabled={disabled}
-            onChange={(event) => apply({ ...mode, fps: Number(event.target.value) })}
+            label="Images par seconde"
+            help={rate.hint}
           >
-            {CAMERA_FRAME_RATES.map((item) => (
-              <NativeSelectOption key={item.fps} value={String(item.fps)}>
-                {item.label}
-                {item.fps === DEFAULT_CAMERA_MODE.fps ? ' (recommandée)' : ''}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </Field>
+            <NativeSelect
+              id="camera-fps"
+              wrapperClassName="w-full"
+              className="w-full"
+              value={String(mode.fps)}
+              disabled={disabled}
+              onChange={(event) => apply({ ...mode, fps: Number(event.target.value) })}
+            >
+              {CAMERA_FRAME_RATES.map((item) => (
+                <NativeSelectOption key={item.fps} value={String(item.fps)}>
+                  {item.label}
+                  {item.fps === DEFAULT_CAMERA_MODE.fps ? ' (recommandée)' : ''}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </Field>
+        )}
       </div>
       {actual && (
         <p className="text-xs text-muted-foreground" role="status">
