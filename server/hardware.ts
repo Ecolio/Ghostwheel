@@ -201,6 +201,7 @@ export function registerHardware(
         width: req.body.width,
         height: req.body.height,
         fps: req.body.fps,
+        rotate180: req.body.rotate180 === true,
       });
       return { ok: true };
     } catch (error) {

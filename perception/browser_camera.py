@@ -5,7 +5,7 @@ import uuid
 
 import cv2
 import numpy as np
-from camera import Camera, valid_mode
+from camera import Camera, clean_mode, valid_mode
 
 MAX_BYTES = 250_000
 MAX_WIDTH, MAX_HEIGHT = 1920, 1080
@@ -52,7 +52,7 @@ class BrowserCamera(Camera):
         with self.lock:
             self.enabled = True
             if valid_mode(mode):
-                self.mode = dict(mode)
+                self.mode = clean_mode(mode)
             self.error = "Activez la caméra dans le navigateur du miroir."
             return self.status()
 
@@ -82,7 +82,7 @@ class BrowserCamera(Camera):
 
     def set_mode(self, mode):
         if valid_mode(mode):
-            self.mode = dict(mode)
+            self.mode = clean_mode(mode)
         return self.status()
 
     def status(self):
@@ -107,7 +107,7 @@ class BrowserCamera(Camera):
         with self.lock:
             if not self.enabled:
                 return False
-            self.latest = frame
+            self.latest = self.oriented(frame)
             self.latest_at = time.monotonic()
             self.latest_wall = int(time.time() * 1000)
             self.selected_id = "browser"

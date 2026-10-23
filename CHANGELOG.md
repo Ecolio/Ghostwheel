@@ -6,6 +6,12 @@ Le fonctionnement actuel est décrit dans la [documentation](docs/README.md). Ce
 
 ## Non publié
 
+### 2026-10-23 : caméra à l’envers
+
+**Ajouté**
+
+- Caméra : interrupteur « Caméra montée à l’envers » dans l’administration. L’image est retournée de 180° par la perception, pour la caméra du serveur comme pour celle du navigateur, avant la détection des visages et l’aperçu.
+
 ### 2026-10-22 : écran de veille
 
 **Ajouté**

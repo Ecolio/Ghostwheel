@@ -16,6 +16,8 @@ import { useCameraPreview } from './useCameraPreview';
 import { Button } from '../ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
 import { NativeSelect, NativeSelectOption } from '../ui/native-select';
+import { Label } from '../ui/label';
+import { Switch } from '../ui/switch';
 import { Alert, AlertDescription } from '../ui/alert';
 
 /**
@@ -275,7 +277,7 @@ function CameraModeSettings({
             disabled={disabled}
             onChange={(event) => {
               const [width, height] = event.target.value.split('x').map(Number) as [number, number];
-              apply({ width, height, fps: mode.fps });
+              apply({ ...mode, width, height });
             }}
           >
             {CAMERA_RESOLUTIONS.map((item) => (
@@ -314,6 +316,21 @@ function CameraModeSettings({
             </NativeSelect>
           </Field>
         )}
+      </div>
+      <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
+        <div className="space-y-1">
+          <Label htmlFor="camera-rotate">Caméra montée à l’envers</Label>
+          <p className="text-xs text-muted-foreground" id="camera-rotate-detail">
+            L’image est retournée de 180° avant la détection des visages et l’aperçu.
+          </p>
+        </div>
+        <Switch
+          id="camera-rotate"
+          aria-describedby="camera-rotate-detail"
+          checked={!!mode.rotate180}
+          disabled={disabled}
+          onCheckedChange={(rotate180) => apply({ ...mode, rotate180 })}
+        />
       </div>
       {actual && (
         <p className="text-xs text-muted-foreground" role="status">

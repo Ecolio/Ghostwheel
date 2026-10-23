@@ -9,11 +9,13 @@ export interface BrowserCameraConfig {
   mode: CameraMode;
 }
 
-/** Résolution et cadence de la caméra, appliquées par la perception. */
+/** Résolution, cadence et orientation de la caméra, appliquées par la perception. */
 export interface CameraMode {
   width: number;
   height: number;
   fps: number;
+  /** Caméra montée tête en bas : l’image est retournée avant la détection. Absent : à l’endroit. */
+  rotate180?: boolean;
 }
 
 export const CAMERA_RESOLUTIONS = [
@@ -46,7 +48,12 @@ export const CAMERA_FRAME_RATES = [
   },
 ] as const;
 
-export const DEFAULT_CAMERA_MODE: CameraMode = { width: 1280, height: 720, fps: 30 };
+export const DEFAULT_CAMERA_MODE: CameraMode = {
+  width: 1280,
+  height: 720,
+  fps: 30,
+  rotate180: false,
+};
 
 export function isCameraMode(value: unknown): value is CameraMode {
   if (!value || typeof value !== 'object') return false;
@@ -54,7 +61,9 @@ export function isCameraMode(value: unknown): value is CameraMode {
   return (
     CAMERA_RESOLUTIONS.some(
       (resolution) => resolution.width === mode.width && resolution.height === mode.height,
-    ) && CAMERA_FRAME_RATES.some((rate) => rate.fps === mode.fps)
+    ) &&
+    CAMERA_FRAME_RATES.some((rate) => rate.fps === mode.fps) &&
+    (mode.rotate180 === undefined || typeof mode.rotate180 === 'boolean')
   );
 }
 
