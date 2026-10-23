@@ -8,7 +8,10 @@ import {
   SCREENSAVER_RETURN_DELAYS_MS,
   type ScreensaverImage,
   type ScreensaverSettings as Settings,
+  type ScreensaverTransition,
+  type ScreensaverWake,
 } from '../../../shared/screensaver';
+import { currentOpening, type Opening } from '../../../shared/opening';
 import type { MirrorState } from '../../../shared/types';
 import { api } from '../../api';
 import type { RunAction } from './types';
@@ -36,6 +39,46 @@ function durationOptions(presets: number[], saved: number): ChoiceOption<string>
   ];
 }
 
+export const transitionOptions: ChoiceOption<ScreensaverTransition>[] = [
+  {
+    value: 'vortex',
+    label: 'Aspiration',
+    description: 'L’image se grise, s’enroule et s’effondre dans l’orbe.',
+  },
+  {
+    value: 'embers',
+    label: 'Cendres',
+    description: 'L’image se consume depuis l’orbe, un liseré de braise en tête.',
+  },
+  {
+    value: 'ripple',
+    label: 'Onde',
+    description: 'Une onde partie de l’orbe traverse l’image et l’emporte.',
+  },
+  {
+    value: 'mosaic',
+    label: 'Mosaïque',
+    description: 'L’image se défait en carreaux qui tournent et fondent, de l’orbe vers les bords.',
+  },
+  {
+    value: 'curtain',
+    label: 'Rideau',
+    description: 'L’image s’ouvre en deux derrière l’orbe, chaque moitié glisse vers son bord.',
+  },
+  { value: 'random', label: 'Au hasard', description: 'Une des cinq, différente à chaque fois.' },
+  { value: 'none', label: 'Sans transition', description: 'L’image disparaît d’un coup.' },
+];
+
+/** Ce qui réveille Cornelius, dit pour l’écran de veille. */
+function openingWake(opening: Opening): string {
+  const who = opening.audience === 'members' ? ' reconnue' : '';
+  return opening.trigger === 'voice'
+    ? 'Au mot « Cornelius », quand la conversation s’ouvre : l’image reste tant qu’on passe sans l’appeler.'
+    : opening.trigger === 'gaze'
+      ? `Quand une personne${who} regarde le miroir : l’image reste tant qu’on passe sans le regarder.`
+      : `Quand une personne${who} se présente devant le miroir.`;
+}
+
 /** Écran de veille : activation et rythme, puis les images proposées au miroir. */
 export function ScreensaverSettings({ state, run }: { state: MirrorState; run: RunAction }) {
   const saved: Settings = state.screensaver
@@ -43,8 +86,22 @@ export function ScreensaverSettings({ state, run }: { state: MirrorState; run: R
         enabled: state.screensaver.enabled,
         intervalMs: state.screensaver.intervalMs,
         returnDelayMs: state.screensaver.returnDelayMs,
+        transition: state.screensaver.transition,
+        wake: state.screensaver.wake,
       }
     : DEFAULT_SCREENSAVER;
+  const wakeOptions: ChoiceOption<ScreensaverWake>[] = [
+    {
+      value: 'presence',
+      label: 'Au passage d’une personne',
+      description: 'Dès qu’une personne passe devant le miroir, même sans s’arrêter.',
+    },
+    {
+      value: 'opening',
+      label: 'Au réveil de Cornelius',
+      description: openingWake(currentOpening(state)),
+    },
+  ];
   const save = (label: string, changes: Partial<Settings>) => {
     const next = { ...saved, ...changes };
     return run(label, () => api.screensaverSettings(next), { key: 'screensaver', payload: next });
@@ -57,8 +114,8 @@ export function ScreensaverSettings({ state, run }: { state: MirrorState; run: R
           <CardTitle>Écran de veille</CardTitle>
           <CardDescription>
             Plutôt qu’un écran noir, le miroir affiche des peintures et vos photos quand personne
-            n’est devant lui. Dès qu’une personne est détectée, l’orbe réapparaît devant l’image et
-            l’aspire.
+            n’est devant lui. Au retour d’une personne, l’orbe réapparaît devant l’image et
+            l’efface.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -81,6 +138,45 @@ export function ScreensaverSettings({ state, run }: { state: MirrorState; run: R
               }
             />
           </div>
+          <ChoiceGroup
+            legend="L’orbe revient"
+            disabled={!saved.enabled}
+            value={saved.wake}
+            options={wakeOptions}
+            describedBy="screensaver-wake-help"
+            onValueChange={(wake) =>
+              save(
+                wake === 'presence'
+                  ? 'L’orbe revient au passage d’une personne.'
+                  : 'L’orbe revient au réveil de Cornelius.',
+                { wake },
+              )
+            }
+          />
+          <p id="screensaver-wake-help" className="text-xs leading-relaxed text-muted-foreground">
+            Ce qui réveille Cornelius se règle dans « Quand il écoute ». Une conversation qui
+            s’ouvre fait toujours revenir l’orbe.
+          </p>
+          <ChoiceGroup
+            legend="Transition"
+            disabled={!saved.enabled}
+            value={saved.transition}
+            options={transitionOptions}
+            describedBy="screensaver-transition-help"
+            onValueChange={(transition) =>
+              save(
+                `Transition : ${transitionOptions.find((option) => option.value === transition)?.label}.`,
+                { transition },
+              )
+            }
+          />
+          <p
+            id="screensaver-transition-help"
+            className="text-xs leading-relaxed text-muted-foreground"
+          >
+            La même transition, jouée à l’envers, fait revenir les images. Si l’ordinateur demande
+            de réduire les animations, c’est toujours un simple fondu.
+          </p>
           <ChoiceGroup
             legend="Changer d’image toutes les"
             compact
@@ -107,9 +203,12 @@ export function ScreensaverSettings({ state, run }: { state: MirrorState; run: R
             }
           />
           <p id="screensaver-return-help" className="text-xs leading-relaxed text-muted-foreground">
-            Temps sans personne devant le miroir, sans conversation ni carte affichée. Avec «
-            Cornelius » pour tout le monde, la caméra reste éteinte : les images restent jusqu’au
-            mot d’appel.
+            {saved.wake === 'presence'
+              ? 'Temps sans personne devant le miroir, sans conversation ni carte affichée.'
+              : 'Temps sans réveil de Cornelius (personne, regard ou conversation, selon le réglage), sans carte affichée.'}{' '}
+            {
+              'Avec « Cornelius » pour tout le monde, la caméra reste éteinte : les images restent jusqu’au mot d’appel.'
+            }
           </p>
         </CardContent>
       </Card>

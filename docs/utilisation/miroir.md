@@ -107,8 +107,19 @@ Les prénoms des personnes reconnues sont donc visibles par tous ceux qui voient
 Plutôt que de rester noir, le miroir peut afficher des peintures et vos photos quand personne n’est devant lui, comme un cadre d’art. Il est désactivé par défaut ; il s’active et se remplit dans l’administration, rubrique « Écran de veille ».
 
 - **Quand.** Les images arrivent après un délai sans personne devant le miroir (30 s par défaut), sans conversation ni carte affichée. Elles changent à intervalle régulier (toutes les 5 minutes par défaut), par un long fondu, dans un ordre mélangé.
+- **Ce qui fait revenir l’orbe.** Au choix : le passage d’une personne (par défaut), ou le réveil de Cornelius. Dans ce second cas, l’écran de veille suit ce qui ouvre la conversation (rubrique « Quand il écoute ») : une personne qui se présente, une personne qui regarde le miroir, ou le mot « Cornelius ». Quelqu’un qui passe sans regarder, ou sans appeler, laisse l’image en place. Si l’ouverture est réservée aux membres du foyer, seule une personne reconnue réveille l’orbe. Une conversation qui s’ouvre le fait toujours revenir.
 - **À l’écran.** Rien d’autre ne s’affiche : ni nom, ni informations permanentes. Une image aux proportions de l’écran le remplit ; les autres s’y posent comme une toile, sur un fond tiré de leur propre flou. Le titre et l’auteur d’une peinture s’écrivent discrètement en bas à droite.
-- **Quand quelqu’un arrive.** L’orbe réapparaît devant l’image, qui se grise puis s’enroule et s’effondre dans l’orbe, jusqu’à laisser le fond noir. Le reste de l’écran revient ensuite.
+- **Au réveil.** L’orbe réapparaît devant l’image, qui se grise puis s’efface en un peu plus d’une seconde, selon la transition choisie. Le reste de l’écran revient ensuite. Les mêmes transitions, jouées à l’envers, font revenir les images :
+
+  | Transition | Ce qu’on voit |
+  |---|---|
+  | Aspiration (par défaut) | L’image s’enroule et s’effondre dans l’orbe, en ouvrant un trou noir au centre. |
+  | Cendres | L’image se consume depuis l’orbe, un liseré de braise en tête. |
+  | Onde | Une onde partie de l’orbe traverse l’image et ne laisse que le noir derrière elle. |
+  | Mosaïque | L’image se défait en carreaux qui tournent et fondent, de l’orbe vers les bords. |
+  | Rideau | L’image s’ouvre en deux derrière l’orbe, chaque moitié glisse vers son bord. |
+  | Au hasard | Une des cinq, différente à chaque fois. |
+  | Sans transition | L’image disparaît d’un coup, et revient de même. |
 - **Avec « Cornelius » ouvert à tout le monde.** La caméra reste éteinte en veille : les images restent jusqu’au mot d’appel.
 
 Si l’ordinateur demande de réduire les animations, l’image apparaît et disparaît par un simple fondu.

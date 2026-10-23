@@ -6,6 +6,7 @@ import type { MirrorConnection } from '../useMirror';
 import { Orb } from './Orb';
 import { AmbientModules } from './AmbientModules';
 import { Screensaver, type ScreensaverScene } from './Screensaver';
+import { screensaverWoken } from './screensaver-wake';
 import { useVoice } from '../audio/useVoice';
 import {
   audioPreparation,
@@ -177,15 +178,18 @@ export function Mirror({ connection }: { connection: MirrorConnection }) {
       .map((person) => person.trackId),
   );
   const activationShown = (!preparation.ready || audioLocked) && fresh && !state?.openaiBlocked;
-  // Peintures quand personne n’est là et que rien n’attend un regard (carte, image en cours).
-  // Le bouton « Activer la voix » ne sert qu’à une personne présente : sa venue le fait revenir.
+  // Peintures tant que l’orbe n’a pas à s’éveiller (voir screensaverWoken) et que rien n’attend
+  // un regard (carte, image en cours). Le bouton « Activer la voix » ne sert qu’à une personne
+  // présente : sa venue le fait revenir.
   const screensaver = state?.screensaver;
   const [screensaverScene, setScreensaverScene] = useState<ScreensaverScene>('off');
   const screensaverActive = useScreensaverActive(
     !!screensaver?.enabled &&
       screensaver.imageCount > 0 &&
-      phase === 'idle' &&
-      !present &&
+      // Un état brièvement ancien (resynchronisation) garde la peinture ; une coupure de plus
+      // de 5 s (connectionLost) la retire pour laisser voir la ligne d’état.
+      !!state &&
+      !screensaverWoken(state, phase) &&
       !voiceOnlyActive &&
       !satelliteName &&
       !imageActivity &&
@@ -231,6 +235,7 @@ export function Mirror({ connection }: { connection: MirrorConnection }) {
           active={screensaverActive}
           revision={screensaver?.revision ?? ''}
           intervalMs={screensaver?.intervalMs ?? 300_000}
+          transition={screensaver?.transition ?? 'vortex'}
           onSceneChange={setScreensaverScene}
         />
       )}

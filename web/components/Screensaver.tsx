@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ScreensaverImage } from '../../shared/screensaver';
+import {
+  SCREENSAVER_EFFECTS,
+  type ScreensaverEffect,
+  type ScreensaverImage,
+  type ScreensaverTransition,
+} from '../../shared/screensaver';
 import { api } from '../api';
 import {
   createScreensaverRenderer,
@@ -9,11 +14,11 @@ import {
 
 /**
  * off : rien n’est affiché. entering : la peinture sort de l’orbe endormie. on : la peinture
- * occupe l’écran. leaving : l’orbe s’éveille devant elle et l’aspire.
+ * occupe l’écran. leaving : l’orbe s’éveille devant elle et l’efface.
  */
 export type ScreensaverScene = 'off' | 'entering' | 'on' | 'leaving';
 
-type Values = Pick<ScreensaverFrame, 'collapse' | 'gray' | 'veil' | 'mix'>;
+type Values = Pick<ScreensaverFrame, 'progress' | 'gray' | 'veil' | 'mix'>;
 type Ease = (t: number) => number;
 interface Tween {
   from: number;
@@ -59,11 +64,13 @@ export function Screensaver({
   active,
   revision,
   intervalMs,
+  transition,
   onSceneChange,
 }: {
   active: boolean;
   revision: string;
   intervalMs: number;
+  transition: ScreensaverTransition;
   onSceneChange: (scene: ScreensaverScene) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -75,6 +82,7 @@ export function Screensaver({
     wake: (active: boolean) => void;
     setImages: (images: ScreensaverImage[]) => void;
     setInterval: (ms: number) => void;
+    setTransition: (transition: ScreensaverTransition) => void;
   } | null>(null);
   const sceneChanged = useRef(onSceneChange);
   sceneChanged.current = onSceneChange;
@@ -90,7 +98,7 @@ export function Screensaver({
       renderer = null;
     }
     const motion = matchMedia('(prefers-reduced-motion: reduce)');
-    const values: Values = { collapse: 1, gray: 1, veil: 1, mix: 0 };
+    const values: Values = { progress: 1, gray: 1, veil: 1, mix: 0 };
     const tweens = new Map<keyof Values, Tween>();
     let current: ScreensaverImage | null = null;
     let next: ScreensaverImage | null = null;
@@ -99,6 +107,8 @@ export function Screensaver({
     let stage: ScreensaverScene = 'off';
     let wanted = false;
     let interval = intervalMs;
+    let style = transition;
+    let effect: ScreensaverEffect = 'vortex';
     let slideshow: ReturnType<typeof setTimeout> | null = null;
     let loading = false;
     let frame = 0;
@@ -149,14 +159,14 @@ export function Screensaver({
           size = { width, height, ratio: devicePixelRatio };
           renderer.resize(width, height, devicePixelRatio);
         }
-        renderer.render({ width, height, center: middle, ...values });
+        renderer.render({ width, height, center: middle, effect, ...values });
         return;
       }
       const layer = fallbackRef.current;
       if (!layer) return;
       layer.style.transformOrigin = `${middle.x}px ${middle.y}px`;
-      layer.style.transform = `rotate(${-values.collapse * 220}deg) scale(${Math.max(0, 1 - values.collapse)})`;
-      layer.style.filter = `grayscale(${values.gray}) brightness(${1 - 0.3 * values.collapse})`;
+      layer.style.transform = `rotate(${-values.progress * 220}deg) scale(${Math.max(0, 1 - values.progress)})`;
+      layer.style.filter = `grayscale(${values.gray}) brightness(${1 - 0.3 * values.progress})`;
       layer.style.opacity = String(values.veil);
       layer.style.setProperty('--screensaver-mix', String(values.mix));
     };
@@ -192,7 +202,14 @@ export function Screensaver({
       else settle();
     };
     const run = () => {
-      if (!frame && !disposed) frame = requestAnimationFrame(tick);
+      if (disposed) return;
+      // Rien à animer (sans transition) : tout de suite, sans attendre la prochaine image.
+      if (tweens.size === 0 && !frame) {
+        paint();
+        settle();
+        return;
+      }
+      if (!frame) frame = requestAnimationFrame(tick);
     };
 
     const pick = (): ScreensaverImage | null => {
@@ -252,46 +269,71 @@ export function Screensaver({
       schedule();
     };
 
+    /**
+     * Transition du prochain mouvement. Un mouvement qui en interrompt un autre (la personne
+     * repart avant la fin) garde la même, pour repartir de l’image telle qu’elle est.
+     */
+    const chooseEffect = (fresh: boolean): 'none' | 'fade' | ScreensaverEffect => {
+      if (style === 'none') return 'none';
+      if (motion.matches) return 'fade';
+      if (fresh)
+        effect =
+          style === 'random'
+            ? SCREENSAVER_EFFECTS[Math.floor(Math.random() * SCREENSAVER_EFFECTS.length)]!
+            : style;
+      return effect;
+    };
     const enter = async () => {
-      if (stage === 'off') {
+      const fresh = stage === 'off';
+      if (fresh) {
         if (loading) return;
         loading = true;
         const image = await load('current').finally(() => (loading = false));
         if (!image || disposed || !wanted) return;
         current = image;
         next = null;
-        // Départ : la toile repliée dans l’orbe endormie, grise.
-        Object.assign(
-          values,
-          motion.matches
-            ? { collapse: 0, gray: 0, veil: 0, mix: 0 }
-            : { collapse: 1, gray: 1, veil: 1, mix: 0 },
-        );
         setCaption(image);
       }
+      const kind = chooseEffect(fresh);
+      // Départ : la toile repliée dans l’orbe endormie, grise ; ou rien, pour un simple fondu.
+      if (fresh)
+        Object.assign(
+          values,
+          kind === 'fade' || kind === 'none'
+            ? { progress: 0, gray: 0, veil: kind === 'none' ? 1 : 0, mix: 0 }
+            : { progress: 1, gray: 1, veil: 1, mix: 0 },
+        );
       changeStage('entering');
-      if (motion.matches) {
-        animate('collapse', 0, 0);
+      if (kind === 'none') {
+        for (const key of ['progress', 'gray', 'veil'] as const)
+          animate(key, key === 'veil' ? 1 : 0, 0);
+      } else if (kind === 'fade') {
+        animate('progress', 0, 0);
         animate('gray', 0, 0);
         animate('veil', 1, 900);
       } else {
-        animate('veil', 1, 300);
-        animate('collapse', 0, 1_900, 0, easeOut);
-        animate('gray', 0, 1_500, 1_100, easeInOut);
+        animate('veil', 1, 200);
+        animate('progress', 0, 1_600, 0, easeOut);
+        animate('gray', 0, 1_200, 900, easeInOut);
       }
       run();
     };
     const leave = () => {
       if (slideshow) clearTimeout(slideshow);
       slideshow = null;
+      const fresh = stage === 'on';
       changeStage('leaving');
-      if (motion.matches) {
-        animate('gray', 1, 300);
-        animate('veil', 0, 700);
+      const kind = chooseEffect(fresh);
+      if (kind === 'none') {
+        animate('veil', 0, 0);
+      } else if (kind === 'fade') {
+        animate('gray', 1, 250);
+        animate('veil', 0, 500);
       } else {
-        // La toile se grise d’abord, puis l’orbe l’aspire en accélérant.
-        animate('gray', 1, 550, 0, easeOut);
-        animate('collapse', 1, 1_700, 250, easeIn);
+        // La toile se grise d’un coup, puis l’orbe l’efface en accélérant : l’orbe doit être
+        // seul à l’écran en à peine plus d’une seconde.
+        animate('gray', 1, 280, 0, easeOut);
+        animate('progress', 1, 1_050, 100, kind === 'vortex' ? easeIn : easeInOut);
       }
       run();
     };
@@ -315,6 +357,9 @@ export function Screensaver({
         interval = ms;
         schedule();
       },
+      setTransition(value) {
+        style = value;
+      },
     };
     const resized = () => {
       if (stage !== 'off') paint();
@@ -328,7 +373,7 @@ export function Screensaver({
       if (slideshow) clearTimeout(slideshow);
       renderer?.dispose();
     };
-    // intervalMs n’est lu qu’au départ ; setInterval suit ses changements.
+    // intervalMs et transition ne sont lus qu’au départ ; setInterval et setTransition suivent.
   }, []);
 
   useEffect(() => {
@@ -343,6 +388,7 @@ export function Screensaver({
     };
   }, [revision]);
   useEffect(() => engine.current?.setInterval(intervalMs), [intervalMs]);
+  useEffect(() => engine.current?.setTransition(transition), [transition]);
   useEffect(() => engine.current?.wake(active), [active]);
 
   return (

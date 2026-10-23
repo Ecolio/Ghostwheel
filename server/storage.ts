@@ -37,9 +37,11 @@ import { adminPasswordMigration } from './admin-password.js';
 import { secretsMigration } from './secrets.js';
 import { trustedDevicesMigration } from './trusted-devices.js';
 import { satellitesMigration } from './satellites-store.js';
-import { screensaverMigration } from './screensaver.js';
+import { screensaverChoicesMigration, screensaverMigration } from './screensaver.js';
 import {
   DEFAULT_SCREENSAVER,
+  SCREENSAVER_TRANSITIONS,
+  SCREENSAVER_WAKES,
   isScreensaverSettings,
   type ScreensaverSettings,
 } from '../shared/screensaver.js';
@@ -373,6 +375,8 @@ export const migrations: readonly string[] = [
   satellitesMigration,
   // Écran de veille : peintures et photos quand personne n’est devant le miroir.
   screensaverMigration,
+  // Écran de veille : transition choisie et ce qui fait revenir l’orbe (validés par le code).
+  screensaverChoicesMigration,
 ];
 
 /** The server owns this connection. Backups include WAL changes via SQLite itself. */
@@ -623,13 +627,19 @@ export class SessionPreferences {
   getScreensaver(): ScreensaverSettings {
     const row = this.db
       .prepare(
-        'SELECT enabled, interval_ms, return_delay_ms FROM screensaver_preferences WHERE id = 1',
+        `SELECT enabled, interval_ms, return_delay_ms, transition, wake
+         FROM screensaver_preferences JOIN screensaver_choices USING (id) WHERE id = 1`,
       )
       .get();
+    // Une transition ou un réveil inconnu (retiré depuis) retombe sur la valeur par défaut seul.
+    const known = <T>(values: readonly T[], value: unknown, fallback: T): T =>
+      values.includes(value as T) ? (value as T) : fallback;
     const settings = {
       enabled: row?.enabled === 1,
       intervalMs: Number(row?.interval_ms),
       returnDelayMs: Number(row?.return_delay_ms),
+      transition: known(SCREENSAVER_TRANSITIONS, row?.transition, DEFAULT_SCREENSAVER.transition),
+      wake: known(SCREENSAVER_WAKES, row?.wake, DEFAULT_SCREENSAVER.wake),
     };
     return isScreensaverSettings(settings) ? settings : { ...DEFAULT_SCREENSAVER };
   }
@@ -639,6 +649,9 @@ export class SessionPreferences {
         'UPDATE screensaver_preferences SET enabled = ?, interval_ms = ?, return_delay_ms = ? WHERE id = 1',
       )
       .run(Number(settings.enabled), settings.intervalMs, settings.returnDelayMs);
+    this.db
+      .prepare('UPDATE screensaver_choices SET transition = ?, wake = ? WHERE id = 1')
+      .run(settings.transition, settings.wake);
   }
   getAdvancedAudioBuffer(): boolean {
     return (

@@ -6,13 +6,15 @@ import { join } from 'node:path';
 import test, { type TestContext } from 'node:test';
 import { createApp } from '../server/app.js';
 import { imageType, titleFromName } from '../server/screensaver.js';
+import { openDatabase, SessionPreferences } from '../server/storage.js';
 import { screensaverCollection } from '../server/screensaver-collection.js';
 import {
   DEFAULT_SCREENSAVER,
   isScreensaverSettings,
   type ScreensaverView,
 } from '../shared/screensaver.js';
-import type { StateEvent } from '../shared/types.js';
+import type { MirrorState, StateEvent } from '../shared/types.js';
+import { screensaverWoken } from '../web/components/screensaver-wake.js';
 
 const origin = 'http://localhost';
 const password = 'mot-de-passe-test-1234';
@@ -75,6 +77,8 @@ test('formats reconnus aux premiers octets, réglages bornés', () => {
   assert.equal(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, intervalMs: 1000 }), false);
   assert.equal(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, returnDelayMs: -1 }), false);
   assert.equal(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, extra: true }), false);
+  assert.equal(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, transition: 'fondu' }), false);
+  assert.equal(isScreensaverSettings({ ...DEFAULT_SCREENSAVER, wake: 'jamais' }), false);
 });
 
 test('écran de veille : réglages diffusés au miroir, images envoyées puis retirées', async (t) => {
@@ -84,7 +88,13 @@ test('écran de veille : réglages diffusés au miroir, images envoyées puis re
     imageCount: 0,
     revision: '',
   });
-  const settings = { enabled: true, intervalMs: 60_000, returnDelayMs: 5_000 };
+  const settings = {
+    enabled: true,
+    intervalMs: 60_000,
+    returnDelayMs: 5_000,
+    transition: 'embers',
+    wake: 'opening',
+  };
   const patch = (payload: Record<string, unknown>) =>
     f.app.inject({ method: 'PATCH', url: '/api/admin/screensaver', headers: f.headers, payload });
   assert.equal(
@@ -96,7 +106,11 @@ test('écran de veille : réglages diffusés au miroir, images envoyées puis re
   assert.equal((await patch({ ...settings, intervalMs: 5 })).statusCode, 400);
   const saved = await patch(settings);
   assert.equal(saved.statusCode, 200, saved.body);
-  assert.equal(saved.json<StateEvent>().state.screensaver?.enabled, true);
+  assert.deepEqual(saved.json<StateEvent>().state.screensaver, {
+    ...settings,
+    imageCount: 0,
+    revision: '',
+  });
 
   const upload = (body: Buffer, type: string, name = encodeURIComponent('Plage d’été.jpg')) =>
     f.app.inject({
@@ -190,4 +204,68 @@ test('collection : peintures téléchargées une fois, échecs signalés', async
   assert.equal(second.collection.error, null);
   assert.equal(asked.length, total + 1, 'seule la peinture manquante est redemandée');
   assert.equal((await f.state()).screensaver?.imageCount, total);
+});
+
+test('réglages relus de la base, transition inconnue ramenée à la valeur par défaut', () => {
+  const db = openDatabase(':memory:');
+  const preferences = new SessionPreferences(db);
+  assert.deepEqual(preferences.getScreensaver(), DEFAULT_SCREENSAVER);
+  const chosen = {
+    enabled: true,
+    intervalMs: 900_000,
+    returnDelayMs: 60_000,
+    transition: 'curtain',
+    wake: 'opening',
+  } as const;
+  preferences.setScreensaver(chosen);
+  assert.deepEqual(preferences.getScreensaver(), chosen);
+  db.prepare("UPDATE screensaver_choices SET transition = 'retirée'").run();
+  assert.deepEqual(preferences.getScreensaver(), { ...chosen, transition: 'vortex' });
+  db.close();
+});
+
+test('réveil de l’orbe : au passage, ou selon ce qui ouvre la conversation', () => {
+  const person = { trackId: 'one', profileId: null as string | null, engaged: false };
+  const mirror = (
+    wake: 'presence' | 'opening',
+    trigger: 'presence' | 'gaze' | 'voice',
+    people: (typeof person)[],
+    audience: 'everyone' | 'members' = 'everyone',
+  ) =>
+    ({
+      screensaver: { ...DEFAULT_SCREENSAVER, wake, imageCount: 1, revision: 'x' },
+      opening: { trigger, audience, recognizeVoice: false },
+      presence: {
+        state: people.some((entry) => entry.engaged)
+          ? 'engaged'
+          : people.length
+            ? 'present'
+            : 'absent',
+        health: 'ok',
+        peopleCount: people.length,
+        people,
+        engagementId: null,
+        observedAt: 0,
+      },
+    }) as unknown as MirrorState;
+  const passing = [person];
+  const looking = [{ ...person, engaged: true }];
+  // Au passage : la présence suffit, quel que soit ce qui ouvre la conversation.
+  assert.equal(screensaverWoken(mirror('presence', 'voice', passing), 'idle'), true);
+  assert.equal(screensaverWoken(mirror('presence', 'gaze', []), 'idle'), false);
+  // Au réveil de Cornelius : le regard, la présence, ou la conversation pour le mot d’appel.
+  assert.equal(screensaverWoken(mirror('opening', 'gaze', passing), 'idle'), false);
+  assert.equal(screensaverWoken(mirror('opening', 'gaze', looking), 'idle'), true);
+  assert.equal(screensaverWoken(mirror('opening', 'presence', passing), 'idle'), true);
+  assert.equal(screensaverWoken(mirror('opening', 'voice', looking), 'idle'), false);
+  assert.equal(screensaverWoken(mirror('opening', 'voice', []), 'connecting'), true);
+  // Réservée au foyer : seule une personne reconnue réveille l’orbe.
+  assert.equal(screensaverWoken(mirror('opening', 'gaze', looking, 'members'), 'idle'), false);
+  assert.equal(
+    screensaverWoken(
+      mirror('opening', 'gaze', [{ ...person, profileId: 'alice', engaged: true }], 'members'),
+      'idle',
+    ),
+    true,
+  );
 });

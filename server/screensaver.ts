@@ -28,6 +28,14 @@ CREATE TABLE IF NOT EXISTS screensaver_images (
   created_at INTEGER NOT NULL
 ) STRICT;`;
 
+/** Transition et réveil de l’orbe, validés par le code : une valeur ajoutée plus tard n’exige pas de migration. */
+export const screensaverChoicesMigration = `CREATE TABLE IF NOT EXISTS screensaver_choices (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  transition TEXT NOT NULL DEFAULT 'vortex',
+  wake TEXT NOT NULL DEFAULT 'presence'
+) STRICT;
+INSERT OR IGNORE INTO screensaver_choices (id) VALUES (1);`;
+
 const extensions: Record<ScreensaverImageType, string> = {
   'image/jpeg': '.jpg',
   'image/png': '.png',

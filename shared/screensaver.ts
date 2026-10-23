@@ -8,7 +8,29 @@ export interface ScreensaverSettings {
   intervalMs: number;
   /** Délai sans personne devant le miroir avant le retour des images. */
   returnDelayMs: number;
+  /** Passage de l’image à l’orbe, et retour. */
+  transition: ScreensaverTransition;
+  /** Ce qui fait revenir l’orbe. */
+  wake: ScreensaverWake;
 }
+
+/**
+ * vortex : l’image s’enroule et s’effondre dans l’orbe. embers : elle se consume depuis l’orbe.
+ * ripple : une onde partie de l’orbe l’emporte. mosaic : elle se défait en carreaux aspirés
+ * vers l’orbe. curtain : elle s’ouvre en deux comme un rideau. random : l’une d’elles au hasard,
+ * à chaque fois. none : l’image disparaît d’un coup.
+ */
+export const SCREENSAVER_EFFECTS = ['vortex', 'embers', 'ripple', 'mosaic', 'curtain'] as const;
+export type ScreensaverEffect = (typeof SCREENSAVER_EFFECTS)[number];
+export const SCREENSAVER_TRANSITIONS = [...SCREENSAVER_EFFECTS, 'random', 'none'] as const;
+export type ScreensaverTransition = (typeof SCREENSAVER_TRANSITIONS)[number];
+
+/**
+ * presence : dès qu’une personne passe devant le miroir. opening : seulement quand Cornelius
+ * s’éveille, selon ce qui ouvre la conversation (présence, regard ou mot « Cornelius »).
+ */
+export const SCREENSAVER_WAKES = ['presence', 'opening'] as const;
+export type ScreensaverWake = (typeof SCREENSAVER_WAKES)[number];
 
 export const SCREENSAVER_INTERVAL_MIN_MS = 10_000;
 export const SCREENSAVER_INTERVAL_MAX_MS = 86_400_000;
@@ -18,6 +40,8 @@ export const DEFAULT_SCREENSAVER: ScreensaverSettings = {
   enabled: false,
   intervalMs: 300_000,
   returnDelayMs: 30_000,
+  transition: 'vortex',
+  wake: 'presence',
 };
 
 /** Durées proposées d’un geste dans l’administration. */
@@ -26,9 +50,14 @@ export const SCREENSAVER_RETURN_DELAYS_MS = [5_000, 30_000, 60_000, 300_000];
 
 export function isScreensaverSettings(value: unknown): value is ScreensaverSettings {
   if (!value || typeof value !== 'object') return false;
-  const { enabled, intervalMs, returnDelayMs, ...rest } = value as Record<string, unknown>;
+  const { enabled, intervalMs, returnDelayMs, transition, wake, ...rest } = value as Record<
+    string,
+    unknown
+  >;
   return (
     Object.keys(rest).length === 0 &&
+    (SCREENSAVER_TRANSITIONS as readonly unknown[]).includes(transition) &&
+    (SCREENSAVER_WAKES as readonly unknown[]).includes(wake) &&
     typeof enabled === 'boolean' &&
     Number.isInteger(intervalMs) &&
     (intervalMs as number) >= SCREENSAVER_INTERVAL_MIN_MS &&

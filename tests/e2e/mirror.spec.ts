@@ -679,19 +679,8 @@ function solidPng(width: number, height: number, rgb: [number, number, number]):
   ]);
 }
 
-test('écran de veille : une peinture quand personne n’est là, l’orbe revient à l’arrivée', async ({
-  page,
-}) => {
-  const fixture = await mirrorFixture(page, (state) => {
-    state.presence = { ...state.presence, state: 'absent', peopleCount: 0, people: [] };
-    state.screensaver = {
-      enabled: true,
-      intervalMs: 60_000,
-      returnDelayMs: 0,
-      imageCount: 1,
-      revision: 'essai',
-    };
-  });
+/** Une peinture servie au miroir à la place de la bibliothèque du serveur. */
+async function routeScreensaverImages(page: Page) {
   await page.route('**/api/screensaver', (route) =>
     route.fulfill({
       json: {
@@ -710,6 +699,30 @@ test('écran de veille : une peinture quand personne n’est là, l’orbe revie
   await page.route('**/api/screensaver/images/peinture', (route) =>
     route.fulfill({ contentType: 'image/png', body: solidPng(64, 40, [40, 70, 160]) }),
   );
+}
+
+function screensaverState(
+  wake: 'presence' | 'opening',
+): NonNullable<StateEvent['state']['screensaver']> {
+  return {
+    enabled: true,
+    intervalMs: 60_000,
+    returnDelayMs: 0,
+    transition: 'vortex',
+    wake,
+    imageCount: 1,
+    revision: 'essai',
+  };
+}
+
+test('écran de veille : une peinture quand personne n’est là, l’orbe revient à l’arrivée', async ({
+  page,
+}) => {
+  const fixture = await mirrorFixture(page, (state) => {
+    state.presence = { ...state.presence, state: 'absent', peopleCount: 0, people: [] };
+    state.screensaver = screensaverState('presence');
+  });
+  await routeScreensaverImages(page);
   try {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/');
@@ -718,6 +731,7 @@ test('écran de veille : une peinture quand personne n’est là, l’orbe revie
     // Rien d’autre que la peinture et son cartel.
     await expect(page.locator('.mirror-top')).toHaveCSS('opacity', '0');
     await expect(page.locator('.orb-fullscreen')).toHaveCSS('opacity', '0');
+    await expect(page.locator('.mirror-footer')).toHaveCSS('opacity', '0');
     await expect(page.locator('.mirror-screensaver-caption')).toContainText('La Nuit étoilée');
     await page.screenshot({ path: `${screenshots}/mirror-screensaver.png` });
 
@@ -732,6 +746,33 @@ test('écran de veille : une peinture quand personne n’est là, l’orbe revie
     await expect(mirror).toHaveAttribute('data-screensaver', 'off');
     await expect(page.locator('.orb-fullscreen')).toHaveCSS('opacity', '1');
     await expect(page.locator('.mirror-top')).toHaveCSS('opacity', '1');
+  } finally {
+    fixture.close();
+  }
+});
+
+test('écran de veille calé sur le réveil de Cornelius : un passant ne le retire pas, un regard si', async ({
+  page,
+}) => {
+  const person = { trackId: 'one', profileId: null, engaged: false };
+  const fixture = await mirrorFixture(page, (state) => {
+    state.opening = { trigger: 'gaze', audience: 'everyone', recognizeVoice: false };
+    state.presence = { ...state.presence, state: 'present', peopleCount: 1, people: [person] };
+    state.screensaver = screensaverState('opening');
+  });
+  await routeScreensaverImages(page);
+  try {
+    await page.goto('/');
+    const mirror = page.locator('.mirror-page');
+    await expect(mirror).toHaveAttribute('data-screensaver', 'on');
+    fixture.publish((state) => {
+      state.presence = {
+        ...state.presence,
+        state: 'engaged',
+        people: [{ ...person, engaged: true }],
+      };
+    });
+    await expect(mirror).toHaveAttribute('data-screensaver', 'off');
   } finally {
     fixture.close();
   }
