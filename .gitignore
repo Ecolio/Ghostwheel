@@ -19,6 +19,7 @@ __pycache__/
 *.sqlite
 *.sqlite-*
 playwright-report/
+.agent/
 .claude/
 .kilo/
 # Vidéos de présentation générées (/brag) et leurs fichiers de travail.
