@@ -182,6 +182,7 @@ Une page décrit l’état actuel, sans date ni historique. Une valeur par défa
 - [Architecture](architecture.md)
 - [Tests et recette](tests-et-recette.md)
 - [Les prompts](prompts.md)
+- [Reprise de l’essai vocal Ghostwheel](reprise-essai-vocal.md)
 - [Feuille de route](feuille-de-route.md)
 - [Référence des modules](../modules/reference.md)
 - [Configuration](../reference/configuration.md)

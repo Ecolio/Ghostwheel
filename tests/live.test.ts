@@ -297,8 +297,8 @@ const closed = {
 };
 
 for (const [mode, model, tier, effort, budget] of [
-  ['normal', 'gpt-6-luna', 'default', 'none', 512],
-  ['fast', 'gpt-6-luna', 'priority', 'none', 512],
+  ['normal', 'gpt-6-luna', 'default', 'none', 4096],
+  ['fast', 'gpt-6-luna', 'priority', 'none', 4096],
   ['ultrafast', 'gpt-6-astra', 'ultrafast', 'low', 4096],
 ] as const) {
   test(`délégation ${mode} : modèle, vitesse et outils conservés à la création et à l’actualisation`, async (t) => {
