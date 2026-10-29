@@ -62,7 +62,7 @@ Activé, Home Assistant n’est proposé que pendant une conversation avec une p
 Ce choix dépend de la façon dont la conversation s’ouvre (voir [Ouverture et présence](ouverture-et-presence.md)) :
 
 - avec la présence ou le regard, la personne est reconnue par la caméra ;
-- avec « Cornelius » pour tout le monde, la caméra est éteinte en veille : il faut cocher **Reconnaître la personne pendant la conversation**. Sinon, personne n’est reconnu et Home Assistant reste indisponible.
+- avec « Ghostwheel » pour tout le monde, la caméra est éteinte en veille : il faut cocher **Reconnaître la personne pendant la conversation**. Sinon, personne n’est reconnu et Home Assistant reste indisponible.
 
 Quand une personne est reconnue en cours de conversation, Home Assistant devient disponible sans rouvrir la conversation.
 

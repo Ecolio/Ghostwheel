@@ -108,7 +108,7 @@ export const fitOptions: ChoiceOption<ScreensaverFit>[] = [
 function openingWake(opening: Opening): string {
   const who = opening.audience === 'members' ? ' reconnue' : '';
   return opening.trigger === 'voice'
-    ? 'Réglé sur le mot « Cornelius » : l’image reste jusqu’à ce qu’on l’appelle.'
+    ? 'Réglé sur le mot « Ghostwheel » : l’image reste jusqu’à ce qu’on l’appelle.'
     : opening.trigger === 'gaze'
       ? `Réglé sur le regard : l’image reste jusqu’à ce qu’une personne${who} regarde le miroir.`
       : `Réglé sur la présence : l’image part dès qu’une personne${who} se présente.`;
@@ -285,7 +285,7 @@ export function ScreensaverSettings({ state, run }: { state: MirrorState; run: R
               ? 'Temps sans personne devant le miroir, sans conversation ni carte affichée.'
               : 'Temps sans réveil de Cornelius (personne, regard ou conversation, selon le réglage), sans carte affichée.'}{' '}
             {
-              'Avec « Cornelius » pour tout le monde, la caméra reste éteinte : les images restent jusqu’au mot d’appel.'
+              'Avec « Ghostwheel » pour tout le monde, la caméra reste éteinte : les images restent jusqu’au mot d’appel.'
             }
           </p>
         </CardContent>

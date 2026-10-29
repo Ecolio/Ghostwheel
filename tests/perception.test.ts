@@ -440,7 +440,7 @@ test('l’issue d’un enregistrement : annulation, coupure, caméra éteinte et
   f.bridge.cancelEnrollment();
   assert.equal(f.bridge.snapshot().enrollmentResult?.outcome, 'saved');
   assert.equal(f.bridge.snapshot().enrollmentResult?.profileId, other.id);
-  // La caméra s’éteint (passage à « Cornelius » pour tout le monde) pendant l’enregistrement.
+  // La caméra s’éteint (passage à « Ghostwheel » pour tout le monde) pendant l’enregistrement.
   f.bridge.enroll(profile.id);
   f.bridge.setCameraEnabled(false);
   assert.equal(f.bridge.snapshot().enrollingProfileId, null);

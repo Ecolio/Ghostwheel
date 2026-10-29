@@ -18,7 +18,7 @@ test('l’ouverture se règle en deux questions, avec une seule écriture par ca
   const gaze = triggers.getByRole('radio', { name: /Le regard/ });
   const members = audiences.getByRole('radio', { name: /Les membres du foyer/ });
   const everyone = audiences.getByRole('radio', { name: /Tout le monde/ });
-  const voice = triggers.getByRole('radio', { name: /« Cornelius »/ });
+  const voice = triggers.getByRole('radio', { name: /« Ghostwheel »/ });
   try {
     await expect(gaze).toBeChecked();
     await expect(everyone).toBeChecked();
@@ -30,7 +30,7 @@ test('l’ouverture se règle en deux questions, avec une seule écriture par ca
     await expect(gaze).toBeChecked();
     await expect(members).toBeChecked();
     await expect(summary).toContainText('un membre du foyer reconnu regarde le miroir');
-    // « Cornelius » réservé aux membres : la caméra veille pour savoir qui parle.
+    // « Ghostwheel » réservé aux membres : la caméra veille pour savoir qui parle.
     await voice.click();
     await expect(voice).toBeChecked();
     await expect(members).toBeChecked();
@@ -110,7 +110,7 @@ test('deux choix d’ouverture rapprochés sont enregistrés tous les deux', asy
     .getByRole('radio', { name: /Les membres du foyer/ });
   const voice = page
     .getByRole('group', { name: 'Ce qui l’ouvre' })
-    .getByRole('radio', { name: /« Cornelius »/ });
+    .getByRole('radio', { name: /« Ghostwheel »/ });
   try {
     await members.click();
     await expect(members).toBeChecked();

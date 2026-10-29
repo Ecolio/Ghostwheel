@@ -26,9 +26,9 @@ const triggers: { value: OpeningTrigger; label: string; description: string }[] 
   },
   {
     value: 'voice',
-    label: '« Cornelius »',
+    label: '« Ghostwheel »',
     description:
-      'Seulement quand on dit « Cornelius », entendu sur cet ordinateur. Le dire relance aussi une conversation arrêtée depuis l’administration.',
+      'Seulement quand on dit « Ghostwheel », entendu sur cet ordinateur. Le dire relance aussi une conversation arrêtée depuis l’administration.',
   },
 ];
 
@@ -37,13 +37,13 @@ const audiences: { value: OpeningAudience; label: string; camera: string; voice:
     value: 'everyone',
     label: 'Tout le monde',
     camera: 'Membre du foyer ou visiteur.',
-    voice: 'Toute personne qui dit « Cornelius ».',
+    voice: 'Toute personne qui dit « Ghostwheel ».',
   },
   {
     value: 'members',
     label: 'Les membres du foyer',
     camera: 'Seulement une personne reconnue par la caméra.',
-    voice: 'Il faut être reconnu devant le miroir en disant « Cornelius ».',
+    voice: 'Il faut être reconnu devant le miroir en disant « Ghostwheel ».',
   },
 ];
 
@@ -58,16 +58,16 @@ function summary(opening: Opening): string {
       ? 'Cornelius répond quand un membre du foyer reconnu regarde le miroir.'
       : 'Cornelius répond quand quelqu’un regarde le miroir.';
   if (members)
-    return '« Cornelius » ouvre la conversation seulement si un membre du foyer est reconnu devant le miroir.';
+    return '« Ghostwheel » ouvre la conversation seulement si un membre du foyer est reconnu devant le miroir.';
   return opening.recognizeVoice
-    ? '« Cornelius » ouvre la conversation pour tout le monde ; la caméra reconnaît ensuite la personne.'
-    : '« Cornelius » ouvre la conversation pour tout le monde, sans caméra.';
+    ? '« Ghostwheel » ouvre la conversation pour tout le monde ; la caméra reconnaît ensuite la personne.'
+    : '« Ghostwheel » ouvre la conversation pour tout le monde, sans caméra.';
 }
 
 function cameraLine(opening: Opening): string {
   if (cameraWatchesInStandby(opening))
     return opening.trigger === 'voice'
-      ? 'Caméra en veille : allumée, pour savoir qui dit « Cornelius ».'
+      ? 'Caméra en veille : allumée, pour savoir qui dit « Ghostwheel ».'
       : 'Caméra en veille : allumée.';
   return 'Caméra en veille : éteinte, et pendant la conversation seulement pour la vision locale.';
 }
@@ -97,13 +97,13 @@ export function openingWarnings(
   if (context.perception === false)
     warnings.push({
       text: voice
-        ? 'Le service caméra n’est pas lancé : c’est lui qui entend « Cornelius », ce choix ne peut donc pas fonctionner pour l’instant.'
+        ? 'Le service caméra n’est pas lancé : c’est lui qui entend « Ghostwheel », ce choix ne peut donc pas fonctionner pour l’instant.'
         : 'Le service caméra n’est pas lancé : ce choix ne peut pas fonctionner pour l’instant.',
       link: start,
     });
   else if (voice && !context.wakeWordReady)
     warnings.push({
-      text: 'Le mot « Cornelius » n’est pas encore prêt sur cet ordinateur : ce choix ne peut pas fonctionner pour l’instant.',
+      text: 'Le mot « Ghostwheel » n’est pas encore prêt sur cet ordinateur : ce choix ne peut pas fonctionner pour l’instant.',
       link: start,
     });
   if (opening.audience === 'members' && context.enrolledFaces === 0)
@@ -187,7 +187,7 @@ export function SessionMode({
               </span>
               <span className="admin-mode-detail" id="opening-recognize-detail">
                 La caméra reste allumée en veille (les images ne quittent pas cet ordinateur) et
-                reconnaît la personne dès « Cornelius ». Si une seule personne enregistrée est face
+                reconnaît la personne dès « Ghostwheel ». Si une seule personne enregistrée est face
                 à elle dans les 8 secondes, ses sources, sa mémoire, ses agents et Home Assistant
                 réservé rejoignent la conversation, sans la rouvrir. Sinon, la conversation reste
                 celle du foyer.
@@ -198,7 +198,7 @@ export function SessionMode({
         <div className="admin-opening-summary" role="status">
           <strong>{summary(opening)}</strong>
           <span>{cameraLine(opening)}</span>
-          {voice && state.wakeWord.ready && <span>Mot « Cornelius » prêt sur cet ordinateur.</span>}
+          {voice && state.wakeWord.ready && <span>Mot « Ghostwheel » prêt sur cet ordinateur.</span>}
         </div>
         {warnings.length > 0 && (
           <ul className="space-y-2" aria-label="Ce qui empêche cette ouverture">

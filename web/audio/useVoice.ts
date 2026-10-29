@@ -30,7 +30,7 @@ export function useVoice(state: MirrorState | null, fresh: boolean) {
   // aucune part (ni micro, ni son, ni connexion OpenAI).
   const scope = state?.session.satellite ? undefined : state?.session;
   const advancedBuffer = state?.advancedAudioBuffer ?? false;
-  // Un arrêt manuel n’éteint pas la veille : dire « Cornelius » le lève côté serveur.
+  // Un arrêt manuel n’éteint pas la veille : dire « Ghostwheel » le lève côté serveur.
   const listenForWake = !!(
     fresh &&
     preparation.ready &&

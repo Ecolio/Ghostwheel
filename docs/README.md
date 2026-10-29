@@ -40,7 +40,7 @@ Cette page est l’index de la documentation. Elle indique par où commencer, pu
 ## Fonctionnalités
 
 - [Ouverture et présence](fonctionnalites/ouverture-et-presence.md) : ce qui ouvre, fait durer et ferme une conversation.
-- [Le mot d’appel](fonctionnalites/mot-d-appel.md) : ouvrir la conversation en disant « Cornelius ».
+- [Le mot d’appel](fonctionnalites/mot-d-appel.md) : ouvrir la conversation en disant « Ghostwheel ».
 - [Les satellites audio](fonctionnalites/satellites.md) : un micro et un haut-parleur dans une autre pièce, installés et associés sans saisie.
 - [La personnalité](fonctionnalites/personnalite.md) : le caractère de Cornelius et les repères de chaque personne.
 - [La mémoire](fonctionnalites/memoire.md) : ce que Cornelius retient et comment le gérer.
@@ -64,6 +64,7 @@ Cette page est l’index de la documentation. Elle indique par où commencer, pu
 - [Tests et recette](developpement/tests-et-recette.md) : tests automatiques et vérification sur le miroir réel.
 - [Le protocole des satellites](developpement/satellites-protocole.md) : le dialogue entre Cornelius et un satellite audio, pour écrire ou modifier son firmware.
 - [Les prompts](developpement/prompts.md) : où vivent les consignes données aux modèles.
+- [Modèle du mot d’appel « Ghostwheel »](developpement/modele-mot-appel-ghostwheel.md) : entraînement, essai informel, provenance et limites.
 - [Feuille de route](developpement/feuille-de-route.md) : ce qui reste à valider et à construire.
 - [Contribuer](../CONTRIBUTING.md) : proposer une modification.
 - [Historique des changements](../CHANGELOG.md).
@@ -74,7 +75,7 @@ Cette page est l’index de la documentation. Elle indique par où commencer, pu
 - [Confidentialité](reference/confidentialite.md) : ce qui reste local, ce qui part chez OpenAI, ce qui est enregistré.
 - [Licences](reference/licences.md) : code, ressources et modèles, et vérifications avant publication.
 - [Glossaire](reference/glossaire.md) : les mots de Cornelius, de « carte » à « vie privée ».
-- [wakeword-generator](https://github.com/lfpoulain/wakeword-generator) : le projet séparé qui a créé le modèle du mot « Cornelius ».
+- [wakeword-generator](https://github.com/lfpoulain/wakeword-generator) : le projet séparé qui a créé le modèle du mot « Ghostwheel ».
 
 ## Voir aussi
 

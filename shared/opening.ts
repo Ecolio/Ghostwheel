@@ -2,7 +2,7 @@ import type { SessionMode } from './types.js';
 
 /**
  * Ouverture de la conversation, en deux questions indépendantes :
- * - ce qui l’ouvre : la présence, le regard ou le mot « Cornelius » ;
+ * - ce qui l’ouvre : la présence, le regard ou le mot « Ghostwheel » ;
  * - qui peut l’ouvrir : tout le monde ou les seuls membres du foyer reconnus.
  *
  * Les quatre réglages historiques (étape 1 à 4, personnes reconnues, mot d’appel,
@@ -16,10 +16,10 @@ import type { SessionMode } from './types.js';
  * | présence     | membres       | 2     | non       | non         | allumée          |
  * | regard       | tout le monde | 3     | non       | non         | allumée          |
  * | regard       | membres       | 3     | oui       | non         | allumée          |
- * | « Cornelius »| tout le monde | 4     | non       | oui         | éteinte          |
- * | « Cornelius »| membres       | 2     | non       | oui         | allumée          |
+ * | « Ghostwheel »| tout le monde | 4     | non       | oui         | éteinte          |
+ * | « Ghostwheel »| membres       | 2     | non       | oui         | allumée          |
  *
- * « Cornelius » réservé aux membres garde la caméra allumée en veille : c’est le seul moyen de
+ * « Ghostwheel » réservé aux membres garde la caméra allumée en veille : c’est le seul moyen de
  * savoir, au mot d’appel, qui parle avant d’ouvrir la conversation.
  */
 export const OPENING_TRIGGERS = ['presence', 'gaze', 'voice'] as const;
@@ -30,7 +30,7 @@ export type OpeningAudience = (typeof OPENING_AUDIENCES)[number];
 export interface Opening {
   trigger: OpeningTrigger;
   audience: OpeningAudience;
-  /** « Cornelius » pour tout le monde : reconnaître la personne pendant la conversation. */
+  /** « Ghostwheel » pour tout le monde : reconnaître la personne pendant la conversation. */
   recognizeVoice: boolean;
 }
 
@@ -94,15 +94,15 @@ export function sameOpeningSettings(a: OpeningSettings, b: OpeningSettings): boo
 }
 
 /**
- * La caméra reste-t-elle allumée en veille ? Oui, sauf avec « Cornelius » pour tout le monde
+ * La caméra reste-t-elle allumée en veille ? Oui, sauf avec « Ghostwheel » pour tout le monde
  * sans reconnaissance : avec la reconnaissance, elle guette déjà la personne pour la reconnaître
- * dès qu’elle dit « Cornelius », sans attendre le démarrage de la caméra.
+ * dès qu’elle dit « Ghostwheel », sans attendre le démarrage de la caméra.
  */
 export function cameraWatchesInStandby(opening: Opening): boolean {
   return !voiceOnlyOpening(opening) || opening.recognizeVoice;
 }
 
-/** « Cornelius » pour tout le monde : seule la voix ouvre, et seul le silence ferme. */
+/** « Ghostwheel » pour tout le monde : seule la voix ouvre, et seul le silence ferme. */
 export function voiceOnlyOpening(opening: Opening): boolean {
   return opening.trigger === 'voice' && opening.audience === 'everyone';
 }

@@ -26,7 +26,7 @@ Cette page définit les mots employés dans l’administration, la documentation
 
 **LFM2.5-VL.** Modèle de vision de Liquid AI qui décrit la scène sur l’ordinateur, en trois tailles (450M, 1,6B et 3B). Voir [La vision locale](../fonctionnalites/vision-locale.md).
 
-**Luna et Astra.** Noms des modèles de délégation dans le code (`gpt-6-luna`, `gpt-6-astra` pour le mode « Ultra rapide »). L’interface dit simplement « Cornelius ».
+**Luna et Astra.** Noms des modèles de délégation dans le code (`gpt-6-luna`, `gpt-6-astra` pour le mode « Ultra rapide »). L’interface dit simplement « Ghostwheel ».
 
 **Miroir.** La page affichée sur l’écran derrière le verre, à l’adresse `http://127.0.0.1:3000/`. Dans le code, son rôle s’appelle encore `kiosk`.
 
@@ -34,7 +34,7 @@ Cette page définit les mots employés dans l’administration, la documentation
 
 **Module.** Brique qui apporte des informations (Heure, Météo, Transports) ou une fonction (Web, Vision, Génération d’image, Home Assistant). Voir [Les modules](../modules/README.md).
 
-**Mot d’appel.** Le mot « Cornelius », reconnu sur l’ordinateur par openWakeWord, qui peut ouvrir la conversation. Voir [Le mot d’appel](../fonctionnalites/mot-d-appel.md).
+**Mot d’appel.** « Ghostwheel », le mot reconnu sur l’ordinateur par openWakeWord et qui peut ouvrir la conversation. Voir [Le mot d’appel](../fonctionnalites/mot-d-appel.md).
 
 **Orbe.** La sphère animée au centre du miroir. Sa couleur et son mouvement indiquent si Cornelius attend, écoute, réfléchit ou parle. Voir [Le miroir](../utilisation/miroir.md).
 

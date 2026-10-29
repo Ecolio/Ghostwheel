@@ -34,7 +34,7 @@ type StatePatch = Omit<Partial<MirrorState>, 'session' | 'presence' | 'wakeWord'
 /** Miroir prêt : clé, perception, navigateur et voix, une personne reconnue qui regarde. */
 function mirror(opening: Opening = gaze, patch: StatePatch = {}): MirrorState {
   const settings = settingsForOpening(opening);
-  // Caméra éteinte en veille pour « Cornelius » ouvert à tout le monde.
+  // Caméra éteinte en veille pour « Ghostwheel » ouvert à tout le monde.
   const watching = settings.mode !== 4;
   const base: MirrorState = {
     setup: { openaiKey: true, perception: true },
@@ -208,7 +208,7 @@ test('sans état des périphériques, la liste lit la configuration diffusée au
   assert.match(item('camera').detail, /en cours/u);
 });
 
-test('« Cornelius » pour tout le monde sans caméra : caméra facultative, perception exigée', () => {
+test('« Ghostwheel » pour tout le monde sans caméra : caméra facultative, perception exigée', () => {
   const ready = mirror(voiceAlone);
   const off = devices({ vision: 'off', selectedId: null, available: [] });
   const done = checklist({ state: ready, devices: off, enrolledFaces: 0 });
@@ -218,7 +218,7 @@ test('« Cornelius » pour tout le monde sans caméra : caméra facultative, per
   assert.equal(readinessComplete(done.items), true);
   assert.equal(mirrorBlocker(ready, { fresh: true }), null);
   assert.deepEqual(adminBlockers(ready), []);
-  assert.equal(adminWaiting(ready), 'En attente du mot d’appel « Cornelius ».');
+  assert.equal(adminWaiting(ready), 'En attente du mot d’appel « Ghostwheel ».');
 
   // Le mot d’appel est entendu par le service de perception : il reste nécessaire.
   const stopped = mirror(voiceAlone, {
@@ -230,12 +230,12 @@ test('« Cornelius » pour tout le monde sans caméra : caméra facultative, per
     devices: devices({ connected: false, vision: 'off', selectedId: null }),
   });
   assert.equal(pending.statuses.perception, 'todo');
-  assert.match(pending.item('perception').detail, /« Cornelius »/u);
+  assert.match(pending.item('perception').detail, /« Ghostwheel »/u);
   assert.equal(pending.statuses.camera, 'optional');
   assert.equal(pending.statuses['wake-word'], 'blocked');
   assert.equal(
     mirrorBlocker(stopped, { fresh: true })?.reason,
-    'Écoute du mot « Cornelius » arrêtée : relancez Cornelius sur cet ordinateur.',
+    'Écoute du mot « Ghostwheel » arrêtée : relancez Cornelius sur cet ordinateur.',
   );
   // À la voix, « Démarrer la session » n’attend pas le mot d’appel.
   const blockers = adminBlockers(stopped);
@@ -368,7 +368,7 @@ test('le miroir explique chaque blocage, dans l’ordre de l’administration', 
       'manual-stop',
       mirror(voiceAlone, { session: { manualStop: true } }),
       { fresh: true },
-      'Conversation arrêtée depuis l’administration : dites « Cornelius » pour reprendre.',
+      'Conversation arrêtée depuis l’administration : dites « Ghostwheel » pour reprendre.',
     ],
     [
       'voice',

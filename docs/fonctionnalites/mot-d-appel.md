@@ -1,37 +1,37 @@
 # Le mot d’appel
 
-Cette page explique comment ouvrir la conversation en disant « Cornelius » : l’activer, obtenir et installer le modèle qui reconnaît ce mot, et ce que devient le son du micro. Elle s’adresse à la personne qui installe et règle le miroir.
+Cette page explique comment ouvrir la conversation en disant « Ghostwheel » : l’activer, obtenir et installer le modèle qui reconnaît ce mot, et ce que devient le son du micro. Elle s’adresse à la personne qui installe et règle le miroir.
 
 ## Ce que fait le mot d’appel
 
-Le mot « Cornelius » est reconnu sur l’ordinateur du miroir, par le service caméra (perception), avec le logiciel libre openWakeWord. Aucun service extérieur n’intervient pour l’entendre.
+Le mot « Ghostwheel » est reconnu sur l’ordinateur du miroir, par le service caméra (perception), avec le logiciel libre openWakeWord. Aucun service extérieur n’intervient pour l’entendre.
 
-Dire « Cornelius » ouvre la conversation. C’est aussi une demande explicite : si la session avait été arrêtée depuis l’administration, le mot la relance.
+Dire « Ghostwheel » ouvre la conversation. C’est aussi une demande explicite : si la session avait été arrêtée depuis l’administration, le mot la relance.
 
 ## Activer le mot d’appel
 
-Dans l’administration, choisissez **Quand il écoute → Ouverture de la conversation → Ce qui l’ouvre → « Cornelius »**. Il est désactivé au départ.
+Dans l’administration, choisissez **Quand il écoute → Ouverture de la conversation → Ce qui l’ouvre → « Ghostwheel »**. Il est désactivé au départ.
 
 Choisissez ensuite **Qui peut l’ouvrir** :
 
-- **Tout le monde** : toute personne qui dit « Cornelius » ouvre la conversation. La caméra reste éteinte en veille. La case **Reconnaître la personne pendant la conversation** permet de l’allumer le temps de la conversation pour reconnaître la personne.
-- **Les membres du foyer** : il faut être reconnu devant le miroir en disant « Cornelius ». La caméra reste allumée en veille pour savoir qui parle.
+- **Tout le monde** : toute personne qui dit « Ghostwheel » ouvre la conversation. La caméra reste éteinte en veille. La case **Reconnaître la personne pendant la conversation** permet de l’allumer le temps de la conversation pour reconnaître la personne.
+- **Les membres du foyer** : il faut être reconnu devant le miroir en disant « Ghostwheel ». La caméra reste allumée en veille pour savoir qui parle.
 
 Le détail de chaque combinaison, et la fin de la conversation sur un silence, sont décrits dans [Ouverture et présence](ouverture-et-presence.md).
 
-Quand le modèle est prêt, le résumé de la carte affiche « Mot « Cornelius » prêt sur cet ordinateur. », et la rubrique **Mise en route** coche **Mot d’appel « Cornelius »** avec « Modèle local prêt. ». Tant qu’il manque, le choix peut être enregistré mais ne peut ouvrir aucune conversation : un avertissement le signale, et aucun autre mot ne le remplace.
+Quand le modèle est prêt, le résumé de la carte affiche « Mot « Ghostwheel » prêt sur cet ordinateur. », et la rubrique **Mise en route** coche **Mot d’appel « Ghostwheel »** avec « Modèle local prêt. ». Tant qu’il manque, le choix peut être enregistré mais ne peut ouvrir aucune conversation : un avertissement le signale, et aucun autre mot ne le remplace.
 
-## Le modèle « Cornelius »
+## Le modèle « Ghostwheel »
 
-Le dépôt fournit le modèle du mot « Cornelius » : `models/cornelius.onnx`. Il est prêt à l’emploi après un `git clone` ou un `git pull`, sans rien entraîner. openWakeWord ne livre que des modèles en anglais : celui-ci a été entraîné pour Cornelius, à partir de voix françaises de synthèse, sans aucun enregistrement de voix réelle.
+Le dépôt fournit le modèle qui reconnaît « Ghostwheel » : `models/cornelius.onnx` (le nom du fichier est conservé pour compatibilité). Il est prêt à l’emploi après un `git clone` ou un `git pull`, sans rien entraîner. openWakeWord ne livre que des modèles en anglais : ce modèle a été entraîné pour des prononciations françaises de Ghostwheel à partir de voix françaises de synthèse, sans aucun enregistrement de voix réelle. L’ancien modèle, qui reconnaissait « Cornelius », est conservé dans `models/archive/`. La recette et les limites de ce nouvel entraînement sont décrites dans [la note dédiée](../developpement/modele-mot-appel-ghostwheel.md).
 
 Sa licence et ses attributions sont dans `models/cornelius.onnx.LICENSE`, à garder avec lui : il est diffusé sous CC BY-NC-SA 4.0, pour un usage non commercial (voir [Licences](../reference/licences.md#le-mot-dappel)).
 
-`models/cornelius.onnx` et sa licence sont les seuls fichiers du dossier `models/` suivis par Git ; tous les autres modèles sont téléchargés.
+Le modèle du mot d’appel et sa licence, ainsi que l’ancien modèle archivé et sa notice, sont les seuls fichiers de `models/` suivis par Git ; les autres modèles sont téléchargés.
 
 ### Entraîner votre propre version, ou un autre mot
 
-Le modèle a été fabriqué avec [wakeword-generator](https://github.com/lfpoulain/wakeword-generator), un projet séparé. Il tourne dans Docker, demande environ 40 Go d’espace libre et profite d’un GPU NVIDIA. Sa configuration d’exemple vise déjà « Cornelius » et produit `output/cornelius.onnx`. Il contient aussi un testeur au micro, utile pour régler le seuil. Toutes les étapes sont dans son README.
+Le modèle a été fabriqué avec [wakeword-generator](https://github.com/lfpoulain/wakeword-generator), un projet séparé. Il tourne dans Docker, demande environ 40 Go d’espace libre et profite d’un GPU NVIDIA. La configuration d’exemple du générateur produit d’autres modèles ; la recette spécifique de Ghostwheel, son essai et ses limites sont décrits dans [la note dédiée](../developpement/modele-mot-appel-ghostwheel.md). Le générateur contient aussi un testeur au micro, utile pour régler le seuil. Toutes les étapes sont dans son README.
 
 Il est aussi possible d’entraîner un modèle compatible avec [la méthode décrite par openWakeWord](https://github.com/dscripka/openWakeWord#training-new-models).
 
@@ -82,17 +82,17 @@ Avant de changer cette valeur, essayez le modèle avec plusieurs voix, à plusie
 
 - Après **Activer la voix** sur le miroir, le navigateur garde le micro ouvert pendant la veille.
 - Le son est envoyé à Cornelius sur l’ordinateur lui-même, puis analysé par la perception. En veille, il ne quitte pas l’ordinateur.
-- Quand « Cornelius » est reconnu et que la conversation s’ouvre, le même micro sert à la conversation, et le son part alors chez OpenAI.
+- Quand « Ghostwheel » est reconnu et que la conversation s’ouvre, le même micro sert à la conversation, et le son part alors chez OpenAI.
 - Si la conversation ne s’ouvre pas (personne non reconnue alors que l’ouverture est réservée aux membres du foyer, par exemple), rien n’est envoyé.
-- Avec **Micro gardé prêt**, le début de la phrase dite avec « Cornelius » est gardé sur l’ordinateur puis transmis à la conversation une fois ouverte (voir [Ouverture et présence](ouverture-et-presence.md#micro-gardé-prêt-bêta)).
+- Avec **Micro gardé prêt**, le début de la phrase dite avec « Ghostwheel » est gardé sur l’ordinateur puis transmis à la conversation une fois ouverte (voir [Ouverture et présence](ouverture-et-presence.md#micro-gardé-prêt-bêta)).
 
-Les [satellites audio](satellites.md) écoutent aussi « Cornelius » : ils envoient le son de leur micro à l’ordinateur, par le réseau local, et c’est l’ordinateur qui cherche le mot, avec le même modèle. Quand le miroir et un satellite entendent le même appel, l’appareil au meilleur score l’emporte.
+Les [satellites audio](satellites.md) écoutent aussi « Ghostwheel » : ils envoient le son de leur micro à l’ordinateur, par le réseau local, et c’est l’ordinateur qui cherche le mot, avec le même modèle. Quand le miroir et un satellite entendent le même appel, l’appareil au meilleur score l’emporte.
 
-Pour couper toute écoute, choisissez une autre ouverture que « Cornelius », ou utilisez **Bloquer OpenAI** dans le panneau **Conversation** de la rubrique **Quand il écoute**.
+Pour couper toute écoute, choisissez une autre ouverture que « Ghostwheel », ou utilisez **Bloquer OpenAI** dans le panneau **Conversation** de la rubrique **Quand il écoute**.
 
 ## Quand il ne répond pas
 
-- Le service caméra doit tourner : c’est lui qui entend « Cornelius ». S’il s’arrête, le miroir affiche « Écoute du mot « Cornelius » arrêtée : relancez Cornelius sur cet ordinateur. » (ou « Service caméra arrêté : relancez Cornelius sur cet ordinateur. » quand l’ouverture est réservée aux membres du foyer). Si le modèle manque, il affiche « Mot d’appel indisponible : son modèle n’est pas prêt sur cet ordinateur. ».
+- Le service caméra doit tourner : c’est lui qui entend « Ghostwheel ». S’il s’arrête, le miroir affiche « Écoute du mot « Ghostwheel » arrêtée : relancez Cornelius sur cet ordinateur. » (ou « Service caméra arrêté : relancez Cornelius sur cet ordinateur. » quand l’ouverture est réservée aux membres du foyer). Si le modèle manque, il affiche « Mot d’appel indisponible : son modèle n’est pas prêt sur cet ordinateur. ».
 - Si le navigateur perd l’autorisation du micro, le bouton **Activer la voix** réapparaît sur le miroir.
 - La rubrique **Mise en route** indique ce qui manque : modèle absent, prétraitement absent ou modèle illisible.
 
@@ -100,7 +100,7 @@ Voir [Dépannage](../utilisation/depannage.md).
 
 ## Licences
 
-Le code d’openWakeWord est sous licence Apache 2.0. Ses modèles prêts à l’emploi, sous une licence non commerciale, ne sont pas installés. Le modèle « Cornelius » fourni est sous CC BY-NC-SA 4.0, à cause des données utilisées pour l’entraîner ; un modèle que vous entraînez vous-même dépend aussi de ses données. La licence des deux modèles de prétraitement reste à clarifier. Le détail est dans [Licences](../reference/licences.md).
+Le code d’openWakeWord est sous licence Apache 2.0. Ses modèles prêts à l’emploi, sous une licence non commerciale, ne sont pas installés. Le modèle « Ghostwheel » fourni est sous CC BY-NC-SA 4.0, par prudence au regard des données utilisées pour l’entraîner ; un modèle que vous entraînez vous-même dépend aussi de ses données. La licence des deux modèles de prétraitement reste à clarifier. Le détail est dans [Licences](../reference/licences.md).
 
 ## Voir aussi
 

@@ -85,7 +85,7 @@ const sections = [
     id: 'satellites',
     group: 'Premiers réglages',
     label: 'Satellites audio',
-    description: 'Les micros et haut-parleurs des autres pièces, qui répondent à « Cornelius ».',
+    description: 'Les micros et haut-parleurs des autres pièces, qui répondent à « Ghostwheel ».',
   },
   {
     id: 'personality',

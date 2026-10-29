@@ -44,7 +44,7 @@ La liste se met à jour d’elle-même. Voici les étapes, dans l’ordre :
 | Miroir ouvert | Bouton **Activer et ouvrir le miroir** |
 | Voix activée sur le miroir | Bouton **Activer et ouvrir le miroir**, ou **Activer la voix** sur le miroir |
 | Visage enregistré | Rubrique « Le foyer et les visages » (bouton **Enregistrer un visage**) |
-| Mot d’appel « Cornelius » | Seulement si la conversation s’ouvre au mot « Cornelius » (bouton **Guide du mot d’appel**) |
+| Mot d’appel « Ghostwheel » | Seulement si la conversation s’ouvre au mot « Ghostwheel » (bouton **Guide du mot d’appel**) |
 | Mot de passe administrateur | **Mise en route → Mot de passe administrateur**, ou le fichier `.env` (étape 1 ci-dessus) |
 | Accès à OpenAI | Bouton **Autoriser OpenAI**, si l’accès a été bloqué |
 
@@ -60,7 +60,7 @@ La clé reste sur cet ordinateur : l’administration n’en montre ensuite que 
 
 ## 4. Service caméra (perception)
 
-La perception est le programme local qui lit la caméra, détecte la voix et entend le mot « Cornelius ». Les scripts de démarrage et les services systemd la lancent avec le serveur. L’étape indique « Lancé et connecté. » quand tout va bien.
+La perception est le programme local qui lit la caméra, détecte la voix et entend le mot « Ghostwheel ». Les scripts de démarrage et les services systemd la lancent avec le serveur. L’étape indique « Lancé et connecté. » quand tout va bien.
 
 Si elle indique « Arrêté », relancez Cornelius (voir l’étape 1). Avec les services systemd, relancez seulement la perception :
 
@@ -74,7 +74,7 @@ La raison d’un échec est dans `data/run/logs/perception.err.log` (scripts) ou
 
 Dans **Caméra et reconnaissance → Caméra du miroir**, choisissez la caméra dans la liste « Caméra », puis cliquez sur **Utiliser cette caméra**. Si elle n’apparaît pas, branchez-la puis cliquez sur **Actualiser la liste**. Tant qu’aucune caméra n’est détectée, la liste affiche « Aucune caméra détectée » et l’étape « Caméra configurée introuvable. Choisissez un périphérique. » : le message disparaît dès qu’une caméra est choisie. **Afficher l’aperçu** montre l’image en direct pour vérifier le cadrage : aucune image n’est enregistrée. Le choix est conservé après un redémarrage.
 
-Cette étape est « Facultatif » quand la conversation s’ouvre au mot « Cornelius » pour tout le monde, sans reconnaissance ni vision : la caméra ne sert alors pas.
+Cette étape est « Facultatif » quand la conversation s’ouvre au mot « Ghostwheel » pour tout le monde, sans reconnaissance ni vision : la caméra ne sert alors pas.
 
 ## 6. Ouvrir le miroir et activer la voix
 
@@ -102,18 +102,18 @@ Ensuite :
 
 Pour vérifier la reconnaissance, utilisez **Tester en direct** dans **Caméra et reconnaissance → Exigence de la reconnaissance**.
 
-Un visage est facultatif si tout le monde peut ouvrir la conversation : il permet alors l’accueil par le prénom. Il est indispensable si seuls les membres du foyer peuvent l’ouvrir. Avec « Cornelius » pour tout le monde, la caméra reste éteinte et aucun visage ne peut être mémorisé : choisissez le temps de l’enregistrement une ouverture par la présence ou le regard (étape suivante).
+Un visage est facultatif si tout le monde peut ouvrir la conversation : il permet alors l’accueil par le prénom. Il est indispensable si seuls les membres du foyer peuvent l’ouvrir. Avec « Ghostwheel » pour tout le monde, la caméra reste éteinte et aucun visage ne peut être mémorisé : choisissez le temps de l’enregistrement une ouverture par la présence ou le regard (étape suivante).
 
 ## 8. Choisir l’ouverture de la conversation
 
 Dans **Quand il écoute → Ouverture de la conversation**, deux questions indépendantes :
 
-- « Ce qui l’ouvre » : « La présence » (dès qu’une personne s’arrête devant le miroir), « Le regard » (quand une personne regarde franchement le miroir) ou « Cornelius » (seulement quand on dit ce mot) ;
+- « Ce qui l’ouvre » : « La présence » (dès qu’une personne s’arrête devant le miroir), « Le regard » (quand une personne regarde franchement le miroir) ou « Ghostwheel » (seulement quand on dit ce mot) ;
 - « Qui peut l’ouvrir » : « Tout le monde » ou « Les membres du foyer ».
 
 Au départ, c’est « Le regard » pour « Tout le monde ». Le choix est enregistré aussitôt. Une phrase résume l’effet obtenu et l’état de la caméra en veille ; un avertissement apparaît si le choix ne peut pas encore fonctionner (service caméra arrêté, aucun visage mémorisé, mot d’appel absent).
 
-Avec « Cornelius » pour tout le monde, une case supplémentaire, **Reconnaître la personne pendant la conversation**, allume la caméra le temps de la conversation. Le mot « Cornelius » demande un modèle à installer : voir [Mot d’appel](../fonctionnalites/mot-d-appel.md). Le détail de chaque combinaison est dans [Ouverture et présence](../fonctionnalites/ouverture-et-presence.md).
+Avec « Ghostwheel » pour tout le monde, une case supplémentaire, **Reconnaître la personne pendant la conversation**, allume la caméra le temps de la conversation. Le mot « Ghostwheel » demande un modèle à installer : voir [Mot d’appel](../fonctionnalites/mot-d-appel.md). Le détail de chaque combinaison est dans [Ouverture et présence](../fonctionnalites/ouverture-et-presence.md).
 
 ## 9. Premier essai vocal
 

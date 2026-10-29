@@ -43,7 +43,7 @@ Par défaut, la caméra, les visages et l’écoute du mot d’appel restent sur
     </td>
     <td width="50%" valign="top">
       <h4>👋 Il sait quand on lui parle</h4>
-      Il ouvre la conversation quand une personne se présente, le regarde ou dit « Cornelius ». Le modèle du mot d’appel est fourni et tourne en local.
+      Il ouvre la conversation quand une personne se présente, le regarde ou dit « Ghostwheel ». Le modèle du mot d’appel est fourni et tourne en local.
     </td>
   </tr>
   <tr>
@@ -83,7 +83,7 @@ Par défaut, la caméra, les visages et l’écoute du mot d’appel restent sur
     </td>
     <td valign="top">
       <h4>📡 Il répond dans les autres pièces</h4>
-      Des satellites audio (micro et haut-parleur) répondent à « Cornelius » ailleurs dans la maison.
+      Des satellites audio (micro et haut-parleur) répondent à « Ghostwheel » ailleurs dans la maison.
     </td>
   </tr>
 </table>
@@ -165,7 +165,7 @@ Ouvrez ensuite, dans un navigateur de la même machine :
 2. Choisissez la caméra dans **Caméra et reconnaissance**.
 3. Cliquez sur **Activer et ouvrir le miroir** et acceptez l’accès au micro.
 4. Ajoutez les personnes du foyer et mémorisez leur visage dans **Le foyer et les visages**.
-5. Choisissez ce qui ouvre la conversation dans **Quand il écoute**, puis dites « Cornelius » !
+5. Choisissez ce qui ouvre la conversation dans **Quand il écoute**, puis dites « Ghostwheel » !
 
 Le pas à pas complet est dans [Premier démarrage](docs/installation/premier-demarrage.md).
 
@@ -185,7 +185,7 @@ Toute la documentation part de [l’index](docs/README.md).
 ## 🔒 Confidentialité
 
 - 🎥 Les images et les signatures de visage sont analysées sur le serveur Cornelius. Avec la caméra du navigateur, les images traversent le réseau local chiffré sans être enregistrées.
-- 🎙️ Le mot « Cornelius » est reconnu en local : en veille, le son ne quitte pas l’ordinateur.
+- 🎙️ Le mot « Ghostwheel » est reconnu en local : en veille, le son ne quitte pas l’ordinateur.
 - 💬 La voix et le texte partent chez OpenAI seulement pendant une conversation. Cornelius n’enregistre ni image, ni son, ni transcription sur le disque.
 
 > [!CAUTION]
@@ -193,9 +193,9 @@ Toute la documentation part de [l’index](docs/README.md).
 
 Le détail est dans [Confidentialité](docs/reference/confidentialite.md).
 
-## 🎙️ Le mot d’appel « Cornelius »
+## 🎙️ Le mot d’appel « Ghostwheel »
 
-Le modèle qui reconnaît « Cornelius » est fourni dans `models/cornelius.onnx`, prêt à l’emploi. Il a été entraîné à partir de voix françaises de synthèse avec [wakeword-generator](https://github.com/lfpoulain/wakeword-generator), notre générateur de mots d’appel en français, publié à part. Vous pouvez vous en servir pour entraîner votre propre version, ou un tout autre mot.
+Le modèle qui reconnaît « Ghostwheel » est fourni dans `models/cornelius.onnx`, prêt à l’emploi (le nom de fichier reste celui attendu par Cornelius). Il a été entraîné à partir de voix françaises de synthèse avec [wakeword-generator](https://github.com/lfpoulain/wakeword-generator), notre générateur de mots d’appel en français, publié à part. L’ancien modèle, qui reconnaissait « Cornelius », est conservé dans `models/archive/`. La [note d’entraînement et d’essai](docs/developpement/modele-mot-appel-ghostwheel.md) décrit la recette, le retour des premiers essais et les limites.
 
 ## 📜 Licence
 
@@ -205,7 +205,7 @@ Cornelius est distribué sous la [PolyForm Noncommercial License 1.0.0](LICENSE)
 |---|---|
 | L’utiliser, le partager et le modifier pour un usage non commercial (personnel, associatif, éducatif, recherche), en gardant la ligne `Required Notice` du fichier `LICENSE` | Tout usage commercial, sauf accord écrit des auteurs |
 
-Ce n’est pas une licence « open source » au sens de l’OSI, puisqu’elle exclut l’usage commercial. Les bibliothèques, polices et modèles utilisés gardent leur propre licence : voir [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) et [Licences](docs/reference/licences.md). Le modèle du mot d’appel est sous CC BY-NC-SA 4.0 (voir `models/cornelius.onnx.LICENSE`).
+Ce n’est pas une licence « open source » au sens de l’OSI, puisqu’elle exclut l’usage commercial. Les bibliothèques, polices et modèles utilisés gardent leur propre licence : voir [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) et [Licences](docs/reference/licences.md). Le modèle du mot d’appel « Ghostwheel » est sous CC BY-NC-SA 4.0 (voir `models/cornelius.onnx.LICENSE`).
 
 ---
 

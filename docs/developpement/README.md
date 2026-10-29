@@ -12,7 +12,7 @@ Cornelius assemble trois environnements, chacun dans son dossier :
 | Perception (caméra, visages, voix, vision) | Python 3.12 | `.venv/` | `scripts/install-linux.sh`, ou à la main (voir ci-dessous) |
 | Génération d’images (facultative) | Python, PyTorch et Diffusers | `.venv-image/` | l’administration, **Modules → Génération d’image → Installer** (`image_generation/install.py`) |
 
-Les dépendances Node sont verrouillées dans `package-lock.json`, celles de Python dans `perception/requirements*.txt` et `image_generation/requirements.txt`. Les modèles téléchargés vont dans `models/`, la base et les journaux dans `data/`. Ces dossiers, `.env`, `.venv/` et `.venv-image/` restent hors du dépôt (voir `.gitignore`), sauf `models/cornelius.onnx` et sa licence, fournis avec le code.
+Les dépendances Node sont verrouillées dans `package-lock.json`, celles de Python dans `perception/requirements*.txt` et `image_generation/requirements.txt`. Les modèles téléchargés vont dans `models/`, la base et les journaux dans `data/`. Ces dossiers, `.env`, `.venv/` et `.venv-image/` restent hors du dépôt (voir `.gitignore`), sauf le modèle Ghostwheel, sa licence et l’archive de l’ancien modèle, fournis avec le code.
 
 Préparer le dépôt sous Linux :
 
@@ -121,11 +121,11 @@ addons/              modules livrés : clock, weather, transit, ragator (les aut
 schemas/             contrats JSON ; examples/ : un exemple valide par contrat
 scripts/             lancement, arrêt, installation, recette et mesures
 tests/               tests TypeScript ; e2e/ navigateur ; python/ ; recette/protocol.json
-models/              cornelius.onnx (mot d’appel) et sa licence ; le reste est téléchargé
+models/              cornelius.onnx (mot d’appel Ghostwheel), sa licence et l’archive du modèle précédent ; le reste est téléchargé
 docs/                documentation
 ```
 
-Hors dépôt : `data/` (base, journaux, images générées), `models/` (sauf `cornelius.onnx` et sa licence), `dist/`, `.env`, `.venv/`, `.venv-image/` et `.local/` (sorties jetables des tests, comme les captures d’écran).
+Hors dépôt : `data/` (base, journaux, images générées), `models/` (sauf le modèle du mot d’appel, sa licence et l’archive dans `models/archive/`), `dist/`, `.env`, `.venv/`, `.venv-image/` et `.local/` (sorties jetables des tests, comme les captures d’écran).
 
 ## Rubriques de l’administration et composants
 

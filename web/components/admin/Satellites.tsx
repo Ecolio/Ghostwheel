@@ -28,7 +28,7 @@ interface Issued {
 
 /**
  * Satellites audio : les petits micros et haut-parleurs des autres pièces, qui ouvrent une
- * conversation en voix seule quand ils entendent « Cornelius ».
+ * conversation en voix seule quand ils entendent « Ghostwheel ».
  */
 export function Satellites({
   profiles,
@@ -77,7 +77,7 @@ export function Satellites({
         <CardHeader>
           <CardTitle>Satellites audio</CardTitle>
           <CardDescription>
-            Un satellite écoute « Cornelius » dans une autre pièce et y tient la conversation, à
+            Un satellite écoute « Ghostwheel » dans une autre pièce et y tient la conversation, à
             voix seule : ni carte, ni caméra. Une seule conversation à la fois dans la maison. Un
             satellite neuf, relié au Wi-Fi, apparaît tout seul ci-dessous pour être associé ; le
             formulaire suivant ne sert qu’à un satellite configuré à la main.

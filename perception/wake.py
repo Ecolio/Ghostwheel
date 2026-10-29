@@ -1,4 +1,4 @@
-"""Local openWakeWord inference for the Cornelius wake-word model (models/cornelius.onnx)."""
+"""Local openWakeWord inference for the Ghostwheel wake-word model (models/cornelius.onnx)."""
 import os
 import time
 from pathlib import Path
@@ -26,7 +26,7 @@ class WakeDetector:
         self.mel = FEATURES / "melspectrogram.onnx"
         self.embedding = FEATURES / "embedding_model.onnx"
         if not self.path.is_file():
-            self.detail = "Modèle absent : placez Cornelius dans models/cornelius.onnx."
+            self.detail = "Modèle du mot d’appel absent : vérifiez models/cornelius.onnx."
             return
         if not self.mel.is_file() or not self.embedding.is_file():
             self.detail = "Prétraitement openWakeWord absent : installez les modèles de caractéristiques."
@@ -34,7 +34,7 @@ class WakeDetector:
         try:
             self.model = self.load()
         except Exception as error:
-            self.detail = "Modèle Cornelius illisible (" + type(error).__name__ + ")."
+            self.detail = "Modèle du mot d’appel illisible (" + type(error).__name__ + ")."
 
     def load(self):
         from openwakeword.model import Model

@@ -7,7 +7,7 @@ import type { MirrorState, SessionPhase } from '../../shared/types';
  * - « presence » (au moindre mouvement) : dès qu’une personne passe devant le miroir.
  * - « opening » (selon le réveil de Cornelius) : quand Cornelius s’éveillerait, d’après
  *   « Quand il écoute » — une personne qui se présente, une personne qui regarde le miroir, ou
- *   le mot « Cornelius » (la conversation qui s’ouvre). Réservée aux membres du foyer,
+ *   le mot « Ghostwheel » (la conversation qui s’ouvre). Réservée aux membres du foyer,
  *   l’ouverture ne compte qu’une personne reconnue. La présence ou le regard suffisent même
  *   quand la conversation ne peut pas s’ouvrir (clé absente, OpenAI bloqué) : la personne voit
  *   alors la ligne d’état.

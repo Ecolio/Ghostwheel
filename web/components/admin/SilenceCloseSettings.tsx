@@ -36,7 +36,7 @@ export function silenceChoice(settings: { enabled: boolean; delayMs: number }, f
 /** Fin de parole : la conversation se ferme après un silence, même devant le miroir. */
 export function SilenceCloseSettings({ state, run }: { state: MirrorState; run: RunAction }) {
   const saved = state.silenceClose ?? DEFAULT_SILENCE_CLOSE;
-  // « Cornelius » pour tout le monde : la présence ne termine jamais la conversation, la fin
+  // « Ghostwheel » pour tout le monde : la présence ne termine jamais la conversation, la fin
   // sur silence reste donc toujours active.
   const forced = voiceOnlyOpening(currentOpening(state));
   const choice = silenceChoice(saved, forced);
@@ -91,8 +91,8 @@ export function SilenceCloseSettings({ state, run }: { state: MirrorState; run: 
         />
         <p id="silence-close-help" className="text-xs leading-relaxed text-muted-foreground">
           {forced
-            ? '« Jamais » n’est pas disponible avec « Cornelius » pour tout le monde : la caméra éteinte ne voit pas la personne partir, seul le silence termine la conversation.'
-            : 'Pour reprendre après la fermeture : regarder à nouveau le miroir, s’éloigner puis revenir, ou dire « Cornelius » s’il ouvre la conversation.'}
+            ? '« Jamais » n’est pas disponible avec « Ghostwheel » pour tout le monde : la caméra éteinte ne voit pas la personne partir, seul le silence termine la conversation.'
+            : 'Pour reprendre après la fermeture : regarder à nouveau le miroir, s’éloigner puis revenir, ou dire « Ghostwheel » s’il ouvre la conversation.'}
         </p>
         <FineTuning hint="Délai personnalisé" defaultOpen={choice === 'custom'}>
           <Field

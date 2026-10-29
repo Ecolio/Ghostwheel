@@ -755,7 +755,7 @@ export class SessionPreferences {
       )
       .run(Number(settings.enabled), settings.delayMs);
   }
-  /** Mode voix : la caméra reconnaît la personne qui a dit « Cornelius ». */
+  /** Mode voix : la caméra reconnaît la personne qui a dit « Ghostwheel ». */
   getVoiceRecognition(): boolean {
     return (
       this.db.prepare('SELECT voice_recognition FROM listening_preferences WHERE id = 1').get()

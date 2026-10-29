@@ -71,7 +71,7 @@ Carte AMD ou Intel (DirectML) :
 
 La dernière commande télécharge la version de la vision adaptée au GPU. Les détails, et la génération d’images, sont dans [GPU](gpu.md).
 
-### En option : le mot d’appel « Cornelius »
+### En option : le mot d’appel « Ghostwheel »
 
 ```powershell
 .venv\Scripts\python -m pip install -r perception\requirements-wake.txt
@@ -79,7 +79,7 @@ La dernière commande télécharge la version de la vision adaptée au GPU. Les 
 .venv\Scripts\python perception\install_wake_features.py
 ```
 
-Le modèle du mot « Cornelius » est fourni dans le dépôt, dans `models\cornelius.onnx`. Voir [Mot d’appel](../fonctionnalites/mot-d-appel.md).
+Le modèle du mot « Ghostwheel » est fourni dans le dépôt, dans `models\cornelius.onnx`. Voir [Mot d’appel](../fonctionnalites/mot-d-appel.md).
 
 ## Démarrer
 

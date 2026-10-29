@@ -1401,7 +1401,7 @@ test('mot d’appel : admission locale seulement après le modèle et la présen
   // La présence seule ne rouvre rien pendant l’arrêt manuel…
   f.engage();
   assert.equal(f.transport.opened.length, 2);
-  // …mais « Cornelius » est une demande explicite, comme « Démarrer » : l’arrêt est levé,
+  // …mais « Ghostwheel » est une demande explicite, comme « Démarrer » : l’arrêt est levé,
   // y compris en base, sinon la veille restait muette après un redémarrage.
   assert.equal(f.controller.wakeDetected(), true);
   assert.equal(f.transport.opened.length, 3);
@@ -1565,7 +1565,7 @@ test('fin de parole en mode détection : même règle de réouverture', (t) => {
   assert.equal(f.transport.opened.length, 2);
 });
 
-test('fin de parole avec « Cornelius » exigé : le mot d’appel rouvre sans détourner le regard', (t) => {
+test('fin de parole avec « Ghostwheel » exigé : le mot d’appel rouvre sans détourner le regard', (t) => {
   const f = fixture(t);
   f.controller.setWakeWordEnabled(true);
   f.controller.setWakeWordAvailability(true, null);
@@ -1732,7 +1732,7 @@ test('mode voix : la caméra n’est saine que pendant les images fraîches', (t
 });
 
 test('mot d’appel exigé : un changement de contexte reprend la même conversation', (t) => {
-  // « Cornelius » pour tout le monde : la reprise garde aussi la personne reconnue.
+  // « Ghostwheel » pour tout le monde : la reprise garde aussi la personne reconnue.
   const voice = voiceFixture(t);
   assert.equal(voice.controller.wakeDetected(), true);
   voice.see([voice.alice.id]);
@@ -1743,14 +1743,14 @@ test('mot d’appel exigé : un changement de contexte reprend la même conversa
   assert.equal(voice.state().session.phase, 'connecting', 'la conversation reprend');
   assert.equal(voice.transport.opened.length, 2);
   assert.equal(voice.state().activeProfile?.id, voice.alice.id);
-  // Une fin normale, elle, attend le prochain « Cornelius » et retire le profil.
+  // Une fin normale, elle, attend le prochain « Ghostwheel » et retire le profil.
   voice.ready();
   voice.controller.close('Fin de test.');
   voice.acknowledgeClose();
   assert.equal(voice.state().session.phase, 'idle');
   assert.equal(voice.state().activeProfile, null);
 
-  // « Cornelius » réservé aux membres : même reprise, la personne étant toujours là.
+  // « Ghostwheel » réservé aux membres : même reprise, la personne étant toujours là.
   const members = fixture(t);
   members.controller.setOpening({ trigger: 'voice', audience: 'members', recognizeVoice: false });
   members.controller.setWakeWordAvailability(true, null);

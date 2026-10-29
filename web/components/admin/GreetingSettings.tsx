@@ -33,7 +33,7 @@ export function GreetingSettings({ state, run }: { state: MirrorState; run: RunA
         <CardTitle>Accueil à l’ouverture</CardTitle>
         <CardDescription>
           Ce que Cornelius dit en premier quand il reconnaît la personne devant le miroir. Sans
-          personne reconnue, il ne salue jamais. Quand la conversation s’ouvre avec « Cornelius »,
+          personne reconnue, il ne salue jamais. Quand la conversation s’ouvre avec « Ghostwheel »,
           la personne a déjà formulé sa demande : reconnue, elle est appelée par son prénom, sans
           salutation.
         </CardDescription>

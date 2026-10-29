@@ -1520,7 +1520,7 @@ test('mode voix : caméra éteinte sans reconnaissance, allumée en permanence a
     delayMs: 30_000,
   });
 
-  // « Cornelius » réservé aux membres : la caméra veille pour savoir qui parle.
+  // « Ghostwheel » réservé aux membres : la caméra veille pour savoir qui parle.
   assert.equal(
     (await patch('/api/admin/opening', { trigger: 'voice', audience: 'members' })).statusCode,
     400,

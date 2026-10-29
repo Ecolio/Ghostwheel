@@ -390,7 +390,7 @@ export async function createApp(
     },
     now,
   );
-  // Miroir et satellites entendent parfois le même « Cornelius » : le meilleur score l’emporte.
+  // Miroir et satellites entendent parfois le même « Ghostwheel » : le meilleur score l’emporte.
   const wakeArbiter = new WakeArbiter(() => perception.wakeStreamCount());
   const satelliteStore = new SatelliteStore(db, now);
   const satellites = new SatelliteHub({
@@ -460,7 +460,7 @@ export async function createApp(
   live.attachVision(vision);
   vision.attachAppender(live);
   // Mode voix : avec la reconnaissance, caméra allumée en permanence pour reconnaître la
-  // personne dès « Cornelius » ; avec la seule vision locale, allumée pendant la conversation ;
+  // personne dès « Ghostwheel » ; avec la seule vision locale, allumée pendant la conversation ;
   // sinon éteinte. Modes caméra : toujours allumée.
   perception.setCameraPolicy(() => {
     const session = controller.sessionState();

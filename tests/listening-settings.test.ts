@@ -33,16 +33,16 @@ test('l’ouverture signale ce qui l’empêche de fonctionner', () => {
   );
   // Nombre de visages encore inconnu : pas d’alerte.
   assert.deepEqual(openingWarnings(members, { ...ready, enrolledFaces: null }), []);
-  // « Cornelius » sans modèle du mot d’appel.
+  // « Ghostwheel » sans modèle du mot d’appel.
   const voice = { trigger: 'voice', audience: 'everyone', recognizeVoice: false } as const;
   assert.match(
     openingWarnings(voice, { ...ready, wakeWordReady: false })[0]!.text,
-    /Le mot « Cornelius » n’est pas encore prêt/,
+    /Le mot « Ghostwheel » n’est pas encore prêt/,
   );
   // Service arrêté : un seul motif pour le mot d’appel, celui du service.
   const down = openingWarnings(voice, { ...ready, perception: false, wakeWordReady: false });
   assert.equal(down.length, 1);
-  assert.match(down[0]!.text, /c’est lui qui entend « Cornelius »/);
+  assert.match(down[0]!.text, /c’est lui qui entend « Ghostwheel »/);
   for (const warning of [...stopped, ...faces, ...down]) assert.doesNotMatch(warning.text, /[—–]/);
 });
 
@@ -70,7 +70,7 @@ test('la fin de parole se lit en durées courantes', () => {
   assert.equal(silenceDelayLabel(90_000), '1 min 30 s');
   assert.equal(silenceDelayLabel(300_000), '5 min');
   assert.equal(silenceChoice({ enabled: false, delayMs: 20_000 }, false), 'never');
-  // Avec « Cornelius » pour tout le monde, le silence ferme toujours : jamais « Jamais ».
+  // Avec « Ghostwheel » pour tout le monde, le silence ferme toujours : jamais « Jamais ».
   assert.equal(silenceChoice({ enabled: false, delayMs: 20_000 }, true), '20000');
   assert.equal(silenceChoice({ enabled: true, delayMs: 120_000 }, false), '120000');
   assert.equal(silenceChoice({ enabled: true, delayMs: 45_000 }, false), 'custom');

@@ -324,7 +324,7 @@ export function Mirror({ connection }: { connection: MirrorConnection }) {
           : phase === 'ready'
             ? (voiceLabel ?? mirrorPhaseLabels.ready)
             : waitingForWakeWord
-              ? 'En attente du mot d’appel « Cornelius ».'
+              ? 'En attente du mot d’appel « Ghostwheel ».'
               : mirrorPhaseLabels[phase]}
       </p>
 

@@ -11,7 +11,7 @@ export const SATELLITE_PROTOCOL = 1;
 const FRAME_BYTES = 2560;
 const HELLO_MS = 5000;
 const PING_MS = 15_000;
-// Son gardé avant la détection : la question suit « Cornelius » sans pause.
+// Son gardé avant la détection : la question suit « Ghostwheel » sans pause.
 const PREROLL_FRAMES = 6;
 // Son gardé pendant l’ouverture de la session Live (8 s au plus).
 const PENDING_FRAMES = 100;
@@ -328,7 +328,7 @@ export class SatelliteHub {
 
   /**
    * La conversation commence : la veille n’est plus alimentée, et son modèle garde en mémoire
-   * le « Cornelius » qui vient d’être dit. Repartir de ce modèle rouvrirait une conversation dès
+   * le « Ghostwheel » qui vient d’être dit. Repartir de ce modèle rouvrirait une conversation dès
    * la fin de celle-ci ; un nouveau flux repart d’une écoute neuve.
    */
   private renewWake(connection: Connection) {

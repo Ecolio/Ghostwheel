@@ -81,7 +81,7 @@ Les valeurs de `.env` ne sont jamais copiées dans la base ; un jeton saisi dans
 
 | Variable | Défaut | Effet | Lue par |
 |---|---|---|---|
-| `CORNELIUS_WAKE_MODEL` | `models/cornelius.onnx` | Fichier du modèle qui reconnaît « Cornelius ». Un chemin relatif part de la racine du projet. | perception |
+| `CORNELIUS_WAKE_MODEL` | `models/cornelius.onnx` | Fichier du modèle qui reconnaît « Ghostwheel ». Un chemin relatif part de la racine du projet. | perception |
 | `CORNELIUS_WAKE_THRESHOLD` | `0.5` | Score à partir duquel le mot est reconnu, strictement entre 0 et 1. Une valeur hors de cette plage revient à `0.5`. Plus haut : moins de déclenchements par erreur, mais plus de mots manqués. | perception |
 
 Voir [Le mot d’appel](../fonctionnalites/mot-d-appel.md).
@@ -143,7 +143,7 @@ Les ports `3000` et `5173` n’écoutent que sur `127.0.0.1`. Seul le port `3443
 | `dist/web/` | L’interface compilée, servie en production. | `npm run build` (les scripts `start` le lancent si besoin) |
 | `.local/` | Sorties jetables : captures et résultats des tests navigateur, outil `uv` de l’installateur Linux. Tout peut être supprimé. | tests, `scripts/install-linux.sh` |
 
-`data/` et la base, `models/` (sauf `models/cornelius.onnx` et sa licence), `.venv/`, `.venv-image/`, `dist/`, `.local/` et `.env` sont exclus de Git. Avant de publier le dépôt, voir [Licences](licences.md#avant-de-publier-le-dépôt).
+`data/` et la base, `models/` (sauf le modèle du mot d’appel, sa licence et l’archive de l’ancien modèle avec sa notice), `.venv/`, `.venv-image/`, `dist/`, `.local/` et `.env` sont exclus de Git. Avant de publier le dépôt, voir [Licences](licences.md#avant-de-publier-le-dépôt).
 
 ## Voir aussi
 

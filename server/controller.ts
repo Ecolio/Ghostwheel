@@ -234,7 +234,7 @@ export class SessionController {
   private voiceIdentityCameraSeen = false;
   private delegationMode = DEFAULT_DELEGATION_MODE;
   private wakeWordReady = false;
-  private wakeWordDetail: string | null = 'Modèle Cornelius indisponible.';
+  private wakeWordDetail: string | null = 'Modèle du mot d’appel indisponible.';
   private silenceSince: number | null = null;
   private userSpeaking = false;
   private assistantBusy = false;
@@ -366,7 +366,7 @@ export class SessionController {
     };
   }
 
-  /** La veille écoute « Cornelius » : un arrêt manuel ne l’éteint pas, le mot le lève. */
+  /** La veille écoute « Ghostwheel » : un arrêt manuel ne l’éteint pas, le mot le lève. */
   isWakeListening(): boolean {
     return (
       this.wakeWordEnabled && this.wakeWordReady && ['idle', 'blocked'].includes(this.session.phase)
@@ -519,7 +519,7 @@ export class SessionController {
     this.close(reason);
   }
 
-  /** « Démarrer » ou « Cornelius » : une demande explicite lève l’arrêt manuel. */
+  /** « Démarrer » ou « Ghostwheel » : une demande explicite lève l’arrêt manuel. */
   private clearManualStop(): void {
     this.preferences?.setManualStop(false);
     this.session.manualStop = false;
@@ -1119,7 +1119,7 @@ export class SessionController {
 
   wakeDetected(onAccepted?: () => void): boolean {
     if (!this.wakeWordEnabled || !this.wakeWordReady) return false;
-    // Dire « Cornelius » est une demande explicite, comme « Démarrer » : elle lève l’arrêt
+    // Dire « Ghostwheel » est une demande explicite, comme « Démarrer » : elle lève l’arrêt
     // manuel. Sans cela, un arrêt depuis l’administration rendait le mot d’appel muet pour de
     // bon, y compris après redémarrage, sans aucun signe sur le miroir.
     if (this.session.manualStop && !['connecting', 'ready'].includes(this.session.phase))
@@ -1141,7 +1141,7 @@ export class SessionController {
   }
 
   /**
-   * « Cornelius » entendu par un satellite : la conversation s’ouvre dans sa pièce, sans
+   * « Ghostwheel » entendu par un satellite : la conversation s’ouvre dans sa pièce, sans
    * navigateur ni caméra, au nom du profil rattaché au satellite, ou anonyme. Faux si une
    * conversation est déjà en cours, ou si l’ouverture est réservée aux membres du foyer et que
    * le satellite n’est rattaché à personne (il ne voit personne).
@@ -1416,7 +1416,7 @@ export class SessionController {
     this.webSearchActive = false;
     this.closingAt = null;
     this.voiceIdentityUntil = null;
-    // Une conversation de satellite ne se rouvre pas d’elle-même : « Cornelius » suffit.
+    // Une conversation de satellite ne se rouvre pas d’elle-même : « Ghostwheel » suffit.
     const reopen = released ? null : this.reopenAfterClose;
     this.reopenAfterClose = null;
     // Mode voix : sans caméra en veille, rien ne prouve que la personne est encore là, sauf
@@ -1690,7 +1690,7 @@ export class SessionController {
 
   /**
    * Fin sur silence alors que la personne reste devant le miroir. Avec le mot d’appel, dire
-   * « Cornelius » suffit à rouvrir ; sinon il faut détourner le regard puis regarder à nouveau
+   * « Ghostwheel » suffit à rouvrir ; sinon il faut détourner le regard puis regarder à nouveau
    * le miroir (ou partir et revenir), pour ne pas rouvrir en boucle devant le même visage.
    */
   private closeAfterSilence(): void {

@@ -59,7 +59,7 @@ Le script peut être relancé autant de fois que nécessaire. Il garde le fichie
 |---|---|
 | `--system-deps` | Installe les paquets du système avec `sudo` : apt sur Debian et Ubuntu, pacman sur Arch. |
 | `--gpu auto\|cpu\|nvidia\|amd` | Moteur de calcul de la vision locale. `auto` (par défaut) choisit NVIDIA si une carte NVIDIA répond, sinon le processeur. `amd` est réservé aux Radeon dédiées avec ROCm. Voir [GPU](gpu.md). |
-| `--wake` | Installe l’écoute locale du mot d’appel « Cornelius ». |
+| `--wake` | Installe l’écoute locale du mot d’appel « Ghostwheel ». |
 | `--no-models` | Ne télécharge pas les modèles (visages, détection de la voix, vision 450M). |
 | `--no-build` | Ne compile pas l’interface. `scripts/start.sh` la compilera au premier démarrage. |
 | `--systemd` | Installe et démarre les deux services qui lancent Cornelius au démarrage. |

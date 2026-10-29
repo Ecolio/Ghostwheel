@@ -1,11 +1,11 @@
-/** Un appareil (miroir ou satellite) qui vient d’entendre « Cornelius ». */
+/** Un appareil (miroir ou satellite) qui vient d’entendre « Ghostwheel ». */
 export interface WakeCandidate {
   score: number;
   accept(): void;
 }
 
 /**
- * Plusieurs appareils dans la même pièce entendent le même « Cornelius » : le meilleur score
+ * Plusieurs appareils dans la même pièce entendent le même « Ghostwheel » : le meilleur score
  * l’emporte. Avec un seul flux à l’écoute, la détection passe aussitôt, sans délai ajouté.
  */
 export class WakeArbiter {

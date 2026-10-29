@@ -49,7 +49,7 @@ export type ScreensaverTransition = (typeof SCREENSAVER_TRANSITIONS)[number];
 
 /**
  * presence : dès qu’une personne passe devant le miroir. opening : seulement quand Cornelius
- * s’éveille, selon ce qui ouvre la conversation (présence, regard ou mot « Cornelius »).
+ * s’éveille, selon ce qui ouvre la conversation (présence, regard ou mot « Ghostwheel »).
  */
 export const SCREENSAVER_WAKES = ['presence', 'opening'] as const;
 export type ScreensaverWake = (typeof SCREENSAVER_WAKES)[number];

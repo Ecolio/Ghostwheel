@@ -14,19 +14,19 @@ Cette page dit ce qui reste sur l’ordinateur du miroir, ce qui part chez OpenA
 - **Les images de la caméra.** La perception analyse la caméra du serveur, ou les images reçues du navigateur quand cette option est choisie. Les images restent en mémoire vive sur le serveur et ne sont jamais écrites sur le disque.
 - **Les visages.** L’enregistrement d’un visage garde des signatures numériques, calculées à partir des images : ce sont des nombres, pas des photos. Elles sont rangées dans la base. La reconnaissance se fait sur l’ordinateur.
 - **La vision locale.** La description d’une image est calculée sur l’ordinateur par le modèle LFM2.5-VL. Seul le texte de cette description rejoint la conversation, donc OpenAI. Elle n’est jamais écrite dans la mémoire. Voir [La vision locale](../fonctionnalites/vision-locale.md).
-- **Le mot d’appel.** « Cornelius » est reconnu sur l’ordinateur, avec openWakeWord. Aucun service en ligne n’est appelé pour cela.
+- **Le mot d’appel.** « Ghostwheel » est reconnu sur l’ordinateur, avec openWakeWord. Aucun service en ligne n’est appelé pour cela.
 - **Les images créées.** Par défaut, la génération d’images tourne sur l’ordinateur. Si vous choisissez « Avec OpenAI » dans le module, la description de l’image (jamais une image de la caméra) part chez OpenAI, qui renvoie l’image. Dans les deux cas, les trois dernières images sont gardées dans `data/generated-images/`, puis effacées au prochain démarrage du serveur.
 
 ## Où va le son du micro
 
 La caméra est lue par la perception, mais le micro est lu par le navigateur qui affiche le miroir, car la conversation passe par la page. Selon les réglages de **Quand il écoute** :
 
-- **Le mot « Cornelius » ouvre la conversation.** Après **Activer la voix**, le micro reste ouvert pendant la veille. Le son va seulement au serveur, sur l’ordinateur (`127.0.0.1`), puis à la perception qui guette le mot. Rien ne sort de la machine.
+- **Le mot « Ghostwheel » ouvre la conversation.** Après **Activer la voix**, le micro reste ouvert pendant la veille. Le son va seulement au serveur, sur l’ordinateur (`127.0.0.1`), puis à la perception qui guette le mot. Rien ne sort de la machine.
 - **Micro gardé prêt** (dans **Quand il écoute → Réglages avancés**). Le micro reste prêt sur l’ordinateur. Le son n’est envoyé à la conversation qu’une fois celle-ci ouverte, avec le début de la phrase.
 - **Sans mot d’appel ni micro gardé prêt.** Le micro préparé est relâché après 15 secondes si aucune conversation ne s’ouvre.
 - **Pendant une conversation.** Le son part chez OpenAI, le temps de la conversation seulement. Il passe aussi par la détection locale de la parole.
 
-**Les satellites audio.** Un satellite envoie le son de son micro à l’ordinateur, par le réseau local et chiffré (WebSocket sécurisé, port `3443`), seulement quand Cornelius écoute « Cornelius » ou pendant sa propre conversation. L’ordinateur y cherche le mot, puis transmet la conversation à OpenAI comme pour le miroir. Une conversation de satellite rattaché à une personne nourrit la mémoire de cette personne ; sinon, elle ne laisse aucun souvenir. Le bouton du satellite coupe son micro. Voir [Les satellites audio](../fonctionnalites/satellites.md).
+**Les satellites audio.** Un satellite envoie le son de son micro à l’ordinateur, par le réseau local et chiffré (WebSocket sécurisé, port `3443`), seulement quand Cornelius écoute « Ghostwheel » ou pendant sa propre conversation. L’ordinateur y cherche le mot, puis transmet la conversation à OpenAI comme pour le miroir. Une conversation de satellite rattaché à une personne nourrit la mémoire de cette personne ; sinon, elle ne laisse aucun souvenir. Le bouton du satellite coupe son micro. Voir [Les satellites audio](../fonctionnalites/satellites.md).
 
 Pour couper tout envoi vers OpenAI, utilisez **Bloquer OpenAI** (voir plus bas).
 

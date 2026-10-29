@@ -49,7 +49,7 @@ export function registerHardware(
     live: LiveTransport | null;
     controller: SessionController;
     perception: PerceptionBridge;
-    /** Départage le miroir et les satellites qui entendent le même « Cornelius ». */
+    /** Départage le miroir et les satellites qui entendent le même « Ghostwheel ». */
     wakeArbiter: WakeArbiter;
     vision: VisionBridge;
     downloads: ModelDownloads;

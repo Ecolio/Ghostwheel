@@ -28,7 +28,8 @@ La licence choisie pour le code ne s’applique pas aux polices, composants, mod
 |---|---|---|
 | Polices DM Sans, DM Mono et Epilogue | `web/assets/fonts/*.ttf` | SIL Open Font License 1.1, notices `dmsans-OFL.txt`, `dmmono-OFL.txt`, `epilogue-OFL.txt` dans le même dossier |
 | Composants d’interface shadcn/ui | `web/components/ui/` | MIT, notice `web/components/ui/LICENSE.md` |
-| Modèle du mot d’appel « Cornelius » | `models/cornelius.onnx` | CC BY-NC-SA 4.0, notice et attributions `models/cornelius.onnx.LICENSE` (voir [Le mot d’appel](#le-mot-dappel)) |
+| Modèle du mot d’appel « Ghostwheel » | `models/cornelius.onnx` | CC BY-NC-SA 4.0, notice et attributions `models/cornelius.onnx.LICENSE` (voir [Le mot d’appel](#le-mot-dappel)) |
+| Ancien modèle « Cornelius » | `models/archive/cornelius-original.onnx` | CC BY-NC-SA 4.0, notice et attributions `models/archive/cornelius-original.onnx.LICENSE` |
 
 Gardez ces notices avec les fichiers, dans le dépôt comme dans toute copie distribuée.
 
@@ -62,7 +63,8 @@ Ces modèles sont téléchargés depuis Hugging Face quand on les installe dans 
 |---|---|---|
 | Bibliothèque [openWakeWord](https://github.com/dscripka/openWakeWord) | [Apache 2.0](https://github.com/dscripka/openWakeWord/blob/main/LICENSE) pour le code | Ses modèles de mots d’appel déjà entraînés sont annoncés [CC BY-NC-SA 4.0](https://github.com/dscripka/openWakeWord#license). Cornelius n’en installe aucun. |
 | Deux modèles de prétraitement partagés (`melspectrogram.onnx`, `embedding_model.onnx`) | à clarifier | Leur licence fait l’objet d’une [demande de clarification](https://github.com/dscripka/openWakeWord/issues/338). Ils sont téléchargés dans `models/openwakeword/` par `perception/install_wake_features.py`, depuis la version 0.5.1 d’openWakeWord. |
-| Modèle « Cornelius » (`models/cornelius.onnx`) | CC BY-NC-SA 4.0, par prudence | Fourni dans le dépôt, entraîné avec [wakeword-generator](https://github.com/lfpoulain/wakeword-generator). Ses droits dépendent des données ci-dessous : il est diffusé pour un usage non commercial, sous les conditions de partage des caractéristiques négatives, avec les attributions des voix réunies dans `models/cornelius.onnx.LICENSE`. |
+| Modèle du mot d’appel « Ghostwheel » (`models/cornelius.onnx`) | CC BY-NC-SA 4.0, par prudence | Modèle français entraîné avec [wakeword-generator](https://github.com/lfpoulain/wakeword-generator), configuré pour les graphies « Goste-wil », « Goste-ouile » et « Goss-touile ». Il remplace le modèle fourni précédemment, conservé dans `models/archive/cornelius-original.onnx`. Les deux modèles sont diffusés pour un usage non commercial, sous les conditions de partage des caractéristiques négatives ; leurs attributions sont dans les fichiers `.LICENSE` voisins. Voir [la note d’entraînement et d’essai](../developpement/modele-mot-appel-ghostwheel.md). |
+| Ancien modèle « Cornelius » (`models/archive/cornelius-original.onnx`) | CC BY-NC-SA 4.0, par prudence | Modèle d’origine, conservé avec ses attributions dans `models/archive/cornelius-original.onnx.LICENSE`. |
 | Caractéristiques négatives [openwakeword_features](https://huggingface.co/datasets/davidscripka/openwakeword_features) | CC BY-NC-SA 4.0 | Usage non commercial et conditions de partage à examiner avant de diffuser un modèle entraîné avec elles. La licence des données ne suffit pas à fixer celle du modèle obtenu. |
 | Réponses impulsionnelles [MIT environmental impulse responses](https://huggingface.co/datasets/davidscripka/MIT_environmental_impulse_responses) (pour simuler l’écho) | inconnue | À éclaircir, ou à remplacer par des enregistrements à licence explicite, avant de distribuer un corpus ou un modèle entraîné avec elles. |
 | Voix Piper françaises | [Siwis : CC BY 4.0](https://huggingface.co/rhasspy/piper-voices/blob/main/fr/fr_FR/siwis/medium/MODEL_CARD), [UPMC : CC BY-SA 4.0](https://huggingface.co/rhasspy/piper-voices/blob/v1.0.0/fr/fr_FR/upmc/medium/MODEL_CARD), [Tom : AGPL v3](https://huggingface.co/rhasspy/piper-voices/blob/v1.0.0/fr/fr_FR/tom/medium/MODEL_CARD) | Ces cartes décrivent les données des voix. Elles ne disent pas, à elles seules, le statut des sons générés ni du modèle entraîné. Gardez les attributions. |
@@ -86,16 +88,16 @@ Le titre et l’auteur de chaque peinture s’affichent sur le miroir. Aucune at
 ## Avant de publier le dépôt
 
 1. **Garder `LICENSE` et `THIRD_PARTY_NOTICES.md`** à la racine, et lancer `npm run notices` après tout changement de dépendance.
-2. **Garder les notices** des polices (`web/assets/fonts/*-OFL.txt`), des composants (`web/components/ui/LICENSE.md`) et du modèle du mot d’appel (`models/cornelius.onnx.LICENSE`). Ajouter une ligne dans `THIRD_PARTY_NOTICES.md` pour toute autre ressource de tiers ajoutée au dépôt.
+2. **Garder les notices** des polices (`web/assets/fonts/*-OFL.txt`), des composants (`web/components/ui/LICENSE.md`) et des deux modèles (`models/cornelius.onnx.LICENSE`, `models/archive/cornelius-original.onnx.LICENSE`). Ajouter une ligne dans `THIRD_PARTY_NOTICES.md` pour toute autre ressource de tiers ajoutée au dépôt.
 3. **Vérifier ce qui part réellement** :
 
    ```sh
    git status --short
    git ls-files
-   git ls-files | grep -Ei '\.(onnx|onnx_data|wav|npy|safetensors|sqlite)$' | grep -v '^models/cornelius\.onnx$'
+   git ls-files | grep -Ei '\.(onnx|onnx_data|wav|npy|safetensors|sqlite)$' | grep -Ev '^(models/cornelius\.onnx|models/archive/cornelius-original\.onnx)$'
    ```
 
-   La dernière commande ne doit rien afficher. Cherchez aussi les secrets (clé OpenAI, jetons) et les gros fichiers. `.gitignore` exclut `models/` (sauf `models/cornelius.onnx` et sa licence), `data/`, `.env`, `.venv/`, `.venv-image/` et `.local/`, mais il ne protège ni un fichier déjà suivi par Git, ni un ajout forcé avec `git add -f`.
+   La dernière commande ne doit rien afficher. Cherchez aussi les secrets (clé OpenAI, jetons) et les gros fichiers. `.gitignore` exclut `models/` (sauf le modèle livré, sa licence et `models/archive/` avec ses notices), `data/`, `.env`, `.venv/`, `.venv-image/` et `.local/`, mais il ne protège ni un fichier déjà suivi par Git, ni un ajout forcé avec `git add -f`.
 4. **Pour partager un modèle de mot d’appel**, établir à part la provenance et les droits des exemples positifs et négatifs, des bruits, des réponses impulsionnelles et des modèles de prétraitement, puis documenter les attributions et les conditions d’usage du modèle.
 5. **Pour distribuer une archive de modèles ou une image Docker complète**, l’examiner à part du code : chaque modèle y garde sa propre licence.
 

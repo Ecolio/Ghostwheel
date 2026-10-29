@@ -93,7 +93,7 @@ function fixture(
   now += 900;
   observe();
   if (options.sessionMode === 4) {
-    // Mode voix : « Cornelius » ouvre la conversation, la caméra s’allume avec elle.
+    // Mode voix : « Ghostwheel » ouvre la conversation, la caméra s’allume avec elle.
     controller.setWakeWordAvailability(true, null);
     assert.equal(controller.wakeDetected(), true);
   }

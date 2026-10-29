@@ -41,7 +41,7 @@ Chaque conversation porte un identifiant d’interaction, une époque de profil 
 
 ## Ouverture de la conversation
 
-L’administration pose deux questions : ce qui ouvre la conversation (la présence, le regard ou le mot « Cornelius ») et qui peut l’ouvrir (tout le monde ou les membres du foyer reconnus). `shared/opening.ts` traduit chaque réponse en une seule combinaison de réglages internes, et relit les anciennes combinaisons qui se recouvraient.
+L’administration pose deux questions : ce qui ouvre la conversation (la présence, le regard ou le mot « Ghostwheel ») et qui peut l’ouvrir (tout le monde ou les membres du foyer reconnus). `shared/opening.ts` traduit chaque réponse en une seule combinaison de réglages internes, et relit les anciennes combinaisons qui se recouvraient.
 
 | Ce qui ouvre | Qui | Étape interne | Membres reconnus seulement | Mot d’appel | Caméra en veille |
 |---|---|---|---|---|---|
@@ -49,8 +49,8 @@ L’administration pose deux questions : ce qui ouvre la conversation (la prése
 | présence | membres | 2 | non | non | allumée |
 | regard | tout le monde | 3 | non | non | allumée |
 | regard | membres | 3 | oui | non | allumée |
-| « Cornelius » | tout le monde | 4 | non | oui | éteinte |
-| « Cornelius » | membres | 2 | non | oui | allumée |
+| « Ghostwheel » | tout le monde | 4 | non | oui | éteinte |
+| « Ghostwheel » | membres | 2 | non | oui | allumée |
 
 Les quatre étapes internes (`SessionMode` dans `shared/types.ts`, colonne `session_mode` de la base) :
 
@@ -59,9 +59,9 @@ Les quatre étapes internes (`SessionMode` dans `shared/types.ts`, colonne `sess
 | 1 | dès la détection | Dès qu’une personne est présente, même inconnue. Si elle est reconnue ensuite, le serveur met à jour les outils de la session sans la recréer et ajoute l’accueil par le prénom. Passer ensuite à une autre personne ferme la session. |
 | 2 | à l’identification | Quand une personne reconnue est présente de façon stable. Le profil actif est le sien. |
 | 3 | à l’engagement | Quand une personne regarde le miroir. Le profil est celui de la personne reconnue, sinon celui du foyer. |
-| 4 | au mot d’appel | Au mot « Cornelius », caméra éteinte en veille. La caméra s’allume pendant la conversation si la reconnaissance au mot d’appel ou la vision est active ; une personne reconnue dans les 8 s rattache son profil. |
+| 4 | au mot d’appel | Au mot « Ghostwheel », caméra éteinte en veille. La caméra s’allume pendant la conversation si la reconnaissance au mot d’appel ou la vision est active ; une personne reconnue dans les 8 s rattache son profil. |
 
-Par défaut, la conversation s’ouvre au regard, pour tout le monde (étape 3). Le mode vie privée ferme la conversation dès qu’une deuxième personne est vue sur deux images consécutives, et empêche d’en ouvrir une tant qu’il y a du monde. Un arrêt manuel reste actif jusqu’à **Démarrer** ou jusqu’au mot « Cornelius ». Le comportement vu par l’utilisateur est décrit dans [Ouverture et présence](../fonctionnalites/ouverture-et-presence.md).
+Par défaut, la conversation s’ouvre au regard, pour tout le monde (étape 3). Le mode vie privée ferme la conversation dès qu’une deuxième personne est vue sur deux images consécutives, et empêche d’en ouvrir une tant qu’il y a du monde. Un arrêt manuel reste actif jusqu’à **Démarrer** ou jusqu’au mot « Ghostwheel ». Le comportement vu par l’utilisateur est décrit dans [Ouverture et présence](../fonctionnalites/ouverture-et-presence.md).
 
 ## État diffusé et WebSocket
 
@@ -154,7 +154,7 @@ Voir [Confidentialité](../reference/confidentialite.md).
 | Commande HTTP sans réponse | État `unknown`, jamais répétée automatiquement. |
 | Redémarrage du serveur | Sessions d’administration fermées, cartes et images effacées, fraîcheur recalculée ; l’arrêt manuel et le blocage d’OpenAI sont conservés. |
 
-Quand un réglage qui change le contexte est modifié pendant une conversation (personnalité, repères, mémoire, profil, recherche web, vision, génération d’images, Home Assistant, agent), `controller.restart()` ferme la conversation et la rouvre aussitôt avec la nouvelle configuration, même quand c’est le mot « Cornelius » qui ouvre la conversation.
+Quand un réglage qui change le contexte est modifié pendant une conversation (personnalité, repères, mémoire, profil, recherche web, vision, génération d’images, Home Assistant, agent), `controller.restart()` ferme la conversation et la rouvre aussitôt avec la nouvelle configuration, même quand c’est le mot « Ghostwheel » qui ouvre la conversation.
 
 ## Voir aussi
 

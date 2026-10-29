@@ -38,6 +38,10 @@ test('Responses extrait sans stockage distant ni outils, avec schéma strict et 
   };
   assert.equal(text.format.strict, true);
   assert.equal(text.format.schema.additionalProperties, false);
+  const instructions = requestBody!.instructions as string;
+  assert.match(instructions, /Cornelius est le nom de l’assistant/u);
+  assert.match(instructions, /« Ghostwheel » est le mot d’appel/u);
+  assert.match(instructions, /la personne s’adresse à Cornelius/u);
 });
 test('une réponse incomplète, un refus et une erreur fournisseur ne deviennent pas des propositions', async () => {
   for (const body of [

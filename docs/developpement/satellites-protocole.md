@@ -7,9 +7,9 @@ Cette page décrit le dialogue entre Cornelius et un satellite audio (micro et h
 ## Principe
 
 - Un satellite ne parle qu’à Cornelius, jamais à OpenAI : la clé reste sur l’ordinateur du miroir, qui relaie le son vers une session Live.
-- En veille, le satellite envoie le son de son micro ; l’ordinateur y cherche « Cornelius » avec le même modèle que le miroir. Le son n’est envoyé que lorsque le serveur le demande (message `listen`).
+- En veille, le satellite envoie le son de son micro ; l’ordinateur y cherche « Ghostwheel » avec le même modèle que le miroir. Le son n’est envoyé que lorsque le serveur le demande (message `listen`).
 - Une seule conversation à la fois dans toute la maison : miroir ou un satellite.
-- Quand le miroir et un satellite entendent « Cornelius » en même temps, l’appareil au meilleur score l’emporte.
+- Quand le miroir et un satellite entendent « Ghostwheel » en même temps, l’appareil au meilleur score l’emporte.
 - Une conversation de satellite est **en voix seule** : ni carte, ni image, ni caméra. Elle se termine après un silence (réglage **Fin de parole**, 20 s par défaut), ou quand le satellite se déconnecte.
 - Par défaut, elle est **anonyme** : ni mémoire personnelle ni outils propres à une personne. Dans **Administration → Satellites audio**, un satellite peut être rattaché à un profil : ses conversations se tiennent alors au nom de cette personne, mémoire comprise, quelle que soit la personne qui parle dans la pièce.
 - L’ouverture réservée aux membres du foyer n’accepte que les satellites rattachés à un profil : les autres ne voient personne et reçoivent `busy`.
@@ -48,7 +48,7 @@ Les autres messages sont des objets JSON en texte, avec un champ `type`. Un mess
 | Message | Quand | Effet |
 |---|---|---|
 | `{"type":"hello","protocol":1,"firmware":"0.1.0","aec":false}` | premier message, dans les 5 s | le serveur répond `welcome`, ou ferme si le protocole n’est pas pris en charge |
-| binaire, 2 560 octets | tant que `listen` vaut `true` | veille : cherché pour « Cornelius » ; conversation : envoyé à Live |
+| binaire, 2 560 octets | tant que `listen` vaut `true` | veille : cherché pour « Ghostwheel » ; conversation : envoyé à Live |
 | `{"type":"mic","muted":true}` | bouton de vie privée | le serveur ignore le son tant que le micro est coupé |
 | `{"type":"log","message":"…"}` | mesure à suivre (niveaux d’écho…) | inscrite dans le journal de Cornelius ; 200 caractères, une par seconde au plus, jamais de son ni de conversation |
 
@@ -62,7 +62,7 @@ Les autres messages sont des objets JSON en texte, avec un champ `type`. Un mess
 | `{"type":"settings","volume":70,"led":{"color":"#00ffb4","brightness":6,"nightLight":false},"attentive":false}` | réglages de l’administration : après `welcome`, puis à chaque changement ; volume de 0 à 100, luminosité de 0 à 10 (0 : alertes seulement), veilleuse en veille, écoute attentive |
 | `{"type":"volume","volume":40}` | ancien message, remplacé par `settings` ; toujours accepté par le firmware |
 | `{"type":"listen","enabled":true}` | envoyer (`true`) ou cesser d’envoyer (`false`) le son du micro ; envoyé après `welcome` puis à chaque changement |
-| `{"type":"wake","score":0.93}` | « Cornelius » a été entendu par ce satellite (signal lumineux) |
+| `{"type":"wake","score":0.93}` | « Ghostwheel » a été entendu par ce satellite (signal lumineux) |
 | `{"type":"busy"}` | la conversation ne s’ouvre pas ici : une autre est en cours, ou l’ouverture est réservée aux membres |
 | `{"type":"session","state":"connecting"}` | la conversation s’ouvre ; le son continue d’être envoyé (il est gardé, puis rejoué) |
 | `{"type":"session","state":"ready"}` | la conversation est ouverte : la voix de Cornelius arrive en binaire |
@@ -72,7 +72,7 @@ Les autres messages sont des objets JSON en texte, avec un champ `type`. Un mess
 
 ### Déroulé d’une conversation
 
-1. Le satellite envoie son micro ; « Cornelius » est entendu.
+1. Le satellite envoie son micro ; « Ghostwheel » est entendu.
 2. `wake`, puis `session: connecting`. Le serveur garde le son qui précède le mot (environ 0,5 s) et celui qui suit : la question peut suivre sans pause.
 3. `session: ready` (environ 1 s plus tard) : le son gardé part vers Live, puis le micro en direct ; la voix de Cornelius arrive.
 4. Après le silence réglé, `session: closed`, puis `listen` reprend sa valeur de veille.
@@ -113,7 +113,7 @@ Créer un satellite et afficher son jeton, dans **Administration → Satellites 
 npx tsx --env-file-if-exists=.env scripts/satellite-ajouter.ts "Bureau"
 ```
 
-Puis simuler le satellite avec un enregistrement WAV (PCM mono 16 kHz) qui contient « Cornelius » et une question :
+Puis simuler le satellite avec un enregistrement WAV (PCM mono 16 kHz) qui contient « Ghostwheel » et une question :
 
 ```sh
 npx tsx scripts/satellite-sim.ts --token <jeton> --wav question.wav

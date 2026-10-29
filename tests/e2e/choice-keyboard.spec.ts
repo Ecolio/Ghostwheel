@@ -18,7 +18,7 @@ test('aux flèches, seul le dernier choix d’ouverture est enregistré', async 
   await login(page, '/admin#voice');
   const triggers = page.getByRole('group', { name: 'Ce qui l’ouvre' });
   const gaze = triggers.getByRole('radio', { name: 'Le regard', exact: true });
-  const voice = triggers.getByRole('radio', { name: '« Cornelius »', exact: true });
+  const voice = triggers.getByRole('radio', { name: '« Ghostwheel »', exact: true });
   try {
     await expect(gaze).toBeChecked();
     // Aller-retour avant la fin du délai : rien n’est envoyé.
@@ -28,7 +28,7 @@ test('aux flèches, seul le dernier choix d’ouverture est enregistré', async 
     await expect(gaze).toBeChecked();
     await page.waitForTimeout(900);
     expect(sent).toEqual([]);
-    // Deux flèches : « La présence » puis « Cornelius » ; seul le second part.
+    // Deux flèches : « La présence » puis « Ghostwheel » ; seul le second part.
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('ArrowLeft');
     await expect(voice).toBeChecked();

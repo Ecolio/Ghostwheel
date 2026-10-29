@@ -1,10 +1,14 @@
 node_modules/
 dist/
 data/
-# Modèles téléchargés : hors Git, sauf le mot d’appel « Cornelius », entraîné pour le projet.
+# Modèles téléchargés : hors Git, sauf le modèle Ghostwheel et l’archive de l’ancien modèle.
 models/*
 !models/cornelius.onnx
 !models/cornelius.onnx.LICENSE
+!models/archive/
+models/archive/*
+!models/archive/cornelius-original.onnx
+!models/archive/cornelius-original.onnx.LICENSE
 .env
 .env.*
 !.env.example

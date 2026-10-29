@@ -347,7 +347,7 @@ class Worker:
                     except Exception as error:
                         self.wake.model = None
                         self.wake_streams = {}
-                        self.wake.detail = "Modèle Cornelius illisible (" + type(error).__name__ + ")."
+                        self.wake.detail = "Modèle du mot d’appel illisible (" + type(error).__name__ + ")."
                         await socket.send(json.dumps(self.wake.status()))
                     else:
                         self.wake_streams[event["slot"]] = (event["streamId"], stream)

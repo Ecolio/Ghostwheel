@@ -175,7 +175,7 @@ export function SessionControls({
     );
 
   const opening = currentOpening(state);
-  // « Cornelius » pour tout le monde : la caméra dort jusqu’à la conversation.
+  // « Ghostwheel » pour tout le monde : la caméra dort jusqu’à la conversation.
   const cameraAsleep = !cameraWatchesInStandby(opening) && !active;
   const cameraDown = fresh && !cameraAsleep && state.presence.health !== 'ok';
   const names = (state.presence.recognizedProfileIds ?? [])

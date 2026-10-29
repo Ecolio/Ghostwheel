@@ -55,7 +55,7 @@ Si une partie du catalogue ne répond pas, la carte indique « Catalogue partiel
 
 ## Demander à la voix
 
-La personne doit être **seule devant le miroir et reconnue**. Avec « Cornelius » pour tout le monde, il faut donc cocher **Reconnaître la personne pendant la conversation** (voir [Ouverture et présence](ouverture-et-presence.md)).
+La personne doit être **seule devant le miroir et reconnue**. Avec « Ghostwheel » pour tout le monde, il faut donc cocher **Reconnaître la personne pendant la conversation** (voir [Ouverture et présence](ouverture-et-presence.md)).
 
 On demande simplement : « Demande à Hermes de préparer trois idées de sorties pour samedi ». Cornelius transmet la demande, avec seulement le contexte utile. Il ne transmet ni la transcription complète, ni la mémoire personnelle, ni d’images.
 

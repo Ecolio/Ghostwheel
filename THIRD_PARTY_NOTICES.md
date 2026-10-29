@@ -18,7 +18,8 @@ Ces fichiers de tiers sont copiés dans le dépôt. Leur notice doit rester à c
 | Police DM Mono | `web/assets/fonts/` | Copyright 2020 The DM Mono Project Authors (<https://www.github.com/googlefonts/dm-mono>) | SIL Open Font License 1.1 | `web/assets/fonts/dmmono-OFL.txt` |
 | Police Epilogue | `web/assets/fonts/` | Copyright 2020 The Epilogue Project Authors (<https://github.com/Etcetera-Type-Co/Epilogue>) | SIL Open Font License 1.1 | `web/assets/fonts/epilogue-OFL.txt` |
 | Composants shadcn/ui | `web/components/ui/` | Copyright (c) 2023 shadcn (<https://ui.shadcn.com>) | MIT | `web/components/ui/LICENSE.md` |
-| Modèle du mot d’appel « Cornelius » | `models/cornelius.onnx` | Entraîné pour Cornelius avec openWakeWord (Apache 2.0, David Scripka), à partir des voix Piper Siwis (CC BY 4.0), UPMC (CC BY-SA 4.0) et Tom (AGPL v3), et des caractéristiques négatives openwakeword_features (CC BY-NC-SA 4.0, David Scripka) | CC BY-NC-SA 4.0, usage non commercial | `models/cornelius.onnx.LICENSE` |
+| Modèle du mot d’appel « Ghostwheel » (chemin de fichier conservé pour compatibilité) | `models/cornelius.onnx` | Entraîné avec openWakeWord et wakeword-generator, à partir des voix Piper françaises Siwis (CC BY 4.0), UPMC (CC BY-SA 4.0) et Tom (AGPL v3), et des caractéristiques négatives openwakeword_features (CC BY-NC-SA 4.0, David Scripka) | CC BY-NC-SA 4.0, usage non commercial | `models/cornelius.onnx.LICENSE` |
+| Ancien modèle « Cornelius » | `models/archive/cornelius-original.onnx` | Entraîné avec openWakeWord et wakeword-generator ; attributions détaillées dans sa notice archivée | CC BY-NC-SA 4.0, usage non commercial | `models/archive/cornelius-original.onnx.LICENSE` |
 
 ## Principales bibliothèques
 
@@ -28,7 +29,7 @@ La perception et la génération d’images utilisent ONNX Runtime (MIT, Microso
 
 ## Modèles téléchargés
 
-En dehors du mot d’appel « Cornelius » (voir plus haut), Cornelius ne contient aucun modèle : ils sont téléchargés sur l’ordinateur de l’utilisateur, chacun avec sa licence. Ils sont cités ici parce que Cornelius les utilise.
+En dehors du mot d’appel « Ghostwheel » (et de l’ancien modèle archivé, voir plus haut), Cornelius ne contient aucun modèle : ils sont téléchargés sur l’ordinateur de l’utilisateur, chacun avec sa licence. Ils sont cités ici parce que Cornelius les utilise.
 
 | Modèle | Auteurs | Licence |
 | --- | --- | --- |
@@ -42,7 +43,7 @@ En dehors du mot d’appel « Cornelius » (voir plus haut), Cornelius ne contie
 | FLUX.2 Klein 4B | Black Forest Labs | Apache 2.0 |
 | Z-Image Turbo | Tongyi-MAI (Alibaba) | Apache 2.0 |
 
-Le modèle « Cornelius » a été entraîné avec [wakeword-generator](https://github.com/lfpoulain/wakeword-generator), un projet séparé qui télécharge des données et des voix de tiers (openwakeword_features en CC BY-NC-SA 4.0, voix Piper Siwis en CC BY 4.0, UPMC en CC BY-SA 4.0, Tom en AGPL v3, moteur Piper en GPL 3.0). Gardez leurs attributions si vous diffusez un modèle entraîné avec eux : voir [docs/reference/licences.md](docs/reference/licences.md).
+Les modèles « Ghostwheel » et l’ancien « Cornelius » ont été entraînés avec [wakeword-generator](https://github.com/lfpoulain/wakeword-generator), un projet séparé qui télécharge des données et des voix de tiers (openwakeword_features en CC BY-NC-SA 4.0, voix Piper Siwis en CC BY 4.0, UPMC en CC BY-SA 4.0, Tom en AGPL v3, moteur Piper en GPL 3.0). Gardez leurs attributions si vous diffusez un modèle entraîné avec eux : voir [docs/reference/licences.md](docs/reference/licences.md).
 
 ## Services en ligne
 

@@ -17,7 +17,7 @@ export function AdvancedAudioBuffer({ state, run }: { state: MirrorState; run: R
           <Badge variant="outline">Bêta</Badge>
         </CardTitle>
         <CardDescription id="advanced-audio-buffer-detail">
-          Permet de dire « Cornelius, allume la lumière » d’une traite, ou de parler dès que la
+          Permet de dire « Ghostwheel, allume la lumière » d’une traite, ou de parler dès que la
           caméra vous voit. Le micro reste prêt sur cet ordinateur ; le son n’est envoyé à la
           conversation qu’une fois celle-ci ouverte. Fonction expérimentale : la réponse peut
           arriver plus tard qu’en parlant une fois la conversation ouverte.

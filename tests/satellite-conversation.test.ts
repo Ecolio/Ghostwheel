@@ -268,7 +268,7 @@ test('concentrateur : son d’avant le mot rejoué, voix vers le satellite, dét
     socket.messages().map((message) => message.type),
     ['welcome', 'settings', 'listen', 'wake', 'session'],
   );
-  // La veille repart d’un flux neuf : l’ancien gardait le « Cornelius » qui vient d’être dit.
+  // La veille repart d’un flux neuf : l’ancien gardait le « Ghostwheel » qui vient d’être dit.
   assert.equal(streams.length, 2);
   assert.deepEqual(ended, [streams[0]]);
   socket.receive(frame(20));

@@ -90,13 +90,13 @@ Ces délais sont fixés dans `server/vision.ts` :
 - **1 seconde** : délai avant l’analyse du début de la conversation, une fois par conversation. C’est le moment où elle part, pas sa durée.
 - **10 secondes** : durée de validité d’une description. Plus ancienne, elle est écartée.
 - **10 secondes** : attente maximale d’une réponse à une question. Au-delà, Cornelius dit que la vision n’a pas pu répondre.
-- **3 secondes** : avec « Cornelius » pour tout le monde, temps laissé à la caméra pour s’allumer et donner sa première image (voir la section suivante).
+- **3 secondes** : avec « Ghostwheel » pour tout le monde, temps laissé à la caméra pour s’allumer et donner sa première image (voir la section suivante).
 
 Une description est aussi écartée si la conversation change entre-temps : autre personne reconnue, regard perdu quand c’est le regard qui ouvre la conversation, fin de la conversation. Une analyse lente ne bloque ni la présence ni la voix.
 
-## Avec « Cornelius » pour tout le monde
+## Avec « Ghostwheel » pour tout le monde
 
-Quand la conversation s’ouvre au mot « Cornelius » pour tout le monde, la caméra reste éteinte en veille (voir [Ouverture et présence](ouverture-et-presence.md)). Si la vision est active, la caméra s’allume seulement pendant la conversation, puis s’éteint à sa fin. Avec **Jamais** et sans reconnaissance de la personne, elle reste éteinte même pendant la conversation.
+Quand la conversation s’ouvre au mot « Ghostwheel » pour tout le monde, la caméra reste éteinte en veille (voir [Ouverture et présence](ouverture-et-presence.md)). Si la vision est active, la caméra s’allume seulement pendant la conversation, puis s’éteint à sa fin. Avec **Jamais** et sans reconnaissance de la personne, elle reste éteinte même pendant la conversation.
 
 La rubrique **Mise en route** demande donc de choisir une caméra dès que la vision est active, même dans ce cas.
 

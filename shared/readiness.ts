@@ -70,7 +70,7 @@ const restart =
   'relancez Cornelius avec scripts/start.sh (scripts/start.ps1 sous Windows), qui démarre aussi ce service';
 
 /**
- * La caméra sert-elle avec cette ouverture ? Elle veille sauf pour « Cornelius » ouvert à tout
+ * La caméra sert-elle avec cette ouverture ? Elle veille sauf pour « Ghostwheel » ouvert à tout
  * le monde ; elle s’allume alors pendant la conversation pour la reconnaissance ou la vision.
  * Sans état de la vision (`undefined`), elle est supposée active, comme par défaut.
  */
@@ -189,7 +189,7 @@ function perceptionItem(connected: boolean, camera: boolean): ReadinessItem {
     title,
     detail: camera
       ? `Arrêté : ${restart}. En cas d’échec, la raison est dans data/run/logs/perception.err.log.`
-      : `Arrêté. Il entend aussi le mot « Cornelius », même caméra éteinte : ${restart}.`,
+      : `Arrêté. Il entend aussi le mot « Ghostwheel », même caméra éteinte : ${restart}.`,
     action: { kind: 'section', section: 'diagnostic' },
   };
 }
@@ -207,7 +207,7 @@ function cameraItem(
       status: 'optional',
       title,
       detail:
-        'Pas nécessaire avec « Cornelius » ouvert à tout le monde, sans reconnaissance ni vision locale.',
+        'Pas nécessaire avec « Ghostwheel » ouvert à tout le monde, sans reconnaissance ni vision locale.',
       action,
     };
   if (!perception)
@@ -282,13 +282,13 @@ function facesItem(
 }
 
 function wakeWordItem(state: MirrorState, needed: boolean, perception: boolean): ReadinessItem {
-  const title = 'Mot d’appel « Cornelius »';
+  const title = 'Mot d’appel « Ghostwheel »';
   if (!needed)
     return {
       id: 'wake-word',
       status: 'optional',
       title,
-      detail: 'Pas nécessaire : la conversation ne s’ouvre pas au mot « Cornelius ».',
+      detail: 'Pas nécessaire : la conversation ne s’ouvre pas au mot « Ghostwheel ».',
     };
   if (state.wakeWord.ready)
     return { id: 'wake-word', status: 'done', title, detail: 'Modèle local prêt.' };
@@ -353,7 +353,7 @@ export function mirrorBlocker(
       id: 'manual-stop',
       // Le mot d’appel lève un arrêt manuel, comme « Démarrer » dans l’administration.
       reason: wakeReady
-        ? 'Conversation arrêtée depuis l’administration : dites « Cornelius » pour reprendre.'
+        ? 'Conversation arrêtée depuis l’administration : dites « Ghostwheel » pour reprendre.'
         : 'Conversation arrêtée depuis l’administration.',
     };
   if (state.browserAudioReady === false)
@@ -365,7 +365,7 @@ export function mirrorBlocker(
       id: 'perception',
       reason: cameraWatchesInStandby(opening)
         ? 'Service caméra arrêté : relancez Cornelius sur cet ordinateur.'
-        : 'Écoute du mot « Cornelius » arrêtée : relancez Cornelius sur cet ordinateur.',
+        : 'Écoute du mot « Ghostwheel » arrêtée : relancez Cornelius sur cet ordinateur.',
     };
   if (state.session.mode !== 4) {
     if (state.presence.health !== 'ok')
@@ -442,7 +442,7 @@ export function adminBlockers(
     if (perceptionDown)
       add(
         'perception',
-        'Service caméra (perception) arrêté : le mot « Cornelius » ne peut pas être entendu.',
+        'Service caméra (perception) arrêté : le mot « Ghostwheel » ne peut pas être entendu.',
         true,
       );
     else if (!state.wakeWord.ready)
@@ -482,6 +482,6 @@ export function adminWaiting(
   const [first] = adminBlockers(state, devices);
   if (first) return first.reason;
   return state.wakeWord.enabled
-    ? 'En attente du mot d’appel « Cornelius ».'
+    ? 'En attente du mot d’appel « Ghostwheel ».'
     : 'Démarrage automatique selon l’ouverture choisie.';
 }

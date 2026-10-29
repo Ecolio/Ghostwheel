@@ -6,6 +6,11 @@ Le fonctionnement actuel est décrit dans la [documentation](docs/README.md). Ce
 
 ## Non publié
 
+### Mot d’appel « Ghostwheel »
+
+- Le modèle chargé sous le nom compatible `models/cornelius.onnx` reconnaît désormais « Ghostwheel ». L’ancien modèle du mot « Cornelius » et sa notice sont conservés dans `models/archive/`.
+- Recette, provenance, essai informel et limites : [note d’entraînement du modèle](docs/developpement/modele-mot-appel-ghostwheel.md).
+
 ### 2026-10-23 : réglages du micro
 
 **Ajouté**

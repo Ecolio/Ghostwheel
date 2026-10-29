@@ -136,7 +136,7 @@ test('une configuration incomplète est dite telle quelle, avec le chemin vers l
   await expect(full.getByRole('button', { name: 'Bloquer OpenAI', exact: true })).toBeVisible();
 });
 
-test('« Cornelius » pour tout le monde : la caméra est dite en veille', async ({ page }) => {
+test('« Ghostwheel » pour tout le monde : la caméra est dite en veille', async ({ page }) => {
   await simulate(page, {
     ...baseline,
     opening: { trigger: 'voice', audience: 'everyone', recognizeVoice: false },

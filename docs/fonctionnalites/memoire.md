@@ -14,7 +14,7 @@ Un souvenir n’est possible que si trois conditions sont réunies pendant que l
 
 À plusieurs, ou si la caméra ne sait pas qui parle, rien n’est retenu. Ce qui a été dit avant que la personne soit reconnue ne lui est jamais attribué après coup. Une personne choisie à la main dans l’administration ne reçoit pas les paroles d’une autre personne présente devant le miroir. La caméra ne distingue pas une voix hors champ : l’attribution reste une estimation prudente, fondée sur qui est devant le miroir.
 
-Avec « Cornelius » ouvert à tout le monde, personne n’est reconnu, sauf si la case **Reconnaître la personne pendant la conversation** est cochée (voir [Ouverture et présence](ouverture-et-presence.md#reconnaître-la-personne-pendant-la-conversation)). Dans ce cas, la personne reconnue retrouve sa mémoire, et ses paroles ne sont retenues que tant qu’elle reste seule et visible par la caméra.
+Avec « Ghostwheel » ouvert à tout le monde, personne n’est reconnu, sauf si la case **Reconnaître la personne pendant la conversation** est cochée (voir [Ouverture et présence](ouverture-et-presence.md#reconnaître-la-personne-pendant-la-conversation)). Dans ce cas, la personne reconnue retrouve sa mémoire, et ses paroles ne sont retenues que tant qu’elle reste seule et visible par la caméra.
 
 ## Comment les souvenirs sont choisis
 

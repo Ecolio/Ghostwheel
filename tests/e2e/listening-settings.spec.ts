@@ -42,10 +42,10 @@ test('la fin de parole se choisit dans une liste, enregistrée au clic', async (
       enabled: false,
       delayMs: 45_000,
     });
-    // « Cornelius » pour tout le monde : « Jamais » est indisponible, et dit pourquoi.
+    // « Ghostwheel » pour tout le monde : « Jamais » est indisponible, et dit pourquoi.
     await page
       .getByRole('group', { name: 'Ce qui l’ouvre' })
-      .getByText('« Cornelius »', { exact: true })
+      .getByText('« Ghostwheel »', { exact: true })
       .click();
     await expect(never).toBeDisabled();
     await expect(group.getByRole('radio', { name: '45 s (personnalisé)' })).toBeChecked();

@@ -56,12 +56,12 @@ Sous le nom « cornelius / », une phrase couleur ambre apparaît seulement quan
 |---|---|
 | « Cornelius n’est pas encore configuré : ouvrez l’administration sur cet ordinateur. » | La clé OpenAI manque. Suivez la rubrique « Mise en route » de l’administration. |
 | « Accès à OpenAI bloqué depuis l’administration. » | Utilisez « Autoriser OpenAI » dans l’administration. |
-| « Conversation arrêtée depuis l’administration. » | Utilisez « Démarrer la session » dans l’administration. Si le mot d’appel est prêt, la phrase se termine par « dites « Cornelius » pour reprendre » : le dire suffit. |
+| « Conversation arrêtée depuis l’administration. » | Utilisez « Démarrer la session » dans l’administration. Si le mot d’appel est prêt, la phrase se termine par « dites « Ghostwheel » pour reprendre » : le dire suffit. |
 | « Service caméra arrêté : relancez Cornelius sur cet ordinateur. » | Le service caméra (perception) ne tourne pas. Voir [Dépannage](depannage.md). |
-| « Écoute du mot « Cornelius » arrêtée : relancez Cornelius sur cet ordinateur. » | Même cause, quand « Cornelius » ouvre la conversation pour tout le monde (caméra éteinte en veille). |
+| « Écoute du mot « Ghostwheel » arrêtée : relancez Cornelius sur cet ordinateur. » | Même cause, quand « Ghostwheel » ouvre la conversation pour tout le monde (caméra éteinte en veille). |
 | « Caméra du miroir indisponible : vérifiez-la dans l’administration. » | Choisissez ou rebranchez la caméra dans « Caméra et reconnaissance ». |
 | « Conversation en pause : plusieurs personnes devant le miroir. » | Le mode vie privée est actif. La conversation reprend quand une seule personne reste. |
-| « Mot d’appel indisponible : son modèle n’est pas prêt sur cet ordinateur. » | Le modèle du mot « Cornelius » manque. Voir [Le mot d’appel](../fonctionnalites/mot-d-appel.md). |
+| « Mot d’appel indisponible : son modèle n’est pas prêt sur cet ordinateur. » | Le modèle du mot « Ghostwheel » manque. Voir [Le mot d’appel](../fonctionnalites/mot-d-appel.md). |
 | « Cornelius est momentanément indisponible : voir l’administration. » | Le détail est dans le panneau Conversation de l’administration. |
 | « Connexion au serveur perdue, nouvelle tentative… » | Le serveur ne répond plus depuis plus de 5 secondes. La page se reconnecte seule dès qu’il revient. |
 
@@ -86,7 +86,7 @@ En haut de l’écran, des informations restent visibles sans rien demander : l�
 - Chaque information porte le nom donné à sa source (par exemple « Météo maison »), puis sa valeur et l’heure du relevé (« Relevé 06/10 08:15 »).
 - Une valeur qui n’a pas pu être rafraîchie reste affichée avec son ancienneté : « Dernière donnée connue, il y a 12 min ». Les autres états possibles sont « Actualisation… », « Aucune donnée disponible » et « Source indisponible ».
 - Les sources du foyer s’affichent dès qu’une personne est devant le miroir. Les sources personnelles s’affichent quand leur propriétaire est reconnu.
-- Rien ne s’affiche quand personne n’est détecté, quand la caméra est éteinte en veille (avec « Cornelius » ouvert à tout le monde, sans reconnaissance), ni en mode vie privée quand plusieurs personnes sont présentes.
+- Rien ne s’affiche quand personne n’est détecté, quand la caméra est éteinte en veille (avec « Ghostwheel » ouvert à tout le monde, sans reconnaissance), ni en mode vie privée quand plusieurs personnes sont présentes.
 
 L’affichage se règle source par source, dans l’administration : Modules → (le module) → Configurer → « Afficher en permanence sur le miroir ». Il est désactivé par défaut. Voir [Les modules](../modules/README.md).
 
@@ -107,7 +107,7 @@ Les prénoms des personnes reconnues sont donc visibles par tous ceux qui voient
 Plutôt que de rester noir, le miroir peut afficher des peintures et vos photos quand personne n’est devant lui, comme un cadre d’art. Il est désactivé par défaut ; il s’active et se remplit dans l’administration, rubrique « Écran de veille ».
 
 - **Quand.** Les images arrivent après un délai sans personne devant le miroir (30 s par défaut), sans conversation ni carte affichée. Elles changent à intervalle régulier (toutes les 5 minutes par défaut), par un long fondu, dans un ordre mélangé.
-- **Ce qui fait revenir l’orbe.** Au choix : « Au moindre mouvement » (par défaut), dès qu’une personne passe, ou « Selon le réveil de Cornelius ». Dans ce second cas, l’écran de veille suit ce qui ouvre la conversation (rubrique « Quand il écoute ») : une personne qui se présente, une personne qui regarde le miroir, ou le mot « Cornelius ». Quelqu’un qui passe sans regarder, ou sans appeler, laisse l’image en place. Si l’ouverture est réservée aux membres du foyer, seule une personne reconnue réveille l’orbe. Une conversation qui s’ouvre le fait toujours revenir.
+- **Ce qui fait revenir l’orbe.** Au choix : « Au moindre mouvement » (par défaut), dès qu’une personne passe, ou « Selon le réveil de Cornelius ». Dans ce second cas, l’écran de veille suit ce qui ouvre la conversation (rubrique « Quand il écoute ») : une personne qui se présente, une personne qui regarde le miroir, ou le mot « Ghostwheel ». Quelqu’un qui passe sans regarder, ou sans appeler, laisse l’image en place. Si l’ouverture est réservée aux membres du foyer, seule une personne reconnue réveille l’orbe. Une conversation qui s’ouvre le fait toujours revenir.
 - **À l’écran.** Rien d’autre ne s’affiche : ni nom, ni informations permanentes. Par défaut, une image aux proportions de l’écran le remplit ; les autres s’y posent comme une toile, sur un fond tiré de leur propre flou. Deux autres affichages existent : l’image entière de bord à bord, ou plein écran. Une image n’est jamais étirée. Le titre et l’auteur d’une peinture s’écrivent discrètement en bas à droite.
 - **Au réveil.** L’orbe réapparaît devant l’image, qui se grise puis s’efface selon la transition choisie, en une seconde par défaut (de 0,5 à 3 s, réglable). Le reste de l’écran revient ensuite. Les mêmes transitions, jouées à l’envers, font revenir les images :
 
@@ -121,7 +121,7 @@ Plutôt que de rester noir, le miroir peut afficher des peintures et vos photos 
   | Fondu | L’image s’éteint doucement vers le noir, sans se griser. |
   | Au hasard | Un des cinq effets animés, différent à chaque fois. |
   | Sans transition | L’image disparaît d’un coup, et revient de même. |
-- **Avec « Cornelius » ouvert à tout le monde.** La caméra reste éteinte en veille : les images restent jusqu’au mot d’appel.
+- **Avec « Ghostwheel » ouvert à tout le monde.** La caméra reste éteinte en veille : les images restent jusqu’au mot d’appel.
 
 Si l’ordinateur demande de réduire les animations, l’image apparaît et disparaît par un simple fondu.
 
@@ -144,13 +144,13 @@ Bon à savoir :
 
 ## Parler à Cornelius
 
-Ce qui ouvre la conversation se règle dans l’administration, rubrique « Quand il écoute » : la présence d’une personne, son regard vers le miroir (réglage par défaut), ou le mot « Cornelius ». Voir [Ouverture et présence](../fonctionnalites/ouverture-et-presence.md) et [Le mot d’appel](../fonctionnalites/mot-d-appel.md).
+Ce qui ouvre la conversation se règle dans l’administration, rubrique « Quand il écoute » : la présence d’une personne, son regard vers le miroir (réglage par défaut), ou le mot « Ghostwheel ». Voir [Ouverture et présence](../fonctionnalites/ouverture-et-presence.md) et [Le mot d’appel](../fonctionnalites/mot-d-appel.md).
 
 - **À l’ouverture.** Le miroir peut jouer un son court. Si Cornelius vous reconnaît, il vous accueille par défaut d’un « Bonjour » suivi de votre prénom.
 - **Parler.** Parlez normalement, sans mot magique. Cornelius répond à voix haute et affiche une carte quand c’est utile. Il est réglé pour ignorer la télévision, la musique ou une conversation voisine, et ne répondre que si on s’adresse à lui.
 - **Interrompre.** Parlez pendant qu’il répond : il s’arrête et vous écoute.
-- **Terminer.** La conversation se ferme quand vous partez, quand vous détournez le regard (si c’est le regard qui l’ouvre, après 8 secondes par défaut), après un silence si la « Fin de parole » est réglée, ou depuis l’administration avec « Arrêter la session ». Avec « Cornelius » ouvert à tout le monde, seuls le silence et l’administration la terminent, car la présence ne compte pas dans ce mode.
-- **Reprendre.** Regardez à nouveau le miroir, éloignez-vous puis revenez, ou dites « Cornelius » si c’est lui qui ouvre la conversation.
+- **Terminer.** La conversation se ferme quand vous partez, quand vous détournez le regard (si c’est le regard qui l’ouvre, après 8 secondes par défaut), après un silence si la « Fin de parole » est réglée, ou depuis l’administration avec « Arrêter la session ». Avec « Ghostwheel » ouvert à tout le monde, seuls le silence et l’administration la terminent, car la présence ne compte pas dans ce mode.
+- **Reprendre.** Regardez à nouveau le miroir, éloignez-vous puis revenez, ou dites « Ghostwheel » si c’est lui qui ouvre la conversation.
 
 ## Plusieurs personnes et vie privée
 

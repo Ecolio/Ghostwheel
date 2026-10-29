@@ -8,7 +8,7 @@
  *     [--url ws://127.0.0.1:3000/satellite] [--fingerprint AA:BB:…] [--timeout 60]
  *     [--out data/satellite-sim.wav] [--wake-only]
  *
- * Avec --wav, la sortie vaut 0 si « Cornelius » est entendu (et, sans --wake-only, si la
+ * Avec --wav, la sortie vaut 0 si « Ghostwheel » est entendu (et, sans --wake-only, si la
  * conversation s’ouvre puis se ferme), 1 sinon. --wake-only s’arrête après la détection,
  * sans conversation ni appel à OpenAI.
  */
@@ -195,7 +195,7 @@ socket.on('message', (data, binary) => {
     if (listening && !wasListening) stream();
   } else if (message.type === 'wake') {
     heard = true;
-    log('« Cornelius » entendu (score ' + message.score + ').');
+    log('« Ghostwheel » entendu (score ' + message.score + ').');
     if (speech && wakeOnly) setTimeout(() => socket.close(1000), 1000);
   } else if (message.type === 'session') {
     log('Conversation : ' + message.state + '.');
@@ -217,6 +217,6 @@ socket.on('close', (code, reason) => {
 });
 socket.on('error', (error) => log('Erreur : ' + error.message));
 setTimeout(() => {
-  log(speech ? 'Délai dépassé sans « Cornelius ».' : 'Fin de la simulation.');
+  log(speech ? 'Délai dépassé sans « Ghostwheel ».' : 'Fin de la simulation.');
   socket.close(1000);
 }, timeoutMs).unref();

@@ -797,7 +797,7 @@ export class LiveTransport implements SessionTransport {
       return;
     const profileName = this.controller.snapshot().state.activeProfile?.name ?? null;
     if (!profileName) return;
-    // Satellite rattaché : la personne vient de dire « Cornelius » et sa demande, sans salut.
+    // Satellite rattaché : la personne vient de dire « Ghostwheel » et sa demande, sans salut.
     if (active.satelliteId) {
       if (
         this.append(
@@ -811,7 +811,7 @@ export class LiveTransport implements SessionTransport {
         active.greeted = true;
       return;
     }
-    // Mode voix : la personne vient de dire « Cornelius » et sa demande ; un « Bonjour » la
+    // Mode voix : la personne vient de dire « Ghostwheel » et sa demande ; un « Bonjour » la
     // couperait. Le prénom reconnu par la caméra reste un contexte, sans salutation.
     if (this.controller.sessionState().mode === 4) {
       if (

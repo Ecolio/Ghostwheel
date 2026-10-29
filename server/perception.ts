@@ -226,7 +226,7 @@ export class PerceptionBridge {
     this.audioInteraction = null;
     this.wakeReady = false;
     this.controller.setSetup({ perception: true });
-    this.controller.setWakeWordAvailability(false, 'Chargement du modèle Cornelius.');
+    this.controller.setWakeWordAvailability(false, 'Chargement du modèle du mot d’appel.');
     this.lastVadAt = 0;
     // Le service précédent est remplacé : son enregistrement en cours ne se terminera pas.
     this.endEnrollment('rejected', ENROLLMENT_MESSAGES.perception);
