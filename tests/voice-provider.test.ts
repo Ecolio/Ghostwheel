@@ -9,6 +9,7 @@ import {
   MISTRAL_MAX_SESSION_MS,
   createMistralVoiceAdapter,
   MISTRAL_TTS_MODEL,
+  MISTRAL_TTS_VOICE,
   shouldForwardVoiceAudio,
 } from '../server/voice/mistral.js';
 import type { VoiceConfiguration, VoiceConnection, VoiceEvent } from '../server/voice/provider.js';
@@ -19,6 +20,7 @@ const tick = () => new Promise((resolve) => setImmediate(resolve));
 test('Voxtral 3 models are pinned instead of relying on incompatible API defaults', () => {
   assert.equal(MISTRAL_STT_MODEL, 'voxtral-mini-transcribe-realtime-3');
   assert.equal(MISTRAL_TTS_MODEL, 'voxtral-mini-tts-3');
+  assert.equal(MISTRAL_TTS_VOICE, 'voice_3137'); // Manon
   assert.equal(MISTRAL_MAX_SESSION_MS, 15 * 60_000);
 });
 

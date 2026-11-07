@@ -71,6 +71,7 @@ export const MISTRAL_MAX_SESSION_MS = 15 * 60_000;
 
 export const MISTRAL_STT_MODEL = 'voxtral-mini-transcribe-realtime-3';
 export const MISTRAL_TTS_MODEL = 'voxtral-mini-tts-3';
+export const MISTRAL_TTS_VOICE = 'voice_3137'; // Manon (French, Voxtral 3)
 
 export function shouldForwardVoiceAudio(state: string): boolean {
   return state === 'speaking';
@@ -149,7 +150,7 @@ export function createMistralVoiceAdapter(
       const session = await client.audio.sessions.init({
         llm: { model: MISTRAL_LLM_MODEL },
         stt: { model: MISTRAL_STT_MODEL, language: 'fr' },
-        tts: { model: MISTRAL_TTS_MODEL, voiceId: 'fr_marie_neutral' },
+        tts: { model: MISTRAL_TTS_MODEL, voiceId: MISTRAL_TTS_VOICE },
         turn: { allowInterruptions: true },
         instructions: configuration.instructions,
         welcomeMessage,
