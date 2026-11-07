@@ -35,7 +35,7 @@ Cornelius ne compte pas les dépenses : fixez vos limites dans votre compte Mist
 
 - **L’écho.** Le son de Mistral est joué hors de l’annulation d’écho du navigateur. Avec un haut-parleur, Cornelius peut entendre sa propre voix et s’interrompre seul. Un casque, ou un micro de conférence avec annulation d’écho intégrée, évite ce problème.
 - **L’interruption.** Elle attend la transcription de ce que vous dites, donc arrive plus tard qu’avec GPT-Live.
-- **Micro gardé prêt.** Dire « Cornelius, allume la lumière » d’une traite ne fonctionne qu’avec GPT-Live.
+- **Micro gardé prêt.** Dire « Ghostwheel, allume la lumière » d’une traite ne fonctionne qu’avec GPT-Live.
 - **Accueil.** Le salut d’ouverture suit le réglage (phrase imposée, phrase libre, ou silence). Une personne reconnue après l’ouverture est appelée par son prénom au tour suivant, sans nouveau salut.
 - **Interventions spontanées.** Une information ajoutée pendant la conversation, comme la fin d’une tâche Hermes, est prise en compte au tour suivant. Elle ne déclenche pas forcément une prise de parole.
 - **Certificats.** Sous Linux, le paquet `ca-certificates` doit être installé : la connexion audio à Mistral en a besoin.
@@ -45,7 +45,7 @@ Cornelius ne compte pas les dépenses : fixez vos limites dans votre compte Mist
 Les tests automatiques simulent Mistral : ils ne prouvent ni l’accès de votre compte, ni le comportement de votre micro. Après avoir ajouté la clé :
 
 1. Choisissez Mistral, ouvrez le miroir et activez la voix.
-2. Dites « Cornelius, quelle heure est-il ? » : la réponse doit être parlée, avec la carte du module.
+2. Ouvrez la conversation avec « Ghostwheel » si le mot d’appel est activé, puis demandez l’heure : la réponse doit être parlée, avec la carte du module.
 3. Posez une autre question, puis coupez la réponse à voix haute.
 4. Essayez une lecture Home Assistant et une demande Hermes autorisées.
 5. Fermez la conversation, vérifiez le retour en veille, puis revenez à OpenAI.

@@ -31,7 +31,7 @@
 
 Cornelius transforme un écran, tel quel ou glissé derrière un miroir sans tain, en assistant pour toute la famille. Il reconnaît qui se présente devant lui, ouvre la conversation quand on le regarde ou qu’on l’appelle par son nom, et répond à la voix avec des cartes qui s’affichent sur le miroir : la météo, le prochain bus, la lumière du salon, un souvenir, une image…
 
-Par défaut, la caméra, les visages et l’écoute du mot d’appel restent sur le serveur Cornelius. En option, [la caméra du navigateur](docs/fonctionnalites/camera-navigateur.md) envoie ses images au serveur sur le réseau local chiffré, pour la même analyse locale. Seule la conversation passe par OpenAI, et seulement quand elle est ouverte.
+Par défaut, la caméra, les visages et l’écoute du mot d’appel restent sur le serveur Cornelius. En option, [la caméra du navigateur](docs/fonctionnalites/camera-navigateur.md) envoie ses images au serveur sur le réseau local chiffré, pour la même analyse locale. Seule la conversation passe par le fournisseur vocal choisi (OpenAI par défaut, ou Mistral), et seulement quand elle est ouverte.
 
 ## ✨ Ce que fait Cornelius
 

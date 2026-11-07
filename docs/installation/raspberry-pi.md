@@ -9,7 +9,7 @@ Un Raspberry Pi fait tourner la conversation, la reconnaissance des visages, le 
 | | Sur un PC | Sur un Raspberry Pi |
 |---|---|---|
 | Conversation, mémoire, modules | oui | oui |
-| Mot d’appel « Cornelius » | oui | oui |
+| Mot d’appel « Ghostwheel » | oui | oui |
 | Reconnaissance des visages | image entière | visages cherchés sur une image réduite à 640 pixels de large, puis reconnus sur l’image entière |
 | [Vision locale](../fonctionnalites/vision-locale.md) (description de la scène) | au choix | retirée : le module **Vision** n’apparaît pas dans l’administration |
 | [Génération d’images](../fonctionnalites/generation-d-images.md) | sur ce PC ou avec OpenAI | avec OpenAI seulement |
@@ -29,7 +29,7 @@ D’autres générateurs d’images en ligne peuvent s’ajouter par un [module]
 - Une **webcam USB**. Les modules caméra officiels (connecteur CSI, pilotés par libcamera) ne sont pas lus par la perception.
 - Un micro USB, ou mieux un haut-parleur de conférence USB qui supprime l’écho : le Pi n’a pas de micro.
 - Un écran Full HD de préférence : en 4K, l’orbe animée demande beaucoup au processeur graphique du Pi.
-- Une clé OpenAI d’un compte payant, comme sur un PC.
+- Une clé du fournisseur vocal choisi (OpenAI ou Mistral), comme sur un PC.
 
 ## Installer
 
@@ -156,7 +156,7 @@ Redémarrez Cornelius après un changement. Voir [Configuration](../reference/co
 Si le Pi peine (orbe saccadée, reconnaissance lente) :
 
 - **Caméra et reconnaissance** : choisissez 640 × 480 à 15 images par seconde.
-- **Quand il écoute** : ouvrez la conversation au mot « Cornelius » pour tout le monde. La caméra reste alors éteinte en veille.
+- **Quand il écoute** : ouvrez la conversation au mot « Ghostwheel » pour tout le monde. La caméra reste alors éteinte en veille.
 - Ajoutez `--force-prefers-reduced-motion` à la commande qui lance Chromium : l’orbe ne se redessine plus que quatre fois par seconde.
 
 Pour un Pi 4 très sollicité, une autre solution est de faire tourner Cornelius sur un autre ordinateur de la maison et de garder le Pi comme écran, avec la [caméra du navigateur](../fonctionnalites/camera-navigateur.md) : les images partent alors vers le serveur, qui fait l’analyse.

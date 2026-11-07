@@ -76,7 +76,7 @@ Cette page est l’index de la documentation. Elle indique par où commencer, pu
 ## Référence
 
 - [Configuration](reference/configuration.md) : variables du fichier `.env`, ports et dossiers.
-- [Confidentialité](reference/confidentialite.md) : ce qui reste local, ce qui part chez OpenAI, ce qui est enregistré.
+- [Confidentialité](reference/confidentialite.md) : ce qui reste local, ce qui part chez le fournisseur vocal ou ailleurs, ce qui est enregistré.
 - [Licences](reference/licences.md) : code, ressources et modèles, et vérifications avant publication.
 - [Glossaire](reference/glossaire.md) : les mots de Cornelius, de « carte » à « vie privée ».
 - [wakeword-generator](https://github.com/lfpoulain/wakeword-generator) : le projet séparé qui a créé le modèle du mot « Ghostwheel ».
