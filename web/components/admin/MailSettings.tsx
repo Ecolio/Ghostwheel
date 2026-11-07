@@ -349,7 +349,7 @@ export function MailSettings({
           </Field>
           <Field
             id="mail-username"
-            label="Identifiant"
+            label="Identifiant SMTP"
             help="Vide : l’adresse d’envoi, comme chez la plupart des fournisseurs."
             className="sm:col-span-3"
           >

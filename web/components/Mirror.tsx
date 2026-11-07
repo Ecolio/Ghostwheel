@@ -1,4 +1,4 @@
-import { memo, useEffect, useState, useSyncExternalStore, type CSSProperties } from 'react';
+import { memo, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { mirrorBlocker, type MirrorBlockerId } from '../../shared/readiness';
 import type { DisplayCard, SessionPhase, VoiceActivity } from '../../shared/types';
@@ -16,6 +16,12 @@ import {
   restoreAudioPermission,
 } from '../audio/preparation';
 import { useMeasures } from '../audio/useMeasures';
+import {
+  rememberPeople,
+  steadyPeople,
+  type PeopleMemory,
+  type PresencePerson,
+} from './steady-people';
 
 export const phaseLabels: Record<SessionPhase, string> = {
   idle: 'En veille',
@@ -67,6 +73,79 @@ function useHeldEngagement(engaged: readonly string[]): Set<string> {
     return () => clearTimeout(timer);
   }, [key]);
   return held;
+}
+
+const NO_PEOPLE: PresencePerson[] = [];
+
+/**
+ * Personnes affichées en bas du miroir, sans clignotement : voir steadyPeople. La liste se
+ * réévalue à chaque observation et au prochain changement prévu.
+ */
+function useSteadyPeople(people: readonly PresencePerson[]): PresencePerson[] {
+  const key = JSON.stringify(people);
+  const memory = useRef<PeopleMemory>({ known: new Map(), unknown: null });
+  const [shown, setShown] = useState<PresencePerson[]>(() =>
+    people.filter((person) => person.profileId),
+  );
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    memory.current = rememberPeople(memory.current, JSON.parse(key), Date.now());
+    const refresh = () => {
+      const { people, nextChangeAt } = steadyPeople(memory.current, Date.now());
+      setShown(people);
+      if (nextChangeAt !== null)
+        timer = setTimeout(refresh, Math.max(0, nextChangeAt - Date.now()) + 20);
+    };
+    refresh();
+    return () => clearTimeout(timer);
+  }, [key]);
+  return shown;
+}
+
+/** Durée du fondu de sortie d’une pastille : celle de la transition d’opacité de .mirror-person. */
+const PERSON_FADE_MS = 600;
+
+type ShownPerson = { key: string; person: PresencePerson; leaving: boolean };
+type LeavingPerson = ShownPerson & { leftAt: number };
+
+/**
+ * Pastilles des personnes, à leur place : une pastille qui part reste le temps de son fondu,
+ * marquée `leaving`, puis quitte le DOM ; l’apparition est un fondu CSS.
+ */
+function useFadingPeople(people: readonly PresencePerson[]): ShownPerson[] {
+  const current = people.map((person, index) => ({
+    key: person.profileId ?? 'unknown-' + index,
+    person,
+    leaving: false,
+  }));
+  const [leaving, setLeaving] = useState<LeavingPerson[]>([]);
+  const previous = useRef<ShownPerson[]>(current);
+  const keys = current.map((entry) => entry.key).join('\n');
+  useEffect(() => {
+    const present = new Set(keys ? keys.split('\n') : []);
+    const gone = previous.current.filter((entry) => !present.has(entry.key));
+    previous.current = current;
+    if (gone.length === 0) return;
+    const leftAt = Date.now();
+    setLeaving((list) => [
+      ...list.filter((entry) => !present.has(entry.key) && !gone.some((g) => g.key === entry.key)),
+      ...gone.map((entry) => ({ ...entry, leaving: true, leftAt })),
+    ]);
+    // Seules les clés décident d’un départ ; `current` se déduit des mêmes personnes.
+  }, [keys]);
+  useEffect(() => {
+    if (leaving.length === 0) return;
+    const first = Math.min(...leaving.map((entry) => entry.leftAt));
+    const timer = setTimeout(
+      () =>
+        setLeaving((list) => list.filter((entry) => Date.now() - entry.leftAt < PERSON_FADE_MS)),
+      Math.max(0, first + PERSON_FADE_MS - Date.now()),
+    );
+    return () => clearTimeout(timer);
+  }, [leaving]);
+  // Une personne revenue pendant son fondu reprend sa pastille.
+  const departing = leaving.filter((entry) => !current.some((item) => item.key === entry.key));
+  return [...current, ...departing];
 }
 
 /** Motifs dont le remède est dans l’administration : son adresse est donnée en texte. */
@@ -155,6 +234,33 @@ function useScreensaverSwipe(listening: boolean) {
   return dismissed;
 }
 
+/** Délai sans mouvement de souris avant que le pointeur ne disparaisse du miroir. */
+const CURSOR_IDLE_MS = 3_000;
+
+/**
+ * Vrai tant que la souris ne bouge pas : un miroir en plein écran n’a pas de pointeur à montrer,
+ * mais sous Wayland (cage, labwc) le navigateur en dessine un, qu’aucun outil du système ne
+ * cache. Le doigt ne le fait pas revenir.
+ */
+function useCursorIdle() {
+  const [idle, setIdle] = useState(true);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const move = (event: PointerEvent) => {
+      if (event.pointerType !== 'mouse') return;
+      setIdle(false);
+      clearTimeout(timer);
+      timer = setTimeout(() => setIdle(true), CURSOR_IDLE_MS);
+    };
+    addEventListener('pointermove', move);
+    return () => {
+      removeEventListener('pointermove', move);
+      clearTimeout(timer);
+    };
+  }, []);
+  return idle;
+}
+
 export function Mirror({ connection }: { connection: MirrorConnection }) {
   const { state, fresh, now, interrupted, reconnect } = connection;
   const preparation = useSyncExternalStore(subscribeAudioPreparation, audioPreparation);
@@ -198,11 +304,11 @@ export function Mirror({ connection }: { connection: MirrorConnection }) {
           )
           .slice(0, 3)
       : [];
-  const peopleVisible = !!(
-    state &&
-    state.presence.health === 'ok' &&
-    state.presence.people.length > 0
+  const people = useSteadyPeople(
+    state?.presence.health === 'ok' ? state.presence.people : NO_PEOPLE,
   );
+  const shownPeople = useFadingPeople(people);
+  const peopleVisible = shownPeople.length > 0;
   const imageActivity = fresh ? (state?.imageGeneration ?? null) : null;
   const connectionLost = useConnectionLost(fresh, interrupted);
   // Une seule ligne d’état, en langage courant ; le bouton « Activer la voix » dit déjà le
@@ -258,6 +364,7 @@ export function Mirror({ connection }: { connection: MirrorConnection }) {
   );
   const mainCard = cards[0];
   const secondaryCards = cards.slice(1);
+  const cursorIdle = useCursorIdle();
 
   return (
     <main
@@ -266,6 +373,7 @@ export function Mirror({ connection }: { connection: MirrorConnection }) {
       // Taille de l’orbe choisie dans l’administration (100 % : taille d’origine).
       style={{ '--orb-user-scale': (state?.orbScale ?? 100) / 100 } as CSSProperties}
       data-screensaver={screensaverScene}
+      data-cursor={cursorIdle ? 'hidden' : undefined}
     >
       <div className="mirror-top">
         <header className="mirror-header">
@@ -405,7 +513,7 @@ export function Mirror({ connection }: { connection: MirrorConnection }) {
               )}
               {peopleVisible && (
                 <aside className="mirror-presence" aria-label="Personnes détectées">
-                  {state.presence.people.map((person) => {
+                  {shownPeople.map(({ key, person, leaving }) => {
                     const profile = person.profileId
                       ? (state.profiles.find((candidate) => candidate.id === person.profileId) ??
                         null)
@@ -414,11 +522,12 @@ export function Mirror({ connection }: { connection: MirrorConnection }) {
                       'mirror-person',
                       engagedPeople.has(person.trackId) ? 'is-engaged' : '',
                       profile && profile.id === state.activeProfile?.id ? 'is-active' : '',
+                      leaving ? 'is-leaving' : '',
                     ]
                       .filter(Boolean)
                       .join(' ');
                     return (
-                      <span key={person.trackId} className={classes}>
+                      <span key={key} className={classes} aria-hidden={leaving || undefined}>
                         <span className="mirror-person-dot" aria-hidden="true" />
                         {profile ? profile.name : 'Personne inconnue'}
                         {engagedPeople.has(person.trackId) && (

@@ -31,7 +31,7 @@ L’orbe montre l’état de Cornelius d’un coup d’œil. Sa taille se règle
 | Ce que fait l’orbe | Ce que cela veut dire |
 |---|---|
 | Petit point | Personne n’est détecté devant le miroir, ou la caméra est éteinte en veille. |
-| Se déploie, gris, respire doucement | Quelqu’un est devant le miroir. Cornelius attend ce qui ouvre la conversation. Gris : aucune conversation n’est ouverte avec OpenAI, rien ne lui est envoyé (reconnaissance et mot d’appel restent sur l’ordinateur). |
+| Se déploie, gris, respire doucement | Quelqu’un est devant le miroir. Cornelius attend ce qui ouvre la conversation. Gris : aucune conversation n’est ouverte avec le fournisseur vocal, rien ne lui est envoyé (reconnaissance et mot d’appel restent sur l’ordinateur). |
 | Fait un petit bond | Cornelius vient de reconnaître une personne du foyer, seule devant lui. |
 | Ambre doré, pulse | La conversation s’ouvre. |
 | Bleu | La conversation est ouverte, Cornelius attend que vous parliez. |
@@ -55,7 +55,7 @@ Sous le nom « cornelius / », une phrase couleur ambre apparaît seulement quan
 | Phrase affichée | Que faire |
 |---|---|
 | « Cornelius n’est pas encore configuré : ouvrez l’administration sur cet ordinateur. » | La clé OpenAI manque. Suivez la rubrique « Mise en route » de l’administration. |
-| « Accès à OpenAI bloqué depuis l’administration. » | Utilisez « Autoriser OpenAI » dans l’administration. |
+| « Accès aux services IA bloqué depuis l’administration. » | Utilisez « Autoriser les services IA » dans l’administration. |
 | « Conversation arrêtée depuis l’administration. » | Utilisez « Démarrer la session » dans l’administration. Si le mot d’appel est prêt, la phrase se termine par « dites « Ghostwheel » pour reprendre » : le dire suffit. |
 | « Service caméra arrêté : relancez Cornelius sur cet ordinateur. » | Le service caméra (perception) ne tourne pas. Voir [Dépannage](depannage.md). |
 | « Écoute du mot « Ghostwheel » arrêtée : relancez Cornelius sur cet ordinateur. » | Même cause, quand « Ghostwheel » ouvre la conversation pour tout le monde (caméra éteinte en veille). |
@@ -94,7 +94,8 @@ L’affichage se règle source par source, dans l’administration : Modules →
 
 En bas de l’écran, une pastille par personne détectée :
 
-- le prénom de la personne si Cornelius la reconnaît, sinon « Personne inconnue » ;
+- le prénom de la personne si Cornelius la reconnaît, sinon « Personne inconnue », seulement après 1,5 s de présence : un visage vu un instant n’affiche rien ;
+- une pastille reste 3 s après la disparition de la personne, pour ne pas clignoter quand la détection hésite ;
 - la pastille devient verte quand la personne regarde le miroir, et repasse au gris en fondu, seulement si le regard se perd plus d’une seconde ;
 - la personne avec qui Cornelius converse a une pastille plus lumineuse.
 
@@ -139,7 +140,7 @@ Bon à savoir :
 
 - **Sans clavier ni souris sur le miroir.** Ouvrez l’administration dans le navigateur du miroir et utilisez « Activer et ouvrir le miroir », dans la rubrique « Mise en route » ou dans le panneau de conversation de « Quand il écoute » : le clic ouvre le miroir dans sa propre fenêtre et réactive le démarrage, en un seul geste. Si le navigateur demande encore un clic pour le son, touchez « Activer la voix » sur le miroir (ou autorisez une fois le son et le micro pour ce site, voir [Dépannage](depannage.md)).
 - **Réactivation automatique.** Si le navigateur garde l’autorisation du micro et laisse jouer le son pour ce site, le miroir réactive la voix seul après un rechargement de la page. Il réessaie toutes les 5 secondes.
-- **OpenAI bloqué.** Le bouton n’apparaît pas tant que l’accès à OpenAI est bloqué depuis l’administration.
+- **Services IA bloqués.** Le bouton n’apparaît pas tant que l’accès aux services IA est bloqué depuis l’administration.
 - **Micro et haut-parleurs.** Le choix se fait dans l’administration, rubrique « Micro et haut-parleurs ». Il est propre au navigateur : faites-le dans le navigateur qui affiche le miroir, à la même adresse.
 
 ## Parler à Cornelius
@@ -168,7 +169,7 @@ Avec le **mode vie privée** (rubrique « Quand il écoute », désactivé par d
 - aucune conversation ne s’ouvre tant qu’il y a plusieurs personnes, et la ligne d’état affiche « Conversation en pause : plusieurs personnes devant le miroir. » ;
 - les informations permanentes sont masquées.
 
-Les images de la caméra et les visages restent sur l’ordinateur. Le son du micro et le texte de la conversation partent chez OpenAI seulement pendant une conversation. Le détail est dans [Confidentialité](../reference/confidentialite.md).
+Les images de la caméra et les visages restent sur l’ordinateur. Le son du micro et le texte de la conversation partent chez le fournisseur vocal choisi seulement pendant une conversation. Le détail est dans [Confidentialité](../reference/confidentialite.md).
 
 ## Miroir ouvert dans un autre onglet
 

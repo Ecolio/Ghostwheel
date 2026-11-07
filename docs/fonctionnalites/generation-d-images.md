@@ -11,6 +11,8 @@ En haut de la carte, **Où créer les images** propose deux moteurs :
 
 Dans les deux cas, la conversation vocale passe par OpenAI comme d’habitude : c’est elle qui comprend la demande et rédige la description de l’image.
 
+Sur un Raspberry Pi, seul **Avec OpenAI** est proposé : le choix du moteur n’apparaît pas. Voir [Installer sur Raspberry Pi](../installation/raspberry-pi.md).
+
 Toutes les images sont carrées, au format WebP : 512 × 512 pixels sur ce PC, 1024 × 1024 avec OpenAI. La fonction est commune au foyer : le moteur, le modèle et les réglages valent pour tous les profils.
 
 La carte **Génération d’image** se trouve dans la rubrique **Modules**, groupe « Capacités de Cornelius ».

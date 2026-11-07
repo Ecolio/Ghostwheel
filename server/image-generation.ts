@@ -129,6 +129,8 @@ export class ImageGeneration {
   private device: string | null = null;
   private detail: string | null = null;
   private lastDurationMs: number | null = null;
+  /** Petite machine : seul OpenAI crée les images, le choix enregistré est gardé tel quel. */
+  private localUnavailable: string | null = null;
   readonly outputDirectory: string;
 
   constructor(
@@ -214,6 +216,7 @@ export class ImageGeneration {
       openaiModel: this.openaiModel,
       openaiQuality: this.openaiQuality,
       openaiUnavailable: this.openaiUnavailable(),
+      localUnavailable: this.localUnavailable,
       preload: this.preload,
       storedImages: this.stored.filter((image) => !image.automatic).length,
       illustrateCards: this.illustrateCards,
@@ -292,8 +295,21 @@ export class ImageGeneration {
     this.openai = source;
   }
 
+  /** Retire le générateur local sur cette machine (Raspberry Pi) : OpenAI seulement. */
+  restrictToOpenAI(reason: string) {
+    this.localUnavailable = reason;
+    // Une base venue d’un PC où les images restaient locales : rien ne part chez OpenAI, ni
+    // facturé, avant que l’administration réactive la création. La base garde ses réglages.
+    if (this.provider === 'local') {
+      this.enabled = false;
+      this.illustrateCards = false;
+    }
+    this.provider = 'openai';
+  }
+
   setProvider(provider: ImageGenerationProvider) {
     if (!IMAGE_GENERATION_PROVIDERS.includes(provider)) throw new Error('Moteur d’image inconnu.');
+    if (provider === 'local' && this.localUnavailable) throw new Error(this.localUnavailable);
     if (this.pending) throw new Error('Attendez la fin de la génération en cours.');
     this.db.prepare('UPDATE image_generation_provider SET provider = ? WHERE id = 1').run(provider);
     this.provider = provider;

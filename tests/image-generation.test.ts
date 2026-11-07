@@ -286,3 +286,36 @@ test('le préchargement demande au worker de charger le modèle et persiste', as
   assert.equal(reloaded.snapshot().preload, true);
   reloaded.dispose();
 });
+
+test('sur Raspberry Pi, des images restées locales ne partent pas seules chez OpenAI', (t) => {
+  const db = openDatabase(':memory:');
+  const directory = mkdtempSync(join(tmpdir(), 'cornelius-images-'));
+  t.after(() => {
+    db.close();
+    rmSync(directory, { recursive: true, force: true });
+  });
+  const open = () => new ImageGeneration(db, true, () => {}, undefined, Date.now, directory);
+  const pc = open();
+  pc.setEnabled(true);
+  pc.setIllustrateCards(true);
+  pc.dispose();
+
+  const pi = open();
+  pi.restrictToOpenAI('Non proposé sur Raspberry Pi.');
+  assert.equal(pi.snapshot().provider, 'openai');
+  assert.equal(pi.snapshot().enabled, false);
+  assert.equal(pi.snapshot().illustrateCards, false);
+  assert.equal(pi.snapshot().localUnavailable, 'Non proposé sur Raspberry Pi.');
+  assert.deepEqual(pi.tools(), []);
+  assert.throws(() => pi.setProvider('local'), /Raspberry Pi/u);
+  pi.setEnabled(true);
+  assert.equal(pi.tools().length, 2);
+  pi.setProvider('openai');
+  pi.dispose();
+
+  // OpenAI déjà choisi sur le PC : le choix est gardé tel quel.
+  const chosen = open();
+  chosen.restrictToOpenAI('Non proposé sur Raspberry Pi.');
+  assert.equal(chosen.snapshot().enabled, true);
+  chosen.dispose();
+});

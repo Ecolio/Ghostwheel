@@ -16,6 +16,15 @@ CONTRADICTION = 0.20
 WINDOW = 1.2
 VOTES = 4
 SPREAD = 0.3
+# Machine lente (sans carte graphique, 450 ms par image) : 1,2 s ne contient pas quatre
+# analyses. La fenêtre s'allonge alors au rythme mesuré, assez pour VOTES images et une
+# de marge. Un intervalle isolé est plafonné : une pause ne dilate pas la fenêtre.
+INTERVAL_CAP = 1.0
+
+
+def vote_window(interval):
+    """Fenêtre de confirmation pour un intervalle moyen entre analyses (None : inconnu)."""
+    return WINDOW if interval is None else max(WINDOW, (VOTES + 0.5) * interval)
 
 
 def required_margin(similarity):
@@ -28,6 +37,8 @@ class Identity:
         self.profile_id = None
         self.last_supported = 0
         self.votes = deque(maxlen=16)
+        self.last_update = None
+        self.interval = None
 
     def clear(self):
         self.profile_id = None
@@ -39,6 +50,12 @@ class Identity:
         margin_for(a, b) renvoie l’écart exigé entre deux profils (ressemblance) ;
         hold est la durée en secondes d’une identité confirmée sans nouvelle preuve.
         """
+        # Rythme des images précédentes : un écart isolé ne retient pas un vieux vote.
+        window = vote_window(self.interval)
+        if self.last_update is not None:
+            step = min(max(now - self.last_update, 0.0), INTERVAL_CAP)
+            self.interval = step if self.interval is None else self.interval * 0.7 + step * 0.3
+        self.last_update = now
         ranked = sorted(scores, reverse=True)
         score, candidate = ranked[0] if ranked else (-1, None)
         runner = ranked[1][1] if len(ranked) > 1 else None
@@ -66,7 +83,7 @@ class Identity:
         if not usable:
             return self.profile_id
         self.votes.append((now, candidate if confident else None))
-        while self.votes and now - self.votes[0][0] > WINDOW:
+        while self.votes and now - self.votes[0][0] > window:
             self.votes.popleft()
         decided = [key for _, key in self.votes if key is not None]
         matching = [stamp for stamp, key in self.votes if key == candidate]

@@ -12,7 +12,7 @@ Cette page est l’index de la documentation. Elle indique par où commencer, pu
 
 | Je veux… | Page |
 |---|---|
-| installer Cornelius | [Linux](installation/linux.md), [Windows](installation/windows.md), puis [carte graphique](installation/gpu.md) si besoin |
+| installer Cornelius | [Linux](installation/linux.md), [Raspberry Pi](installation/raspberry-pi.md), [Windows](installation/windows.md), [Home Assistant](installation/home-assistant.md), puis [carte graphique](installation/gpu.md) si besoin |
 | réussir le premier lancement | [Premier démarrage](installation/premier-demarrage.md) |
 | choisir ce qui ouvre la conversation | [Ouverture et présence](fonctionnalites/ouverture-et-presence.md), [Mot d’appel](fonctionnalites/mot-d-appel.md) |
 | parler à Cornelius depuis une autre pièce | [Les satellites audio](fonctionnalites/satellites.md) |
@@ -20,13 +20,16 @@ Cette page est l’index de la documentation. Elle indique par où commencer, pu
 | recevoir une image du miroir sur mon téléphone | [L’envoi par e-mail](fonctionnalites/envoi-par-e-mail.md) |
 | écrire mon propre module | [Créer un module](https://github.com/lfpoulain/cornelius-modules/blob/main/docs/creer-un-module.md), dans le dépôt cornelius-modules |
 | comprendre pourquoi rien ne se passe | [Dépannage](utilisation/depannage.md) |
+| converser avec Mistral plutôt qu’OpenAI | [Le fournisseur vocal](fonctionnalites/fournisseur-vocal.md) |
 | savoir ce qui part sur Internet | [Confidentialité](reference/confidentialite.md) |
 | modifier le code | [Développer Cornelius](developpement/README.md), [Contribuer](../CONTRIBUTING.md) |
 
 ## Installation
 
 - [Installer sous Linux](installation/linux.md) : le script d’installation, les services systemd, les mises à jour.
+- [Installer sur Raspberry Pi](installation/raspberry-pi.md) : Raspberry Pi 4 et 5, ce qui est retiré (vision locale, images locales), le miroir au démarrage.
 - [Installer sous Windows](installation/windows.md) : l’installation manuelle dans PowerShell, le démarrage et l’arrêt.
+- [Installer dans Home Assistant](installation/home-assistant.md) : l’add-on depuis la boutique, le miroir sur un autre appareil, les satellites, les données et les sauvegardes.
 - [Premier démarrage](installation/premier-demarrage.md) : la rubrique « Mise en route », étape par étape.
 - [Carte graphique (GPU)](installation/gpu.md) : quel matériel convient à la vision et aux images, et comment l’installer.
 
@@ -49,6 +52,7 @@ Cette page est l’index de la documentation. Elle indique par où commencer, pu
 - [L’envoi par e-mail](fonctionnalites/envoi-par-e-mail.md) : envoyer une image ou un message sur le téléphone d’une personne du foyer.
 - [Home Assistant](fonctionnalites/home-assistant.md) : lumières, prises et capteurs de la maison.
 - [Les agents Hermes](fonctionnalites/agents-hermes.md) : confier des demandes longues à un agent personnel.
+- [Le fournisseur vocal](fonctionnalites/fournisseur-vocal.md) : converser avec OpenAI (par défaut) ou Mistral, coût et limites.
 
 ## Modules
 

@@ -369,6 +369,8 @@ export function Diagnostics({
                     État de la vision en attente du serveur…
                   </p>
                 );
+              if (vision.unavailable)
+                return <p className="text-sm text-muted-foreground">{vision.unavailable}</p>;
               const modeLabels: Record<string, string> = {
                 off: 'Désactivée',
                 scene: 'À l’ouverture, puis sur demande',

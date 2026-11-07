@@ -22,6 +22,8 @@ SIDE = "Tournez légèrement la tête vers un côté."
 OTHER_SIDE = "Tournez légèrement la tête vers l’autre côté."
 UP = "Levez légèrement le menton."
 DOWN = "Baissez légèrement le menton."
+STRAIGHT = "Gardez la tête droite, sans la tourner."
+TOO_FAR = "Un peu moins : le mouvement doit rester léger."
 STAGES = 5
 # Écart d’inclinaison verticale par rapport à la position de face.
 PITCH_MIN = 0.06
@@ -34,6 +36,9 @@ class Enrollment:
     required = 6
     per_template = 3
     interval = 0.25
+    # Les repères du visage hésitent parfois une image, tête baissée surtout : un écart plus
+    # court ne fait pas recommencer l’étape.
+    grace = 0.6
 
     def __init__(self, request, existing=None):
         self.request = request
@@ -47,6 +52,7 @@ class Enrollment:
         self.direction = None
         self.vertical = None
         self.last_sample_at = -1
+        self.missed_since = None
         self.message = FRONT
 
     def prompt(self):
@@ -61,17 +67,26 @@ class Enrollment:
         return {"step": min(self.stage, STAGES - 1), "collected": len(self.samples),
                 "total": self.required, "message": self.message}
 
-    def matches(self, sample):
+    def mismatch(self, sample):
+        """None si la vue convient à l’étape, sinon la consigne à afficher."""
         stage = self.stage
         if stage == 0:
-            return abs(sample.pose) <= 0.13
+            return None if abs(sample.pose) <= 0.13 else FRONT
         if stage in (1, 2):
             direction = 1 if sample.pose > 0 else -1
-            return 0.18 <= abs(sample.pose) <= 0.42 and (stage == 1 or direction != self.direction)
+            if stage == 2 and direction == self.direction:
+                return self.prompt()
+            if abs(sample.pose) > 0.42:
+                return TOO_FAR
+            return None if abs(sample.pose) >= 0.18 else self.prompt()
+        if abs(sample.pose) > 0.2:
+            return STRAIGHT
         offset = sample.pitch - self.baseline
-        if abs(sample.pose) > 0.2 or not PITCH_MIN <= abs(offset) <= PITCH_MAX:
-            return False
-        return stage == 3 or (offset > 0) != (self.vertical > 0)
+        if stage == 4 and (offset > 0) == (self.vertical > 0):
+            return self.prompt()
+        if abs(offset) > PITCH_MAX:
+            return TOO_FAR
+        return None if abs(offset) >= PITCH_MIN else self.prompt()
 
     def add(self, samples, now):
         if len(samples) != 1:
@@ -87,17 +102,25 @@ class Enrollment:
             self.samples.clear()
             self.message = "Ce visage ne correspond pas à celui déjà mémorisé pour ce profil."
             return None
-        anchor = self.templates[0] if self.templates else (self.samples[0] if self.samples else None)
-        if anchor is not None and float(np.dot(anchor, sample.feature)) < 0.35:
+        # Comparée à la vue déjà prise la plus proche : tête baissée, le visage ressemble moins
+        # à la vue de face qu’aux autres.
+        anchors = self.templates or self.samples[:1]
+        if anchors and float(np.max(np.asarray(anchors) @ sample.feature)) < 0.35:
             self.samples.clear()
             self.message = "Visage différent ou angle trop fort : revenez de face."
             return None
-        self.message = self.prompt()
-        if not self.matches(sample):
-            self.samples.clear()
-            if self.stage == 0:
-                self.pitches.clear()
+        problem = self.mismatch(sample)
+        if problem:
+            self.message = problem
+            if self.missed_since is None:
+                self.missed_since = now
+            if now - self.missed_since >= self.grace:
+                self.samples.clear()
+                if self.stage == 0:
+                    self.pitches.clear()
             return None
+        self.missed_since = None
+        self.message = self.prompt()
         if self.stage == 1:
             direction = 1 if sample.pose > 0 else -1
             if self.direction is not None and direction != self.direction:

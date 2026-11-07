@@ -357,6 +357,8 @@ export function ImageGenerationSettings({
     });
   const provider = generation?.provider ?? 'local';
   const openai = provider === 'openai';
+  // Raspberry Pi : pas de générateur local, OpenAI est le seul moteur.
+  const localUnavailable = !!generation?.localUnavailable;
   // Avec OpenAI, rien à installer : seuls la clé et l’activation comptent.
   const ready = openai || currentInstalled;
   const enabledSwitch = (
@@ -438,19 +440,26 @@ export function ImageGenerationSettings({
           ? 'Créer une image à la voix : Cornelius envoie votre description à OpenAI, qui crée une image carrée affichée ensuite sur le miroir. Chaque image est facturée sur votre compte OpenAI.'
           : 'Créer une image à la voix : Cornelius dessine sur ce PC une image carrée à partir de votre description, puis l’affiche sur le miroir. La description et l’image ne sont envoyées à aucun service d’image en ligne.'}
       </p>
-      <ProviderChoice
-        value={provider}
-        disabled={!generation || generation.busy}
-        onChange={(next) =>
-          run(
-            next === 'openai'
-              ? 'Les images seront créées par OpenAI.'
-              : 'Les images seront créées sur ce PC.',
-            () => api.imageGeneration({ provider: next }),
-            { key: 'image-generation-provider', payload: { provider: next } },
-          )
-        }
-      />
+      {localUnavailable ? (
+        <p className="text-xs text-muted-foreground">
+          Sur cette machine, seul OpenAI crée les images : le générateur local demande un ordinateur
+          plus puissant, avec une carte graphique.
+        </p>
+      ) : (
+        <ProviderChoice
+          value={provider}
+          disabled={!generation || generation.busy}
+          onChange={(next) =>
+            run(
+              next === 'openai'
+                ? 'Les images seront créées par OpenAI.'
+                : 'Les images seront créées sur ce PC.',
+              () => api.imageGeneration({ provider: next }),
+              { key: 'image-generation-provider', payload: { provider: next } },
+            )
+          }
+        />
+      )}
       {openai && generation ? (
         <OpenAISteps
           generation={generation}

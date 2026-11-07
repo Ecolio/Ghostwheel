@@ -148,7 +148,10 @@ def main():
         default=os.getenv("CORNELIUS_VISION_MODEL", "450m"),
         help="Variante LFM à télécharger : 450m (défaut), 1.6b ou 3b.",
     )
-    parser.add_argument("--vision-only", action="store_true", help="Installe uniquement le modèle LFM sélectionné.")
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument("--vision-only", action="store_true", help="Installe uniquement le modèle LFM sélectionné.")
+    selection.add_argument("--no-vision", action="store_true",
+                           help="Installe les seuls modèles de base, sans vision (Raspberry Pi).")
     parser.add_argument("--json", action="store_true", help="Progression JSON ligne par ligne pour l’administration.")
     args = parser.parse_args()
     selected_variant = resolve_variant("gpu" if args.gpu else args.device)
@@ -164,7 +167,7 @@ def main():
     known_ids = {model.get("id") for model in directory_models}
     if args.vision_only and args.model not in known_ids:
         parser.error("Modèle de vision inconnu.")
-    args.model = resolve_model_selector(args.model, known_ids)
+    args.model = None if args.no_vision else resolve_model_selector(args.model, known_ids)
     for model in manifest:
         if "files" in model or "gpuFiles" in model:
             # Seul le modèle LFM sélectionné ; visages/VAD gérés plus bas.

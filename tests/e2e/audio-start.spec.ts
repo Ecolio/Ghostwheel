@@ -13,10 +13,10 @@ test('activer depuis l’administration autorise OpenAI et ouvre le miroir dans 
     .getByLabel('Mot de passe administrateur')
     .fill('admin-browser-test-only-credentials-1234');
   await page.getByRole('button', { name: 'Ouvrir cet espace' }).click();
-  await page.getByRole('button', { name: 'Bloquer OpenAI', exact: true }).click();
-  await expect(page.getByText('Accès OpenAI bloqué', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Bloquer les services IA', exact: true }).click();
+  await expect(page.getByText('Accès aux services IA bloqué', { exact: true })).toBeVisible();
   const panel = page.getByRole('region', { name: 'Conversation' });
-  const label = 'Autoriser OpenAI et ouvrir le miroir';
+  const label = 'Autoriser les services IA et ouvrir le miroir';
   await expect(panel.getByRole('button', { name: label, exact: true })).toBeVisible();
   // La mise en route propose le même geste, sous le même libellé, à l’étape « Miroir ouvert ».
   await page.getByRole('button', { name: 'Mise en route', exact: true }).click();

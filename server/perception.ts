@@ -113,6 +113,8 @@ export class PerceptionBridge {
     private controller: SessionController,
     private changed: () => void,
     private now = Date.now,
+    /** Largeur de l’image où chercher les visages (petite machine) ; null : image entière. */
+    private detectionWidth: number | null = null,
   ) {
     this.browserCamera = new BrowserCameraRelay(
       () =>
@@ -488,6 +490,7 @@ export class PerceptionBridge {
       recognitionThreshold: this.recognitionThreshold,
       trackingGraceMs: tracking.graceMs,
       identityHoldMs: tracking.identityHoldMs,
+      detectionWidth: this.detectionWidth,
       profiles,
       enrollment: this.enrollment,
     });

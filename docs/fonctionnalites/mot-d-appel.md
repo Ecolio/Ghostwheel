@@ -82,13 +82,13 @@ Avant de changer cette valeur, essayez le modèle avec plusieurs voix, à plusie
 
 - Après **Activer la voix** sur le miroir, le navigateur garde le micro ouvert pendant la veille.
 - Le son est envoyé à Cornelius sur l’ordinateur lui-même, puis analysé par la perception. En veille, il ne quitte pas l’ordinateur.
-- Quand « Ghostwheel » est reconnu et que la conversation s’ouvre, le même micro sert à la conversation, et le son part alors chez OpenAI.
+- Quand « Ghostwheel » est reconnu et que la conversation s’ouvre, le même micro sert à la conversation, et le son part alors chez le fournisseur vocal choisi (OpenAI ou Mistral).
 - Si la conversation ne s’ouvre pas (personne non reconnue alors que l’ouverture est réservée aux membres du foyer, par exemple), rien n’est envoyé.
 - Avec **Micro gardé prêt**, le début de la phrase dite avec « Ghostwheel » est gardé sur l’ordinateur puis transmis à la conversation une fois ouverte (voir [Ouverture et présence](ouverture-et-presence.md#micro-gardé-prêt-bêta)).
 
 Les [satellites audio](satellites.md) écoutent aussi « Ghostwheel » : ils envoient le son de leur micro à l’ordinateur, par le réseau local, et c’est l’ordinateur qui cherche le mot, avec le même modèle. Quand le miroir et un satellite entendent le même appel, l’appareil au meilleur score l’emporte.
 
-Pour couper toute écoute, choisissez une autre ouverture que « Ghostwheel », ou utilisez **Bloquer OpenAI** dans le panneau **Conversation** de la rubrique **Quand il écoute**.
+Pour couper toute écoute, choisissez une autre ouverture que « Ghostwheel », ou utilisez **Bloquer les services IA** dans le panneau **Conversation** de la rubrique **Quand il écoute**.
 
 ## Quand il ne répond pas
 

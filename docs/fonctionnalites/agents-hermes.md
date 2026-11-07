@@ -98,7 +98,7 @@ Avant de transmettre la décision, Cornelius vérifie qu’elle porte bien sur l
 - Les messages et les réponses ne sont enregistrés ni dans la base, ni dans le journal de Cornelius. Les réponses restent en mémoire au plus quinze minutes sans nouvelle lecture.
 - Hermes garde ses propres conversations et mémoires. Oublier un souvenir dans Cornelius ne les efface pas.
 - Désactiver ou retirer une connexion arrête les nouvelles demandes et le suivi depuis Cornelius ; Hermes continue de gérer les tâches déjà reçues. Supprimer une personne efface ses références dans Cornelius, pas son compte Hermes.
-- **Bloquer OpenAI** coupe la conversation de Cornelius, pas Hermes ni ses tâches.
+- **Bloquer les services IA** coupe la conversation de Cornelius, pas Hermes ni ses tâches.
 - Chaque appel à Hermes attend au plus cinq secondes, lit au plus 256 Kio et refuse les redirections.
 
 ## Voir aussi

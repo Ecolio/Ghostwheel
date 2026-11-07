@@ -1,3 +1,4 @@
+import type { VoiceProvider } from '../shared/voice-provider.js';
 import { DEFAULT_CARD_SETTINGS, type CardSettings } from '../shared/cards.js';
 import { DEFAULT_LIVE_VOICE, type LiveVoice } from '../shared/voices.js';
 import { DEFAULT_SCREENSAVER, type ScreensaverSettings } from '../shared/screensaver.js';
@@ -60,6 +61,8 @@ export interface SessionPreferencesStore {
   setAdvancedAudioBuffer?(enabled: boolean): void;
   getOrbScale?(): number;
   setOrbScale?(scale: number): void;
+  getVoiceProvider?(): VoiceProvider;
+  setVoiceProvider?(provider: VoiceProvider): void;
   getSpeechVoice?(): LiveVoice;
   setSpeechVoice?(voice: LiveVoice): void;
   getCardSettings?(): CardSettings;
@@ -86,6 +89,8 @@ export interface SessionTransport {
   unavailableReason?(): string | null;
   open(scope: Scope): void;
   close(interactionId: string): void;
+  /** Provider charges for wall-clock session duration, so idle time must always be bounded. */
+  meteredByDuration?(): boolean;
   /** Session déjà ouverte : ajoute les informations personnelles sans la recréer (mode 1). */
   identify?(scope: Scope): void;
   /** Une admission est probable : préparer les connexions réseau, sans créer de session. */
@@ -154,7 +159,12 @@ export class SessionController {
    */
   setSetup(patch: Partial<MirrorSetup>): void {
     const next = { ...this.setup, ...patch };
-    if (next.openaiKey === this.setup.openaiKey && next.perception === this.setup.perception)
+    if (
+      next.openaiKey === this.setup.openaiKey &&
+      next.mistralKey === this.setup.mistralKey &&
+      next.voiceKey === this.setup.voiceKey &&
+      next.perception === this.setup.perception
+    )
       return;
     this.setup = next;
     this.publish();
@@ -193,8 +203,8 @@ export class SessionController {
   private profileSeenAt: number | null = null;
   private cameraFaultSince: number | null = null;
   private crowdedFrames = 0;
-  // Fin prévue de la dernière activité vocale (personne ou Cornelius) de la session.
-  private voiceActiveUntil = 0;
+  // Fin prévue de la dernière réponse de Cornelius (réflexion ou parole) dans la session.
+  private assistantActiveUntil = 0;
   private presentSince: number | null = null;
   private presenceStable = false;
   private absenceSince: number | null = null;
@@ -216,6 +226,7 @@ export class SessionController {
   private wakeWordEnabled = false;
   private advancedAudioBuffer = false;
   private orbScale = 100;
+  private voiceProvider: VoiceProvider = 'openai';
   private screensaver: ScreensaverSettings = { ...DEFAULT_SCREENSAVER };
   private screensaverImages = { count: 0, revision: '' };
   private speechVoice: LiveVoice = DEFAULT_LIVE_VOICE;
@@ -261,6 +272,7 @@ export class SessionController {
     if (this.session.mode === 4) preferences?.setWakeWordEnabled?.(true);
     this.advancedAudioBuffer = preferences?.getAdvancedAudioBuffer?.() ?? false;
     this.orbScale = preferences?.getOrbScale?.() ?? 100;
+    this.voiceProvider = preferences?.getVoiceProvider?.() ?? 'openai';
     this.screensaver = { ...(preferences?.getScreensaver?.() ?? DEFAULT_SCREENSAVER) };
     this.speechVoice = preferences?.getSpeechVoice?.() ?? DEFAULT_LIVE_VOICE;
     this.cardSettings = preferences?.getCardSettings?.() ?? { ...DEFAULT_CARD_SETTINGS };
@@ -399,6 +411,7 @@ export class SessionController {
         revision: this.screensaverImages.revision,
       },
       speechVoice: this.speechVoice,
+      voiceProvider: this.voiceProvider,
       cardSettings: { ...this.cardSettings },
       admissionSound: { ...this.admissionSound },
       delegationMode: this.delegationMode,
@@ -960,6 +973,11 @@ export class SessionController {
     this.publish();
   }
 
+  setVoiceProvider(provider: VoiceProvider): void {
+    this.preferences?.setVoiceProvider?.(provider);
+    this.voiceProvider = provider;
+    this.publish();
+  }
   /** Voix de la prochaine conversation : celle en cours garde la sienne (fixée à l’ouverture). */
   setSpeechVoice(voice: LiveVoice): void {
     if (this.speechVoice === voice) return;
@@ -1299,7 +1317,7 @@ export class SessionController {
     };
     this.started = false;
     this.controlReady = false;
-    this.voiceActiveUntil = 0;
+    this.assistantActiveUntil = 0;
     this.resetSilence();
     // Mode voix : la caméra s’allume avec la conversation et peut reconnaître la personne.
     this.voiceIdentityUntil =
@@ -1613,7 +1631,12 @@ export class SessionController {
 
   /** Minuterie de silence : toujours en mode voix, sur option dans les modes caméra. */
   silenceTracking(): boolean {
-    return this.session.mode === 4 || this.silenceClose.enabled || this.satelliteSession();
+    return (
+      this.session.mode === 4 ||
+      this.silenceClose.enabled ||
+      this.satelliteSession() ||
+      this.transport.meteredByDuration?.() === true
+    );
   }
 
   private silenceDelay(): number {
@@ -1671,7 +1694,10 @@ export class SessionController {
       return false;
     const now = this.now();
     this.voice = { phase, startedAt: now, endsAt: phase === 'idle' ? null : now + durationMs };
-    if (phase !== 'idle') this.voiceActiveUntil = Math.max(this.voiceActiveUntil, now + durationMs);
+    // Seule la réponse de Cornelius retient la fin d’engagement : la personne qui parle en
+    // détournant les yeux ou de loin, souvent à quelqu’un d’autre, ne garde pas la conversation.
+    if (phase === 'thinking' || phase === 'speaking')
+      this.assistantActiveUntil = Math.max(this.assistantActiveUntil, now + durationMs);
     this.publish();
     return true;
   }
@@ -1726,12 +1752,13 @@ export class SessionController {
       if (this.absenceExpired(now)) this.departure();
       else if (
         // Seul le mode « Engagement » ouvre sur le regard : lui seul se termine à sa perte.
-        // La parole de la personne ou de Cornelius repousse cette fin.
+        // Une réponse de Cornelius en cours repousse cette fin, pas la parole de la personne.
         this.session.mode === 3 &&
         this.rawObservation?.presence &&
         this.engagementId !== null &&
         this.disengagedSince !== null &&
-        now - Math.max(this.disengagedSince, this.voiceActiveUntil) >= this.timings.disengagementMs
+        now - Math.max(this.disengagedSince, this.assistantActiveUntil) >=
+          this.timings.disengagementMs
       ) {
         // La personne est toujours là : seule la conversation se termine.
         this.engagedSince = null;

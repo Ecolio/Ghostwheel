@@ -19,6 +19,7 @@
     "check": "tsc --noEmit",
     "test": "tsx --disable-warning=ExperimentalWarning --test \"tests/*.test.ts\" \"addons/*/*.test.ts\"",
     "setup": "tsx scripts/setup.ts",
+    "password": "tsx --env-file-if-exists=.env --disable-warning=ExperimentalWarning scripts/admin-password.ts",
     "test:e2e": "playwright test",
     "test:modules": "tsx scripts/test-modules.ts",
     "mesures": "tsx scripts/mesures.ts",
@@ -28,6 +29,8 @@
     "format:check": "prettier --check \"{server,shared,web,tests,addons}/**/*.{ts,tsx,css,html}\" \"scripts/*.ts\" \"*.{ts,json}\""
   },
   "dependencies": {
+    "@mistralai/mistralai": "3.1.0",
+    "@livekit/rtc-node": "0.13.28",
     "@fastify/cookie": "11.1.2",
     "@fastify/rate-limit": "11.2.0",
     "@fastify/static": "10.1.3",

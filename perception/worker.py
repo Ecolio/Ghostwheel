@@ -50,6 +50,7 @@ class Worker:
         self.engagement = dict(DEFAULT_ENGAGEMENT)
         self.tracking_grace_ms = 8000
         self.identity_hold_ms = 8000
+        self.detection_width = None
         self.vision_model = os.getenv("CORNELIUS_VISION_MODEL", "450m")
         if self.vision_model not in MODEL_DIRECTORIES:
             self.vision_model = "450m"
@@ -85,6 +86,7 @@ class Worker:
         self.vision.configure_engagement(self.engagement)
         self.vision.configure_tracking(self.tracking_grace_ms)
         self.vision.configure_identity_hold(self.identity_hold_ms)
+        self.vision.configure_detection(self.detection_width)
 
     def start_enrollment(self, request):
         existing = None
@@ -311,6 +313,7 @@ class Worker:
                 self.tracking_grace_ms = event.get("trackingGraceMs", 8000)
                 self.identity_hold_ms = event.get("identityHoldMs", 8000)
                 self.engagement = event.get("engagement", dict(DEFAULT_ENGAGEMENT))
+                self.detection_width = event.get("detectionWidth")
                 if self.vision:
                     self.configure_vision()
                 request = event.get("enrollment")

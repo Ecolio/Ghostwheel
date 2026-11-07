@@ -132,7 +132,12 @@ test('le miroir est public et les droits administrateur restent protégés', asy
 test('l’état diffusé dit ce qui manque au premier lancement sans exposer aucun secret', async (t) => {
   const first = await fixture(t, { openaiKey: undefined, adminPassword: 'cornelius' });
   const firstState = await first.app.inject({ url: '/api/state' });
-  assert.deepEqual(firstState.json().state.setup, { openaiKey: false, perception: false });
+  assert.deepEqual(firstState.json().state.setup, {
+    openaiKey: false,
+    perception: false,
+    mistralKey: false,
+    voiceKey: false,
+  });
   const firstAdmin = await first.login();
   const firstDevices = (
     await first.app.inject({ url: '/api/admin/devices', headers: { cookie: firstAdmin } })
@@ -144,10 +149,20 @@ test('l’état diffusé dit ce qui manque au premier lancement sans exposer auc
   const f = await fixture(t);
   const secrets = ['test-key', 'p'.repeat(40), 'i'.repeat(40), password];
   const anonymous = await f.app.inject({ url: '/api/state' });
-  assert.deepEqual(anonymous.json().state.setup, { openaiKey: true, perception: false });
+  assert.deepEqual(anonymous.json().state.setup, {
+    openaiKey: true,
+    perception: false,
+    mistralKey: false,
+    voiceKey: true,
+  });
   const admin = await f.login();
   const { snapshot } = await f.connect('admin', admin);
-  assert.deepEqual(snapshot.state.setup, { openaiKey: true, perception: false });
+  assert.deepEqual(snapshot.state.setup, {
+    openaiKey: true,
+    perception: false,
+    mistralKey: false,
+    voiceKey: true,
+  });
   const devices = await f.app.inject({ url: '/api/admin/devices', headers: { cookie: admin } });
   assert.equal(devices.json().defaultPassword, false);
   for (const body of [anonymous.body, JSON.stringify(snapshot), devices.body])
@@ -166,7 +181,12 @@ test('l’état diffusé dit ce qui manque au premier lancement sans exposer auc
     .map((message) => JSON.parse(message) as StateEvent)
     .filter((event) => event.type === 'state');
   // Dès la première publication après la connexion : jamais un état intermédiaire incohérent.
-  assert.deepEqual(states[0]?.state.setup, { openaiKey: true, perception: true });
+  assert.deepEqual(states[0]?.state.setup, {
+    openaiKey: true,
+    perception: true,
+    mistralKey: false,
+    voiceKey: true,
+  });
   for (const message of messages)
     for (const secret of secrets) assert.equal(message.includes(secret), false, secret);
   worker.terminate();
@@ -1642,4 +1662,75 @@ test('browser camera is opt-in, admin configured, same-origin and reserved to th
     (await f.app.inject({ method: 'PUT', url, headers, payload: { source: 'server' } })).statusCode,
     200,
   );
+});
+
+test('sur Raspberry Pi, ni vision ni images locales, et les visages sont cherchés sur 640 px', async (t) => {
+  const machine = { arch: 'arm64', board: 'Raspberry Pi 5 Model B Rev 1.0', small: true };
+  const f = await fixture(t, { machine });
+  const headers = { origin, cookie: await f.login() };
+  const devices = (await f.app.inject({ url: '/api/admin/devices', headers })).json();
+  assert.deepEqual(devices.machine, machine);
+  assert.equal(devices.perception.vision.mode, 'off');
+  assert.match(devices.perception.vision.unavailable, /Raspberry Pi/u);
+  assert.equal(devices.imageGeneration.provider, 'openai');
+  assert.match(devices.imageGeneration.localUnavailable, /Raspberry Pi/u);
+  for (const [url, payload] of [
+    ['/api/admin/vision', { mode: 'scene' }],
+    ['/api/admin/vision/model', { model: '1.6b' }],
+    ['/api/admin/vision/device', { device: 'cpu' }],
+  ] as const) {
+    const response = await f.app.inject({ method: 'PATCH', url, headers, payload });
+    assert.equal(response.statusCode, 400, url);
+    assert.match(response.json().error, /Raspberry Pi/u);
+  }
+  const local = await f.app.inject({
+    method: 'PATCH',
+    url: '/api/admin/image-generation',
+    headers,
+    payload: { provider: 'local' },
+  });
+  assert.equal(local.statusCode, 409);
+  const install = await f.app.inject({
+    method: 'POST',
+    url: '/api/admin/image-generation/install',
+    headers,
+    payload: {},
+  });
+  assert.equal(install.statusCode, 409);
+  const enabled = await f.app.inject({
+    method: 'PATCH',
+    url: '/api/admin/image-generation',
+    headers,
+    payload: { enabled: true },
+  });
+  assert.equal(enabled.statusCode, 200, enabled.body);
+  assert.equal(enabled.json().provider, 'openai');
+
+  const messages: { type: string; detectionWidth?: unknown }[] = [];
+  const worker = await f.app.injectWS(
+    '/perception',
+    { headers: { host: 'localhost', origin, authorization: 'Bearer ' + 'p'.repeat(40) } },
+    { onInit: (ws) => ws.on('message', (data) => messages.push(JSON.parse(String(data)))) },
+  );
+  f.sockets.push(worker);
+  await setImmediate();
+  assert.equal(messages.find((message) => message.type === 'profiles')?.detectionWidth, 640);
+  assert.ok(!messages.some((message) => message.type === 'vision_warm'));
+});
+
+test('sur un PC, les visages sont cherchés sur l’image entière', async (t) => {
+  const f = await fixture(t);
+  const messages: { type: string; detectionWidth?: unknown }[] = [];
+  const worker = await f.app.injectWS(
+    '/perception',
+    { headers: { host: 'localhost', origin, authorization: 'Bearer ' + 'p'.repeat(40) } },
+    { onInit: (ws) => ws.on('message', (data) => messages.push(JSON.parse(String(data)))) },
+  );
+  f.sockets.push(worker);
+  await setImmediate();
+  assert.equal(messages.find((message) => message.type === 'profiles')?.detectionWidth, null);
+  const headers = { origin, cookie: await f.login() };
+  const devices = (await f.app.inject({ url: '/api/admin/devices', headers })).json();
+  assert.equal(devices.machine, undefined);
+  assert.equal(devices.imageGeneration.localUnavailable, null);
 });

@@ -53,7 +53,7 @@ La ressemblance exigée pour reconnaître quelqu’un se règle dans **Caméra e
 Selon ce qui l’a ouverte :
 
 - **La présence** : la conversation reste ouverte tant que la personne est là, même sans regarder le miroir. Elle se ferme quand le départ est confirmé.
-- **Le regard** : la conversation se ferme aussi quand la personne ne regarde plus le miroir pendant le délai **Terminer après la perte du regard**. La parole de la personne ou de Cornelius repousse cette fin. La personne reste reconnue ; un nouveau regard confirmé rouvre la conversation.
+- **Le regard** : la conversation se ferme aussi quand la personne ne regarde plus le miroir pendant le délai **Terminer après la perte du regard**. Une réponse de Cornelius en cours repousse cette fin, pour ne pas le couper au milieu d’une phrase ; la parole de la personne, elle, ne la repousse pas : parler à quelqu’un d’autre en détournant les yeux, ou de loin, laisse la conversation se fermer. La personne reste reconnue ; un nouveau regard confirmé rouvre la conversation.
 - **« Ghostwheel » pour les membres du foyer** : comme pour la présence, la conversation se ferme au départ confirmé.
 - **« Ghostwheel » pour tout le monde** : la caméra ne sert pas à voir la personne partir, même allumée pour la reconnaissance. Seul un silence termine la conversation (voir « Fin de parole » plus bas). L’écoute du mot « Ghostwheel » reprend aussitôt pour la prochaine demande.
 
@@ -101,7 +101,7 @@ Pour reprendre :
 - **Démarrer la session** dans le même panneau réactive le démarrage automatique, selon l’ouverture choisie ;
 - dire « Ghostwheel », quand le mot d’appel est prêt, vaut aussi une demande explicite et lève l’arrêt.
 
-**Bloquer OpenAI**, dans ce même panneau quand il est affiché en entier (rubrique **Quand il écoute**), coupe et interdit toute conversation tant qu’il n’est pas levé (voir [L’administration](../utilisation/administration.md)).
+**Bloquer les services IA**, dans ce même panneau quand il est affiché en entier (rubrique **Quand il écoute**), coupe et interdit toute conversation tant qu’il n’est pas levé (voir [L’administration](../utilisation/administration.md)).
 
 ## Micro gardé prêt (bêta)
 

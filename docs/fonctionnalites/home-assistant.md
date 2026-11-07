@@ -4,7 +4,7 @@ Cornelius peut allumer et éteindre les lumières et les prises de la maison, et
 
 ## Ce que fait le connecteur
 
-Home Assistant est un logiciel de domotique installé à part. Cornelius s’y connecte directement : aucun module complémentaire, blueprint ni intégration n’est à installer dans Home Assistant.
+Home Assistant est un logiciel de domotique installé à part. Cornelius s’y connecte directement : aucun module complémentaire, blueprint ni intégration n’est à installer dans Home Assistant. Cornelius peut aussi tourner lui-même sur la box, comme add-on (voir [Installer dans Home Assistant](../installation/home-assistant.md)) : la connexion décrite ici reste la même.
 
 - **Lumières et prises** (`light.*` et `switch.*`) : allumer, éteindre, lire l’état, et régler la luminosité des lumières qui le permettent (de 1 à 100 %).
 - **Capteurs**, en lecture seule : capteurs et détecteurs, minuteries, dates et heures, nombres, interrupteurs virtuels, listes de choix, compteurs, thermostats, volets et serrures. Un capteur n’est jamais commandé : Cornelius peut dire si une serrure est fermée, pas l’ouvrir.
@@ -15,7 +15,7 @@ La configuration est commune au foyer. La carte **Home Assistant** se trouve dan
 
 ## Se connecter
 
-1. Dans Home Assistant, ouvrez votre profil, onglet **Sécurité**, rubrique **Jetons d’accès longue durée**, et créez un jeton pour Cornelius.
+1. Dans Home Assistant, ouvrez votre profil, onglet **Sécurité**, rubrique **Jetons d’accès longue durée**, et créez un jeton pour Cornelius. De préférence, faites-le depuis un compte réservé à Cornelius, sans droits d’administrateur (voir [Réduire le risque](#réduire-le-risque)).
 2. Dans **Modules → Home Assistant**, renseignez **Adresse Home Assistant**, par exemple `http://homeassistant.local:8123`. Donnez l’adresse de base, sans chemin ni paramètres.
 3. Collez le jeton dans **Jeton longue durée**.
 4. Cliquez sur **Connecter Home Assistant**.
@@ -96,6 +96,24 @@ En cas de coupure, Cornelius se reconnecte seul, en espaçant les essais de 1 à
 - **Supprimer la connexion** efface le jeton, la sélection et l’autorisation. Le réglage **Réserver aux personnes reconnues** est conservé. Révoquez aussi le jeton dans Home Assistant pour l’invalider.
 - Le jeton garde les droits du compte Home Assistant qui l’a créé. C’est Cornelius qui limite ce que la conversation peut faire, pas le jeton.
 - Cornelius refuse les redirections vers une autre adresse. Les réglages de Home Assistant ne sont accessibles que depuis l’administration.
+- La base et ses copies ne sont lisibles que par le compte système qui fait tourner Cornelius (fichiers en `0600`, dossier `data/` en `0700`). Une sauvegarde de `data/` contient le jeton : gardez-la à l’abri comme un mot de passe.
+
+## Réduire le risque
+
+Home Assistant ne permet pas de limiter un jeton à quelques appareils. Quiconque lit la base, ou une copie de `data/`, peut utiliser le jeton avec tous les droits du compte qui l’a créé, hors de Cornelius. Deux précautions réduisent ce risque.
+
+**Un compte dédié, sans droits d’administrateur.**
+
+1. Dans Home Assistant, **Paramètres → Personnes**, ajoutez une personne « Cornelius » et autorisez-la à se connecter. Laissez **Administrateur** désactivé et, si l’option est proposée, cochez **Connexion depuis le réseau local uniquement**.
+2. Connectez-vous une fois avec ce compte, créez le jeton dans son profil, puis collez-le dans Cornelius.
+
+Ce que ce compte limite : sans droits d’administrateur, le jeton ne donne pas accès à la configuration de Home Assistant (intégrations, utilisateurs, automatisations, modules complémentaires, sauvegardes). Ce qu’il ne limite pas : le jeton peut toujours lire tous les états et commander tous les appareils de la maison, y compris ceux que Cornelius n’a pas le droit d’utiliser, comme une serrure ou une alarme. Seule **Reprendre la sélection Assist** demande un compte administrateur : cochez alors les appareils à la main.
+
+**Changer de jeton.** Un jeton longue durée reste valable dix ans. Pour le changer, après une fuite possible ou simplement de temps en temps :
+
+1. Créez un nouveau jeton dans Home Assistant.
+2. Collez-le dans **Jeton longue durée** et cliquez sur **Connecter Home Assistant**, puis recochez la sélection et l’autorisation.
+3. Dans Home Assistant, supprimez l’ancien jeton : c’est ce qui l’invalide, y compris dans les copies et sauvegardes qui le contiennent encore.
 
 ## Limites
 

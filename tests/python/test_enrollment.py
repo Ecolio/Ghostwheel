@@ -67,6 +67,27 @@ class EnrollmentTests(unittest.TestCase):
             self.capture(.3, pitch=.45)
         self.assertEqual(self.enrollment.stage, 3)
 
+    def test_a_brief_wobble_does_not_restart_the_step(self):
+        for pose in (0, .25, -.25):
+            for _ in range(6):
+                self.capture(pose)
+        for _ in range(3):
+            self.capture(0, pitch=.7)
+        self.capture(0, pitch=.58)  # Un repère qui hésite une image.
+        self.assertEqual(len(self.enrollment.samples), 3)
+        for _ in range(3):
+            self.capture(0, pitch=.58)  # Revenu de face trop longtemps : on recommence.
+        self.assertEqual(len(self.enrollment.samples), 0)
+
+    def test_tells_what_to_correct(self):
+        for pose in (0, .25, -.25):
+            for _ in range(6):
+                self.capture(pose)
+        self.capture(0, pitch=1.)
+        self.assertEqual(self.enrollment.message, "Un peu moins : le mouvement doit rester léger.")
+        self.capture(.3, pitch=.7)
+        self.assertEqual(self.enrollment.message, "Gardez la tête droite, sans la tourner.")
+
     def test_samples_are_spaced_in_time(self):
         self.enrollment.add([FaceSample(self.feature, 0)], 0)
         self.enrollment.add([FaceSample(self.feature, 0)], .1)

@@ -1,6 +1,6 @@
 # Historique des changements
 
-Cette page retrace les grandes étapes de Cornelius, de la plus récente à la plus ancienne. Elle s’appuie sur l’historique Git et sur les notes datées des anciens documents. Aucune version n’est encore publiée : tout se trouve sous « Non publié ».
+Cette page retrace les grandes étapes de Cornelius, de la plus récente à la plus ancienne. Elle s’appuie sur l’historique Git et sur les notes datées des anciens documents. Chaque version publiée porte un tag Git (`v0.2.0`) et une release sur GitHub ; ce qui est fait depuis, sur la branche principale, se trouve sous « Non publié ».
 
 Le fonctionnement actuel est décrit dans la [documentation](docs/README.md). Ce qui reste à faire est dans la [feuille de route](docs/developpement/feuille-de-route.md).
 
@@ -10,6 +10,69 @@ Le fonctionnement actuel est décrit dans la [documentation](docs/README.md). Ce
 
 - Le modèle chargé sous le nom compatible `models/cornelius.onnx` reconnaît désormais « Ghostwheel ». L’ancien modèle du mot « Cornelius » et sa notice sont conservés dans `models/archive/`.
 - Recette, provenance, essai informel et limites : [note d’entraînement du modèle](docs/developpement/modele-mot-appel-ghostwheel.md).
+
+
+## 0.2.0 · 2026-11-02
+
+Première version publiée : tout ce qui suit, du premier dépôt Git à la mémoire sur un serveur compatible OpenAI. C’est la version que reprend l’application [Home Assistant](https://github.com/lfpoulain/cornelius-ha).
+
+### 2026-11-02 : mémoire sur un serveur compatible OpenAI
+
+**Ajouté**
+
+- Fournisseur de l’extraction mémoire au choix, dans **Mise en route → Clés et jetons → Mémoire personnalisée** : « OpenAI » (par défaut), « Mistral » ou un serveur compatible OpenAI de la maison, par exemple Ollama (contribution de thibautrey, #12). On y renseigne le nom, l’URL de base, la clé `CUSTOM_OPENAI_API_KEY` et le modèle, proposé par la détection des modèles ou choisi à la main. La demande passe par l’API Responses, puis par Chat Completions quand le serveur ne la connaît pas, et la réponse est vérifiée avec le schéma mémoire avant d’être appliquée. Le réglage de la voix et celui des images ne changent pas.
+- Secours mémoire au choix, quand le fournisseur personnalisé échoue : « Aucun » (par défaut avec ce fournisseur), « OpenAI » ou « Mistral ». Avec « Aucun », une extraction qui échoue n’est envoyée à aucun autre service.
+
+**Modifié**
+
+- L’extraction mémoire ne suit plus le fournisseur de la conversation : elle a son propre choix. Sans réglage, elle reste chez OpenAI, et une installation qui avait choisi Mistral comme voix garde Mistral pour la mémoire.
+
+### 2026-11-01 : add-on Home Assistant
+
+**Ajouté**
+
+- Cornelius tourne comme application (add-on) de Home Assistant OS, dans le dépôt séparé [cornelius-ha](https://github.com/lfpoulain/cornelius-ha), à ajouter à la boutique de Home Assistant : serveur et perception sur la box, miroir sur un autre appareil. Page [Installer dans Home Assistant](docs/installation/home-assistant.md).
+- `CORNELIUS_SUPERVISED=1` : sous un superviseur autre que systemd, un redémarrage demandé par l’administration quitte simplement au lieu de relancer le serveur en arrière-plan, et un démarrage incomplet (port HTTPS déjà pris) arrête le serveur pour que le superviseur le voie.
+- `CORNELIUS_TRUST_LOOPBACK=0` : une requête venue de `127.0.0.1` n’est plus traitée comme l’ordinateur du miroir (miroir sans autorisation, mot de passe par défaut accepté). L’add-on s’en sert, car sur le réseau de l’hôte la boucle locale est partagée avec Home Assistant et ses autres applications. Sans la variable, rien ne change.
+
+**Corrigé**
+
+- Sous Linux et macOS, l’annonce mDNS des satellites répond enfin aux recherches : la socket était liée à l’adresse de l’interface et ne recevait aucun paquet multicast, si bien qu’un satellite ne trouvait pas Cornelius seul. Windows n’est pas concerné et reste inchangé.
+
+### 2026-10-29 : ARM64 et Raspberry Pi
+
+**Ajouté**
+
+- Installation sous Linux en ARM64 : `scripts/install-linux.sh` vérifie le processeur (x86-64 ou ARM64, 32 bits refusé) et n’accepte que `--gpu auto` ou `cpu` en ARM64.
+- Mode petite machine, reconnu seul sur un Raspberry Pi (nom de la carte dans le device tree) ou imposé par `CORNELIUS_SMALL_MACHINE` : vision locale retirée (module **Vision** masqué), générateur d’images local retiré (seul OpenAI reste ; des images jusque-là locales restent désactivées tant que l’administration ne les réactive pas), visages cherchés sur une image de 640 pixels de large puis reconnus sur l’image entière. Les réglages enregistrés sont gardés.
+- L’installateur ne télécharge pas le modèle de vision sur une petite machine (`perception/download_models.py --no-vision`).
+- Page [Installer sur Raspberry Pi](docs/installation/raspberry-pi.md).
+- `npm run password` choisit le mot de passe de l’administration depuis un terminal (saisie masquée, gardé en base comme celui de la **Mise en route**, sans redémarrage). L’installateur Linux le propose à la fin tant que le mot de passe de départ est en place, puis affiche l’adresse de l’administration depuis un autre appareil : une installation par SSH n’est plus bloquée par le refus du mot de passe de départ à distance.
+
+**Corrigé**
+
+- Avec `--systemd`, l’installateur Linux active le « linger » du compte (`sudo loginctl enable-linger`) : les services ne s’arrêtent plus à la fermeture du terminal SSH et démarrent avec l’ordinateur, sans session ouverte. Constaté sur un Raspberry Pi 5 sous Raspberry Pi OS Lite.
+- Le miroir cache le pointeur de la souris quand elle ne bouge pas depuis 3 secondes, et dès l’ouverture de la page. Sous Wayland (cage, labwc), Chromium dessine son propre pointeur, qu’aucun outil du système ne cache.
+
+### 2026-10-28 : fin au regard malgré la parole
+
+**Modifié**
+
+- Avec l’ouverture au regard, parler en détournant les yeux ou de loin, souvent à quelqu’un d’autre, ne garde plus la conversation ouverte : elle se ferme après « Terminer après la perte du regard ». Seule une réponse de Cornelius en cours repousse encore cette fin.
+
+### 2026-10-27 : Mistral comme fournisseur vocal
+
+**Ajouté**
+
+- Fournisseur de la conversation au choix, dans **Mise en route → Voix de Cornelius** : « OpenAI · GPT Live » (par défaut) ou « Mistral · Voxtral 3 » (contribution de thibautrey, #4). Avec Mistral, Voxtral écoute et parle, Mistral Small répond, appelle les outils de Cornelius et extrait les souvenirs.
+- Clé `MISTRAL_API_KEY`, dans « Clés et jetons » ou `.env`. Le changement de fournisseur exige sa clé et une conversation terminée.
+- Avec Mistral, facturé à la minute : fermeture après 20 secondes sans activité, 15 minutes au plus, session supprimée chez Mistral à chaque fermeture.
+
+**Modifié**
+
+- « Bloquer OpenAI » devient « Bloquer les services IA » et coupe les deux fournisseurs.
+- La carte « Voix de Cornelius » passe de la personnalité à « Mise en route ».
+- Documentation : page [Le fournisseur vocal](docs/fonctionnalites/fournisseur-vocal.md), confidentialité, administration et configuration à jour.
 
 ### 2026-10-23 : réglages du micro
 

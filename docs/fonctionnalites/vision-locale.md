@@ -6,9 +6,11 @@ Cette page explique comment Cornelius décrit ce qui se trouve devant le miroir 
 
 La caméra du miroir sert d’abord à voir et reconnaître les personnes. La vision locale ajoute une autre capacité : décrire la scène, par exemple un objet que l’on montre, sa couleur ou un texte à lire.
 
-Cette description est calculée sur l’ordinateur du miroir par un modèle d’analyse d’image, LFM2.5-VL, publié par Liquid AI. Aucune image ne quitte la machine. Seul le texte de la description rejoint la conversation, et donc OpenAI, comme le reste de ce qui se dit.
+Cette description est calculée sur l’ordinateur du miroir par un modèle d’analyse d’image, LFM2.5-VL, publié par Liquid AI. Aucune image ne quitte la machine. Seul le texte de la description rejoint la conversation, et donc le fournisseur vocal choisi, comme le reste de ce qui se dit.
 
 La vision est réglée pour tout le foyer : le modèle et le moment où Cornelius regarde valent pour tous les profils.
+
+Sur un Raspberry Pi, la vision locale n’est pas proposée : le module **Vision** n’apparaît pas dans l’administration et la reconnaissance des personnes continue seule. Voir [Installer sur Raspberry Pi](../installation/raspberry-pi.md).
 
 ## Quand Cornelius regarde
 

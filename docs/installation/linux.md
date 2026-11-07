@@ -4,11 +4,11 @@ Cette page explique comment installer Cornelius sur un ordinateur Linux (Debian,
 
 ## Ce qu’il faut
 
-- Un ordinateur x86-64 sous Debian, Ubuntu, Arch ou une dérivée. Le script reconnaît les familles Debian (dont Ubuntu) et Arch.
+- Un ordinateur x86-64 ou ARM64 sous Debian, Ubuntu, Arch ou une dérivée. Le script reconnaît les familles Debian (dont Ubuntu) et Arch. Sur Raspberry Pi, lisez aussi [Installer sur Raspberry Pi](raspberry-pi.md).
 - Un compte avec `sudo`, pour installer les paquets du système.
 - Une webcam, un micro, des haut-parleurs et un écran.
 - Un navigateur récent, par exemple Chromium ou Google Chrome.
-- Une clé OpenAI d’un compte payant : sans elle, Cornelius ne peut pas parler.
+- Une clé du fournisseur vocal choisi (OpenAI ou Mistral) : sans elle, Cornelius ne peut pas parler.
 - Node.js 24 (version 24.2 ou plus récente) et Python 3.12. Le script d’installation les installe, avec l’aide de fnm pour Node.js (voir « Préparer Node.js 24 »).
 - En option : une carte graphique (voir [GPU](gpu.md)), un jeton Météo Concept et un jeton PRIM pour les modules Météo et Transports.
 
@@ -58,11 +58,11 @@ Le script peut être relancé autant de fois que nécessaire. Il garde le fichie
 | Option | Effet |
 |---|---|
 | `--system-deps` | Installe les paquets du système avec `sudo` : apt sur Debian et Ubuntu, pacman sur Arch. |
-| `--gpu auto\|cpu\|nvidia\|amd` | Moteur de calcul de la vision locale. `auto` (par défaut) choisit NVIDIA si une carte NVIDIA répond, sinon le processeur. `amd` est réservé aux Radeon dédiées avec ROCm. Voir [GPU](gpu.md). |
+| `--gpu auto\|cpu\|nvidia\|amd` | Moteur de calcul de la vision locale. `auto` (par défaut) choisit NVIDIA si une carte NVIDIA répond, sinon le processeur. `amd` est réservé aux Radeon dédiées avec ROCm. En ARM64, seuls `auto` et `cpu` sont acceptés. Voir [GPU](gpu.md). |
 | `--wake` | Installe l’écoute locale du mot d’appel « Ghostwheel ». |
 | `--no-models` | Ne télécharge pas les modèles (visages, détection de la voix, vision 450M). |
 | `--no-build` | Ne compile pas l’interface. `scripts/start.sh` la compilera au premier démarrage. |
-| `--systemd` | Installe et démarre les deux services qui lancent Cornelius au démarrage. |
+| `--systemd` | Installe et démarre les deux services qui lancent Cornelius au démarrage de l’ordinateur, même sans session ouverte (demande le mot de passe `sudo`). |
 | `-h`, `--help` | Affiche l’aide. |
 
 Voici ce que fait réellement le script, dans l’ordre :
@@ -75,9 +75,10 @@ Voici ce que fait réellement le script, dans l’ordre :
 6. Il télécharge les modèles, chacun vérifié par son empreinte SHA-256, avec `perception/download_models.py --device auto`.
 7. Avec `--wake`, il installe openWakeWord et prévient si le modèle `models/cornelius.onnx` manque. Ce modèle est fourni dans le dépôt : voir [Mot d’appel](../fonctionnalites/mot-d-appel.md).
 8. Il liste les caméras `/dev/video*` et signale celles qui ne sont pas lisibles.
-9. Avec `--systemd`, il installe et démarre les services (voir plus bas).
+9. Avec `--systemd`, il installe et démarre les services, puis les autorise à tourner sans session ouverte (voir plus bas).
+10. Si l’administration a encore le mot de passe de départ `cornelius`, il vous en demande un autre (8 caractères au moins, saisie masquée, Entrée pour le faire plus tard). Depuis un autre appareil, l’administration refuse de s’ouvrir avec le mot de passe de départ : sur une installation par SSH, c’est le moment de le changer. Hors d’un terminal (installation automatisée), il passe sans rien demander.
 
-À la fin, il affiche l’adresse de l’administration et rappelle la clé OpenAI si elle manque.
+À la fin, il affiche l’adresse de l’administration, sur cet ordinateur et depuis un autre appareil du réseau, et rappelle la clé OpenAI si elle manque.
 
 Si le script s’arrête en route, corrigez la cause puis relancez-le avec les mêmes options. Il refait chaque étape, mais garde ce qui est déjà prêt. Deux cas courants :
 
@@ -98,7 +99,7 @@ nano .env
 OPENAI_API_KEY=sk-...
 ```
 
-Profitez-en pour changer `CORNELIUS_ADMIN_PASSWORD` (4 caractères au moins). Redémarrez ensuite le serveur pour qu’il lise le fichier :
+Le mot de passe de l’administration se change avec `npm run password`, dans le dossier de Cornelius : il compte aussitôt, sans redémarrage, comme celui choisi dans **Mise en route**. Après une modification de `.env`, redémarrez le serveur pour qu’il lise le fichier :
 
 ```sh
 systemctl --user restart cornelius        # avec les services systemd
@@ -126,10 +127,10 @@ journalctl --user -u cornelius -f
 journalctl --user -u cornelius-perception -f
 ```
 
-Sans réglage supplémentaire, les services ne démarrent qu’à l’ouverture de votre session. Pour qu’ils démarrent avec l’ordinateur, avant toute connexion, autorisez-les une fois :
+Par défaut, systemd ne fait tourner les services d’un compte que pendant une session ouverte : ils s’arrêteraient à la fermeture du terminal SSH et ne démarreraient pas avec l’ordinateur. Le script lève cette limite avec `sudo loginctl enable-linger "$USER"`, qui demande votre mot de passe. Sans droits `sudo`, il prévient : faites-le alors faire une fois par un administrateur. Pour vérifier :
 
 ```sh
-sudo loginctl enable-linger "$USER"
+loginctl show-user "$USER" -p Linger     # Linger=yes
 ```
 
 Les services utilisent le chemin de Node.js trouvé pendant l’installation. Après un changement de version de Node.js, relancez `scripts/install-linux.sh --systemd` pour les mettre à jour.
@@ -158,7 +159,7 @@ Options de `start.sh` et `restart.sh` :
 
 Les journaux de ces scripts sont dans `data/run/logs/` : `backend.out.log` et `backend.err.log` pour le serveur, `perception.out.log` et `perception.err.log` pour la perception. Le serveur écrit aussi son journal détaillé dans `data/logs/cornelius.log`, que l’administration affiche dans la rubrique « Journal ».
 
-`scripts/stop.sh` arrête aussi tout programme qui écoute sur le port de Cornelius (3000 par défaut) ou sur le port 5173, et toute perception ou tout générateur d’images de Cornelius encore actif, même lancé depuis un autre dossier. Si une autre application utilise le port 3000, choisissez un autre `PORT` dans `.env` (de 1024 à 65535), puis relancez : les adresses deviennent alors `http://127.0.0.1:PORT/admin` et `http://127.0.0.1:PORT/`.
+`scripts/stop.sh` arrête aussi tout programme qui écoute sur le port de Cornelius (3000 par défaut) ou sur le port de l’interface de développement (5173, ou `CORNELIUS_DEV_PORT`), et toute perception ou tout générateur d’images de Cornelius encore actif, même lancé depuis un autre dossier. Si une autre application utilise le port 3000, choisissez un autre `PORT` dans `.env` (de 1024 à 65535), puis relancez : les adresses deviennent alors `http://127.0.0.1:PORT/admin` et `http://127.0.0.1:PORT/`.
 
 ## Afficher le miroir
 

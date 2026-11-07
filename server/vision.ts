@@ -95,6 +95,8 @@ export class VisionBridge {
   private lastRequestAt: number | null = null;
   private lastLatencyMs: number | null = null;
   private history: VisionEvent[] = [];
+  /** Petite machine : la vision reste éteinte, le réglage enregistré est gardé tel quel. */
+  private unavailable: string | null = null;
 
   constructor(
     private readonly db: DatabaseSync,
@@ -149,12 +151,24 @@ export class VisionBridge {
       lastRequestAt: this.lastRequestAt,
       lastLatencyMs: this.lastLatencyMs,
       history: this.history.map((entry) => ({ ...entry })),
+      unavailable: this.unavailable,
     };
+  }
+
+  /** Retire la vision sur cette machine (Raspberry Pi), avant la connexion du worker. */
+  restrict(reason: string) {
+    this.unavailable = reason;
+    this.mode = 'off';
+  }
+
+  assertAvailable() {
+    if (this.unavailable) throw new Error(this.unavailable);
   }
 
   setMode(mode: VisionMode) {
     if (!modes.includes(mode)) throw new Error('Mode de vision invalide.');
     if (this.mode === mode) return;
+    this.assertAvailable();
     this.revision++;
     this.db.prepare('UPDATE camera_preferences SET vision_mode = ? WHERE id = 1').run(mode);
     this.mode = mode;
@@ -170,6 +184,7 @@ export class VisionBridge {
 
   setModel(model: VisionModel) {
     if (!models.includes(model)) throw new Error('Modèle de vision inconnu.');
+    this.assertAvailable();
     if (this.modelId === model) return;
     this.revision++;
     this.db.prepare('UPDATE camera_preferences SET vision_model = ? WHERE id = 1').run(model);
@@ -187,6 +202,7 @@ export class VisionBridge {
 
   setDevice(device: VisionDevice) {
     if (!devices.includes(device)) throw new Error('Périphérique de vision inconnu.');
+    this.assertAvailable();
     if (this.device === device) return;
     this.revision++;
     this.db.prepare('UPDATE camera_preferences SET vision_device = ? WHERE id = 1').run(device);

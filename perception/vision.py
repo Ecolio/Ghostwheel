@@ -64,6 +64,8 @@ class Vision:
         self.tracks = {}
         self.tracking_grace = 1.5
         self.identity_hold = HOLD
+        # Petite machine : largeur de l’image où chercher les visages ; None : image entière.
+        self.detection_width = None
         self.lock = threading.RLock()
 
     def configure(self, threshold):
@@ -87,6 +89,31 @@ class Vision:
         """Durée d’une identité confirmée sans nouvelle preuve, tant que le visage reste suivi."""
         with self.lock:
             self.identity_hold = _seconds(hold_ms, "Délai de maintien de l’identité invalide.")
+
+    def configure_detection(self, width):
+        """Cherche les visages sur une image réduite à `width` pixels de large (None : entière)."""
+        if width is not None and (isinstance(width, bool) or not isinstance(width, int)
+                                  or not 160 <= width <= 1920):
+            raise ValueError("Largeur de détection invalide.")
+        with self.lock:
+            self.detection_width = width
+
+    def detect(self, frame):
+        """Visages YuNet aux coordonnées de `frame`, cherchés au besoin sur une copie réduite."""
+        height, width = frame.shape[:2]
+        scale = 1.0
+        if self.detection_width and width > self.detection_width:
+            scale = self.detection_width / width
+            frame = cv2.resize(frame, (self.detection_width, max(1, round(height * scale))),
+                               interpolation=cv2.INTER_AREA)
+        self.detector.setInputSize((frame.shape[1], frame.shape[0]))
+        _, faces = self.detector.detect(frame)
+        if faces is None or scale == 1.0:
+            return faces
+        # Cadre et cinq repères (colonnes 0 à 13) ramenés à l’image entière ; le score reste.
+        faces = faces.copy()
+        faces[:, :14] /= scale
+        return faces
 
     def is_engaged(self, span, nose, center, face_ratio):
         return bool(span > 8 and abs(nose - center) / span <= self.pose_tolerance
@@ -146,9 +173,8 @@ class Vision:
 
     def _analyze(self, frame):
         now = time.monotonic()
-        height, width = frame.shape[:2]
-        self.detector.setInputSize((width, height))
-        _, faces = self.detector.detect(frame)
+        width = frame.shape[1]
+        faces = self.detect(frame)
         people, embeddings, engaged = [], [], False
         # Retain matching information across short occlusions, never emit an unseen person.
         self.tracks = {key: track for key, track in self.tracks.items() if now - track.last_seen <= self.tracking_grace}

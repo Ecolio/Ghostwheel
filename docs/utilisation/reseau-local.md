@@ -32,7 +32,7 @@ L’administration demande son mot de passe, comme sur l’ordinateur. Le miroir
 
 Le bouton **Retirer les autorisations**, dans la même carte, oublie tous les appareils autorisés. Chacun devra se reconnecter.
 
-Tant que le mot de passe vaut `cornelius` (la valeur de départ), aucune connexion n’est acceptée depuis un autre appareil : changez-le d’abord dans l’administration, sur l’ordinateur de Cornelius (**Mise en route**, carte « Mot de passe administrateur »).
+Tant que le mot de passe vaut `cornelius` (la valeur de départ), aucune connexion n’est acceptée depuis un autre appareil : changez-le d’abord dans l’administration, sur l’ordinateur de Cornelius (**Mise en route**, carte « Mot de passe administrateur »). Sur un ordinateur sans écran, installé par SSH, la commande `npm run password`, lancée dans le dossier de Cornelius, fait la même chose ; l’installateur Linux la propose à la fin.
 
 ## Un seul miroir à la fois
 

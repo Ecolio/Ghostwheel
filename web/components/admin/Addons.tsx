@@ -259,12 +259,15 @@ export function Addons({
   // Dans « Maison », un module vient après Home Assistant et les commandes HTTP.
   const entries: Entry[] = [
     ...definitions.filter((d) => moduleDisplay(d).group === 'daily').map(moduleEntry),
-    ...builtIns.map((entry): Entry => ({
-      id: entry.id,
-      group: entry.group,
-      builtIn: entry,
-      definition: null,
-    })),
+    // Raspberry Pi : la vision locale n’existe pas, son module n’est pas proposé.
+    ...builtIns
+      .filter((entry) => entry.id !== 'vision' || !status?.machine?.small)
+      .map((entry): Entry => ({
+        id: entry.id,
+        group: entry.group,
+        builtIn: entry,
+        definition: null,
+      })),
     ...definitions.filter((d) => moduleDisplay(d).group === 'home').map(moduleEntry),
   ];
   const visible = (entry: Entry) =>

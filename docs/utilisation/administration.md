@@ -26,14 +26,14 @@ Quand la connexion au serveur se perd plus d’une seconde et demie, un bandeau 
 
 ## Le panneau de conversation
 
-Sous l’en-tête, un panneau résume l’état de la conversation : un titre (« Conversation en cours », « En veille attentive », « Configuration à terminer », « Session arrêtée », « Accès OpenAI bloqué »…) et, dessous, ce qu’attend Cornelius ou ce qui l’empêche de démarrer. Quand des étapes de la mise en route restent à faire, un lien « Voir la mise en route » donne leur nombre.
+Sous l’en-tête, un panneau résume l’état de la conversation : un titre (« Conversation en cours », « En veille attentive », « Configuration à terminer », « Session arrêtée », « Accès aux services IA bloqué »…) et, dessous, ce qu’attend Cornelius ou ce qui l’empêche de démarrer. Quand des étapes de la mise en route restent à faire, un lien « Voir la mise en route » donne leur nombre.
 
 Dans la plupart des rubriques, le panneau tient sur une ligne, avec un seul bouton : « Démarrer la session » ou « Arrêter la session ». Il est complet dans la rubrique « Quand il écoute », avec :
 
 - **Démarrer la session** : lève un arrêt manuel et réactive le démarrage automatique. Il reste grisé tant qu’un motif bloque le démarrage (clé absente, miroir fermé, caméra indisponible…), et le motif est écrit à côté.
 - **Arrêter la session** : ferme la conversation en cours et suspend le démarrage automatique jusqu’au prochain « Démarrer la session ». Si le mot « Ghostwheel » ouvre la conversation, le dire suffit aussi pour reprendre.
-- **Activer et ouvrir le miroir** : présent tant que le miroir n’est pas ouvert ou que la voix n’y est pas autorisée. En un seul clic, il ouvre le miroir dans sa propre fenêtre et réactive le démarrage ; le micro et le son se préparent dans la fenêtre du miroir (« Activer la voix » si le navigateur demande un clic). Quand OpenAI est bloqué, il devient « Autoriser OpenAI et ouvrir le miroir ».
-- **Bloquer OpenAI** : coupe tout échange avec OpenAI. Plus aucune conversation ne s’ouvre et le miroir affiche « Accès à OpenAI bloqué depuis l’administration. ». Le bouton devient « Autoriser OpenAI » pour revenir en arrière. Le blocage est conservé après un redémarrage.
+- **Activer et ouvrir le miroir** : présent tant que le miroir n’est pas ouvert ou que la voix n’y est pas autorisée. En un seul clic, il ouvre le miroir dans sa propre fenêtre et réactive le démarrage ; le micro et le son se préparent dans la fenêtre du miroir (« Activer la voix » si le navigateur demande un clic). Quand les services IA sont bloqués, il devient « Autoriser les services IA et ouvrir le miroir ».
+- **Bloquer les services IA** : coupe tout échange avec OpenAI et Mistral, souvenirs et images OpenAI compris. Plus aucune conversation ne s’ouvre et le miroir affiche « Accès aux services IA bloqué depuis l’administration. ». Le bouton devient « Autoriser les services IA » pour revenir en arrière. Le blocage est conservé après un redémarrage.
 - **La présence devant le miroir** : nombre de personnes « Devant le miroir », personne « Reconnue », personne « Engagée » (qui regarde le miroir) et état du « Micro du miroir ». Quand la caméra est éteinte en veille, le panneau montre l’état du « Mot d’appel » à la place.
 
 ## La règle d’enregistrement
@@ -54,7 +54,7 @@ Les réglages sont gardés sur le serveur et conservés après un redémarrage. 
 
 La carte « Avant la première conversation » (« Tout est prêt » une fois fini) liste les étapes dans l’ordre où elles se font. Chacune porte un état, « Fait », « À faire », « Bloqué » (elle attend une étape précédente) ou « Facultatif », et, quand il y a lieu, un bouton pour agir :
 
-1. **Clé OpenAI** : à coller dans la carte **Clés et jetons**, juste en dessous (ou `OPENAI_API_KEY` dans `.env`, avec un redémarrage).
+1. **Clé du fournisseur vocal choisi** (OpenAI ou Mistral) : à coller dans la carte **Clés et jetons**, juste en dessous (ou `OPENAI_API_KEY`, `MISTRAL_API_KEY` dans `.env`, avec un redémarrage).
 2. **Service caméra (perception)** : le service qui lit la caméra et entend le mot « Ghostwheel ». S’il est arrêté, relancez Cornelius avec `scripts/start.sh` (`scripts/start.ps1` sous Windows). La raison d’un échec est dans `data/run/logs/perception.err.log`. Bouton « Ouvrir le diagnostic ».
 3. **Caméra choisie** : bouton « Choisir la caméra ». Facultatif si « Ghostwheel » ouvre la conversation pour tout le monde, sans reconnaissance ni vision locale.
 4. **Miroir ouvert** : l’adresse du miroir est rappelée, avec « Activer et ouvrir le miroir ».
@@ -62,9 +62,14 @@ La carte « Avant la première conversation » (« Tout est prêt » une fois fi
 6. **Visage enregistré** : nécessaire quand la conversation est réservée aux membres du foyer, facultatif sinon (il permet l’accueil par le prénom). Bouton « Enregistrer un visage ».
 7. **Mot d’appel « Ghostwheel »** : seulement si le mot « Ghostwheel » ouvre la conversation. Le modèle doit se trouver dans `models/cornelius.onnx`. Bouton « Guide du mot d’appel ».
 8. **Mot de passe administrateur** : à changer dans la carte du même nom, plus bas, s’il vaut encore celui de départ.
-9. **Accès à OpenAI** : bouton « Autoriser OpenAI » s’il a été bloqué.
+9. **Accès aux services IA** : bouton « Autoriser les services IA » s’il a été bloqué.
 
-La liste se met à jour d’elle-même. Sous elle : la carte **Clés et jetons** (clé OpenAI, mot de passe SMTP et jetons des modules, pris en compte sans redémarrage), la carte **Mot de passe administrateur** et la carte **Accès depuis le réseau local**. Le parcours complet est décrit dans [Premier démarrage](../installation/premier-demarrage.md).
+La liste se met à jour d’elle-même. Sous elle : la carte **Clés et jetons** (clés OpenAI, Mistral et mémoire personnalisée, mot de passe SMTP et jetons des modules, pris en compte sans redémarrage), la carte **Mémoire personnalisée**, la carte **Voix de Cornelius**, la carte **Mot de passe administrateur** et la carte **Accès depuis le réseau local**. Le parcours complet est décrit dans [Premier démarrage](../installation/premier-demarrage.md).
+
+Carte « Voix de Cornelius » :
+
+- **Fournisseur de la conversation** : « OpenAI · GPT Live » (par défaut) ou « Mistral · Voxtral 3 ». Le changement est refusé pendant une conversation et tant que la clé du fournisseur manque ; il s’applique à la conversation suivante. Voir [Le fournisseur vocal](../fonctionnalites/fournisseur-vocal.md).
+- **Voix** (OpenAI seulement) : l’une des 22 voix de GPT-Live. Cedar (par défaut) et Marin sont conseillées pour le français ; les autres peuvent garder un léger accent anglais. La nouvelle voix s’entend à la conversation suivante. Avec Mistral, la voix est Marie.
 
 ## Micro et haut-parleurs
 
@@ -120,7 +125,7 @@ L’enregistrement d’un visage demande le service caméra. Quel que soit le mo
 - **Réglages avancés** (replié) :
   - **Micro gardé prêt** (bêta) : « Garder le micro prêt » (désactivé par défaut) permet de dire « Ghostwheel, allume la lumière » d’une traite. Le micro reste prêt sur cet ordinateur ; le son n’est envoyé qu’une fois la conversation ouverte ;
   - **Délais de présence** : cinq délais en secondes, avec un bouton « Valeurs par défaut ». « Confirmer un départ » (1,5 s, de 0 à 30), « Terminer après la perte du regard » (8 s, de 0 à 60), « Garder l’identité sans nouvelle preuve » (8 s, de 0 à 60), « Confirmer une présence » (0,4 s, de 0 à 5) et « Confirmer le regard » (0,35 s, de 0 à 5) ;
-  - **Délégation : recherches et actions** : le modèle qui fait les recherches, les cartes et les commandes. « Normal », « Rapide » (par défaut) ou « Ultra rapide ». Changer de mode pendant une conversation la termine, après confirmation. « Ultra rapide » ne fonctionne pas si votre compte OpenAI garde ses données en Europe.
+  - **Délégation : recherches et actions** : le modèle qui fait les recherches, les cartes et les commandes. « Normal », « Rapide » (par défaut) ou « Ultra rapide ». Changer de mode pendant une conversation la termine, après confirmation. « Ultra rapide » ne fonctionne pas si votre compte OpenAI garde ses données en Europe. Cette carte n’apparaît pas avec Mistral.
 
 ## Satellites audio
 
@@ -141,7 +146,6 @@ L’enregistrement d’un visage demande le service caméra. Quel que soit le mo
 
 Chaque texte compte 4 000 caractères au plus. Enregistrer s’applique aussitôt : une conversation en cours redémarre. Voir [La personnalité](../fonctionnalites/personnalite.md).
 
-- **Voix de Cornelius** : l’une des 22 voix de GPT-Live. Cedar (par défaut) et Marin sont conseillées pour le français ; les autres peuvent garder un léger accent anglais. La nouvelle voix s’entend à la conversation suivante.
 - **Taille de l’orbe** : de 50 à 150 % de sa taille d’origine, appliquée en direct sur le miroir ; « Revenir à 100 % » la remet à l’origine.
 
 ## Écran de veille

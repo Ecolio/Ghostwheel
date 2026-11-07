@@ -24,7 +24,7 @@ const fields: { key: keyof PresenceTimings; label: string; help: string }[] = [
   {
     key: 'disengagementMs',
     label: 'Terminer après la perte du regard (s)',
-    help: 'Pendant une conversation, temps toléré sans visage détecté dans tous les modes caméra, et sans regard vers le miroir quand c’est le regard qui ouvre la conversation. La parole de la personne ou de Cornelius repousse la fin. Une ouverture par la présence ne se termine pas sur la perte du regard. De 0 à 60 s.',
+    help: 'Pendant une conversation, temps toléré sans visage détecté dans tous les modes caméra, et sans regard vers le miroir quand c’est le regard qui ouvre la conversation. Une réponse de Cornelius en cours repousse la fin ; la parole de la personne ne la repousse pas. Une ouverture par la présence ne se termine pas sur la perte du regard. De 0 à 60 s.',
   },
   {
     key: 'identityHoldMs',

@@ -32,7 +32,7 @@ Le plus simple est une boîte dédiée au miroir, par exemple `cornelius.maison@
 | **Chiffrement** | **TLS** (connexion chiffrée dès le départ) ou **STARTTLS** (chiffrée juste après). Jamais sans chiffrement. | TLS |
 | **Adresse d’envoi** | Celle du compte : les e-mails partent de cette adresse | vide |
 | **Nom de l’expéditeur** | Ce que le téléphone affiche comme expéditeur | Cornelius |
-| **Identifiant** | Vide : l’adresse d’envoi, comme chez la plupart des fournisseurs | vide |
+| **Identifiant SMTP** | Vide : l’adresse d’envoi, comme chez la plupart des fournisseurs | vide |
 | **Mot de passe** | Rangé avec les clés (`CORNELIUS_SMTP_PASSWORD`) : il apparaît aussi dans **Mise en route → Clés et jetons**, et peut venir du fichier `.env` | aucun |
 
 **Tester la connexion** vérifie le serveur, le chiffrement et le mot de passe, sans rien envoyer.

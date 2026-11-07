@@ -76,6 +76,8 @@ export class ImageGenerationRuntime {
 
   ensure(model: ImageGenerationModel) {
     if (this.stopped) throw new Error('Le serveur est en cours d’arrêt.');
+    const unavailable = this.generation.snapshot().localUnavailable;
+    if (unavailable) throw new Error(unavailable);
     if (this.active === model) return;
     if (this.active)
       throw new Error(

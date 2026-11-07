@@ -553,6 +553,8 @@ test('le miroir reste lisible en portrait comme en paysage, sans défilement ni 
   try {
     await page.goto('/');
     await expect(page.locator('.display-card')).toHaveCount(3);
+    // La personne inconnue de la fixture n’apparaît qu’après son délai : on mesure sa pastille.
+    await expect(page.locator('.mirror-status')).toBeVisible();
     for (const viewport of [
       { width: 1080, height: 1920 },
       { width: 2160, height: 3840 },

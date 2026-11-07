@@ -1,19 +1,19 @@
 # Confidentialité
 
-Cette page dit ce qui reste sur l’ordinateur du miroir, ce qui part chez OpenAI ou ailleurs, et à quel moment. Elle décrit aussi ce qui est enregistré, où, et comment l’effacer. Elle s’adresse aux membres du foyer comme à la personne qui installe Cornelius.
+Cette page dit ce qui reste sur l’ordinateur du miroir, ce qui part chez le fournisseur vocal (OpenAI par défaut, ou Mistral) ou ailleurs, et à quel moment. Elle décrit aussi ce qui est enregistré, où, et comment l’effacer. Elle s’adresse aux membres du foyer comme à la personne qui installe Cornelius.
 
 ## En bref
 
-- Par défaut, la caméra est branchée au serveur Cornelius. Avec la caméra du navigateur, les images rejoignent ce serveur par le réseau local chiffré. Les visages et la vision y sont analysés ; aucune image n’est envoyée à OpenAI.
+- Par défaut, la caméra est branchée au serveur Cornelius. Avec la caméra du navigateur, les images rejoignent ce serveur par le réseau local chiffré. Les visages et la vision y sont analysés ; aucune image n’est envoyée au fournisseur vocal.
 - En veille, le son du micro reste sur l’ordinateur. Celui d’un satellite audio va à l’ordinateur par le réseau local, chiffré, et n’en sort pas.
-- Pendant une conversation, la voix et le texte de l’échange partent chez OpenAI. Après la conversation, le texte dit par une personne reconnue peut repartir chez OpenAI pour choisir les souvenirs à garder.
+- Pendant une conversation, la voix et le texte de l’échange partent chez le fournisseur vocal choisi : OpenAI par défaut, ou Mistral. Après la conversation, le texte dit par une personne reconnue peut repartir chez ce même fournisseur pour choisir les souvenirs à garder.
 - Cornelius n’enregistre ni image, ni son, ni transcription de conversation sur le disque.
 
 ## Ce qui reste sur l’ordinateur
 
 - **Les images de la caméra.** La perception analyse la caméra du serveur, ou les images reçues du navigateur quand cette option est choisie. Les images restent en mémoire vive sur le serveur et ne sont jamais écrites sur le disque.
 - **Les visages.** L’enregistrement d’un visage garde des signatures numériques, calculées à partir des images : ce sont des nombres, pas des photos. Elles sont rangées dans la base. La reconnaissance se fait sur l’ordinateur.
-- **La vision locale.** La description d’une image est calculée sur l’ordinateur par le modèle LFM2.5-VL. Seul le texte de cette description rejoint la conversation, donc OpenAI. Elle n’est jamais écrite dans la mémoire. Voir [La vision locale](../fonctionnalites/vision-locale.md).
+- **La vision locale.** La description d’une image est calculée sur l’ordinateur par le modèle LFM2.5-VL. Seul le texte de cette description rejoint la conversation, donc le fournisseur vocal. Elle n’est jamais écrite dans la mémoire. Voir [La vision locale](../fonctionnalites/vision-locale.md).
 - **Le mot d’appel.** « Ghostwheel » est reconnu sur l’ordinateur, avec openWakeWord. Aucun service en ligne n’est appelé pour cela.
 - **Les images créées.** Par défaut, la génération d’images tourne sur l’ordinateur. Si vous choisissez « Avec OpenAI » dans le module, la description de l’image (jamais une image de la caméra) part chez OpenAI, qui renvoie l’image. Dans les deux cas, les trois dernières images sont gardées dans `data/generated-images/`, puis effacées au prochain démarrage du serveur.
 
@@ -24,28 +24,30 @@ La caméra est lue par la perception, mais le micro est lu par le navigateur qui
 - **Le mot « Ghostwheel » ouvre la conversation.** Après **Activer la voix**, le micro reste ouvert pendant la veille. Le son va seulement au serveur, sur l’ordinateur (`127.0.0.1`), puis à la perception qui guette le mot. Rien ne sort de la machine.
 - **Micro gardé prêt** (dans **Quand il écoute → Réglages avancés**). Le micro reste prêt sur l’ordinateur. Le son n’est envoyé à la conversation qu’une fois celle-ci ouverte, avec le début de la phrase.
 - **Sans mot d’appel ni micro gardé prêt.** Le micro préparé est relâché après 15 secondes si aucune conversation ne s’ouvre.
-- **Pendant une conversation.** Le son part chez OpenAI, le temps de la conversation seulement. Il passe aussi par la détection locale de la parole.
+- **Pendant une conversation.** Le son part chez le fournisseur vocal, le temps de la conversation seulement. Avec OpenAI, le navigateur l’envoie directement ; avec Mistral, il passe par le serveur Cornelius, qui le transmet. Il passe aussi par la détection locale de la parole.
 
-**Les satellites audio.** Un satellite envoie le son de son micro à l’ordinateur, par le réseau local et chiffré (WebSocket sécurisé, port `3443`), seulement quand Cornelius écoute « Ghostwheel » ou pendant sa propre conversation. L’ordinateur y cherche le mot, puis transmet la conversation à OpenAI comme pour le miroir. Une conversation de satellite rattaché à une personne nourrit la mémoire de cette personne ; sinon, elle ne laisse aucun souvenir. Le bouton du satellite coupe son micro. Voir [Les satellites audio](../fonctionnalites/satellites.md).
+**Les satellites audio.** Un satellite envoie le son de son micro à l’ordinateur, par le réseau local et chiffré (WebSocket sécurisé, port `3443`), seulement quand Cornelius écoute « Ghostwheel » ou pendant sa propre conversation. L’ordinateur y cherche le mot, puis transmet la conversation au fournisseur vocal choisi comme pour le miroir. Une conversation de satellite rattaché à une personne nourrit la mémoire de cette personne ; sinon, elle ne laisse aucun souvenir. Le bouton du satellite coupe son micro. Voir [Les satellites audio](../fonctionnalites/satellites.md).
 
-Pour couper tout envoi vers OpenAI, utilisez **Bloquer OpenAI** (voir plus bas).
+Pour couper tout envoi vers OpenAI et Mistral, utilisez **Bloquer les services IA** (voir plus bas).
 
-## Ce qui part chez OpenAI, et quand
+## Ce qui part chez le fournisseur vocal, et quand
 
-**Pendant une conversation**, OpenAI reçoit :
+Le fournisseur vocal est OpenAI par défaut, ou Mistral s’il est choisi dans **Mise en route → Voix de Cornelius**. Un seul des deux reçoit une conversation donnée. Voir [Le fournisseur vocal](../fonctionnalites/fournisseur-vocal.md).
+
+**Pendant une conversation**, le fournisseur reçoit :
 
 - la voix et le texte de l’échange ;
 - les consignes de Cornelius, le style du foyer et, si la personne est reconnue, son prénom, son style et ses repères (**Personnaliser Cornelius → Ce que Cornelius reçoit** montre ce texte) ;
 - les descriptions de la caméra, si la vision est active ;
 - les résultats des modules, des commandes, de Home Assistant et des agents, et les souvenirs consultés quand une question porte sur eux ;
 - les noms des destinataires d’e-mail et le résultat d’un envoi, jamais leurs adresses ;
-- les recherches sur le web, faites par OpenAI, si **Modules → Web → Autoriser la recherche web** est activé.
+- les recherches sur le web, faites par le fournisseur, si **Modules → Web → Autoriser la recherche web** est activé.
 
-Les conversations sont ouvertes avec l’option `store: false` d’OpenAI, qui demande de ne pas conserver la réponse pour la consulter ensuite. Cette option ne dit rien des autres règles de conservation d’OpenAI : voir les conditions de votre compte.
+Les conversations sont ouvertes avec l’option `store: false` d’OpenAI, qui demande de ne pas conserver la réponse pour la consulter ensuite. Cette option ne dit rien des autres règles de conservation d’OpenAI : voir les conditions de votre compte. Avec Mistral, chaque fermeture de conversation supprime la session chez Mistral ; ses autres règles de conservation dépendent aussi des conditions de votre compte.
 
-**Après une conversation**, si la personne était seule, reconnue, et que sa mémoire est autorisée, le texte de ce qu’elle a dit et ses souvenirs actuels sont envoyés à OpenAI, qui propose quoi retenir. Ce texte est ensuite effacé. Voir [La mémoire](../fonctionnalites/memoire.md).
+**Après une conversation**, si la personne était seule, reconnue, et que sa mémoire est autorisée, le texte de ce qu’elle a dit et ses souvenirs actuels sont envoyés au fournisseur mémoire choisi, qui propose quoi retenir. Ce choix est indépendant de celui de la conversation : il peut revenir à une API compatible OpenAI tenue à la maison, et alors aucun secours ne l’envoie ailleurs par défaut. Ce texte est ensuite effacé. Voir [La mémoire](../fonctionnalites/memoire.md).
 
-**À aucun moment** OpenAI ne reçoit d’image de la caméra, de signature de visage, ni le son de la veille.
+**À aucun moment** le fournisseur vocal ne reçoit d’image de la caméra, de signature de visage, ni le son de la veille.
 
 ## Ce qui part ailleurs
 
@@ -72,7 +74,7 @@ Tout est sur l’ordinateur du miroir, dans le dossier `data/` (voir [Configurat
 | Images de l’écran de veille (vos photos et les peintures) | `data/screensaver/` ; leur titre dans la base |
 | Mot de passe de l’administration | le fichier `.env` au départ ; s’il est changé dans **Mise en route**, une empreinte (scrypt) dans la base, jamais le mot de passe lui-même |
 | Secrets des commandes (`CORNELIUS_SECRET_*`) | le fichier `.env`, jamais dans la base |
-| Clé OpenAI, jetons Météo et Transports, mot de passe SMTP | la base locale s’ils sont saisis dans l’administration (ils y passent avant ceux de `.env`), sinon le fichier `.env`. L’administration n’en montre que les quatre derniers caractères, et le journal les masque. |
+| Clés OpenAI et Mistral, jetons Météo et Transports, mot de passe SMTP | la base locale s’ils sont saisis dans l’administration (ils y passent avant ceux de `.env`), sinon le fichier `.env`. L’administration n’en montre que les quatre derniers caractères, et le journal les masque. |
 
 Sous Linux, la base, ses copies, `.env` et le journal ne sont lisibles que par leur propriétaire.
 
@@ -110,7 +112,7 @@ Tout cela est aussi retiré des copies de sécurité. Les données du foyer (sty
 
 Le journal (rubrique **Journal**, fichier `data/logs/cornelius.log`) ne note que des informations techniques. Avant l’écriture, il masque :
 
-- la clé OpenAI, le mot de passe, les jetons de la perception, du générateur d’images, de Météo et de Transports ;
+- les clés OpenAI et Mistral, le mot de passe, les jetons de la perception, du générateur d’images, de Météo et de Transports ;
 - tout texte qui ressemble à une clé OpenAI ou à un jeton d’accès (`Bearer …`) ;
 - tout champ dont le nom évoque un jeton, un secret, un mot de passe, un cookie, une clé, une transcription, du son, une image ou une signature de visage.
 
@@ -122,11 +124,11 @@ L’administration demande le mot de passe administrateur (celui de `.env`, ou c
 
 Le miroir, lui, ne demande aucun mot de passe. Le miroir et l’administration répondent à l’ordinateur lui-même et, en HTTPS, aux appareils du réseau local (désactivable avec `CORNELIUS_LAN=0`), jamais à Internet. Un autre appareil n’ouvre le miroir qu’après avoir été autorisé une fois avec le mot de passe administrateur.
 
-## Les dépenses OpenAI
+## Les dépenses
 
-Cornelius ne compte pas ce que coûtent les conversations et ne les bloque pas pour ce motif. Fixez vos limites de dépense dans votre compte OpenAI. Les modes **Rapide** et **Ultra rapide** de **Quand il écoute → Réglages avancés → Délégation : recherches et actions** coûtent plus cher que **Normal**.
+Cornelius ne compte pas ce que coûtent les conversations et ne les bloque pas pour ce motif. Fixez vos limites de dépense dans votre compte OpenAI ou Mistral. Avec Mistral, facturé à la minute, une conversation se ferme après 20 secondes sans activité et dure 15 minutes au plus. Les modes **Rapide** et **Ultra rapide** de **Quand il écoute → Réglages avancés → Délégation : recherches et actions** coûtent plus cher que **Normal**.
 
-Le bouton **Bloquer OpenAI**, dans le panneau **Conversation** de la rubrique **Quand il écoute** (le seul où ce panneau est complet), ferme la conversation en cours et interdit toute nouvelle connexion à OpenAI, extraction de souvenirs comprise. Le blocage reste après un redémarrage. **Autoriser OpenAI** le lève. La caméra, la reconnaissance et la vision locale continuent de fonctionner.
+Le bouton **Bloquer les services IA**, dans le panneau **Conversation** de la rubrique **Quand il écoute** (le seul où ce panneau est complet), ferme la conversation en cours et interdit toute nouvelle connexion à OpenAI et à Mistral, extraction de souvenirs et images OpenAI comprises. Le blocage reste après un redémarrage. **Autoriser les services IA** le lève. La caméra, la reconnaissance et la vision locale continuent de fonctionner.
 
 ## Voir aussi
 
@@ -135,6 +137,7 @@ Le bouton **Bloquer OpenAI**, dans le panneau **Conversation** de la rubrique **
 - [La vision locale](../fonctionnalites/vision-locale.md)
 - [Home Assistant](../fonctionnalites/home-assistant.md)
 - [Les agents Hermes](../fonctionnalites/agents-hermes.md)
+- [Le fournisseur vocal](../fonctionnalites/fournisseur-vocal.md)
 - [Configuration](configuration.md)
 - [Licences](licences.md)
 

@@ -12,7 +12,7 @@ Cette page vous guide de la fin de l’installation jusqu’à la première conv
 
 Ouvrez `http://127.0.0.1:3000/admin`. Saisissez le « Mot de passe administrateur », puis cliquez sur **Ouvrir cet espace**.
 
-Le mot de passe est la valeur de `CORNELIUS_ADMIN_PASSWORD` dans le fichier `.env`, `cornelius` au départ. Changez-le dès maintenant dans **Mise en route**, carte « Mot de passe administrateur » (8 caractères au moins) : il remplace celui de `.env`, sans redémarrage.
+Le mot de passe est la valeur de `CORNELIUS_ADMIN_PASSWORD` dans le fichier `.env`, `cornelius` au départ. Changez-le dès maintenant dans **Mise en route**, carte « Mot de passe administrateur » (8 caractères au moins) : il remplace celui de `.env`, sans redémarrage. Dans un terminal, `npm run password` fait la même chose.
 
 ```sh
 systemctl --user restart cornelius        # Linux, avec les services systemd
@@ -46,7 +46,7 @@ La liste se met à jour d’elle-même. Voici les étapes, dans l’ordre :
 | Visage enregistré | Rubrique « Le foyer et les visages » (bouton **Enregistrer un visage**) |
 | Mot d’appel « Ghostwheel » | Seulement si la conversation s’ouvre au mot « Ghostwheel » (bouton **Guide du mot d’appel**) |
 | Mot de passe administrateur | **Mise en route → Mot de passe administrateur**, ou le fichier `.env` (étape 1 ci-dessus) |
-| Accès à OpenAI | Bouton **Autoriser OpenAI**, si l’accès a été bloqué |
+| Accès aux services IA | Bouton **Autoriser les services IA**, si l’accès a été bloqué |
 
 En haut de chaque page, le panneau de la conversation résume l’état de Cornelius sur une ligne (par exemple « Configuration à terminer » ou « En veille attentive ») et propose **Démarrer la session** ou **Arrêter la session**. Le lien « Voir la mise en route » ramène à cette liste.
 
@@ -56,7 +56,7 @@ Quand tout est prêt, la carte affiche « Tout est prêt » et l’administratio
 
 Sans clé, Cornelius ne peut pas parler. Créez une clé dans votre compte OpenAI (page [API keys](https://platform.openai.com/api-keys)), sur un compte payant. Collez-la dans la carte **Clés et jetons**, plus bas dans la même rubrique, puis **Enregistrer** : elle compte tout de suite, sans redémarrage. (Elle peut aussi s’écrire dans `.env` après `OPENAI_API_KEY=`, avec un redémarrage.)
 
-La clé reste sur cet ordinateur : l’administration n’en montre ensuite que les quatre derniers caractères. Chaque conversation est facturée par OpenAI. Cornelius ne suit pas les dépenses : fixez une limite dans votre compte OpenAI. Le bouton **Bloquer OpenAI**, dans le panneau de la conversation de « Quand il écoute », coupe et interdit toute connexion à OpenAI jusqu’à **Autoriser OpenAI**.
+La clé reste sur cet ordinateur : l’administration n’en montre ensuite que les quatre derniers caractères. Chaque conversation est facturée par OpenAI. Cornelius ne suit pas les dépenses : fixez une limite dans votre compte OpenAI. Le bouton **Bloquer les services IA**, dans le panneau de la conversation de « Quand il écoute », coupe et interdit toute connexion à OpenAI jusqu’à **Autoriser les services IA**.
 
 ## 4. Service caméra (perception)
 
@@ -78,7 +78,7 @@ Cette étape est « Facultatif » quand la conversation s’ouvre au mot « Ghos
 
 ## 6. Ouvrir le miroir et activer la voix
 
-Cliquez sur **Activer et ouvrir le miroir**, à l’étape « Miroir ouvert ». Ce bouton réactive le démarrage automatique et ouvre la page du miroir dans sa propre fenêtre, l’administration restant ouverte. Acceptez l’accès au micro quand le navigateur le demande (touchez « Activer la voix » sur le miroir s’il l’affiche), puis passez la fenêtre du miroir en plein écran avec F11. Si l’accès à OpenAI est bloqué, le bouton s’appelle **Autoriser OpenAI et ouvrir le miroir** et lève aussi le blocage.
+Cliquez sur **Activer et ouvrir le miroir**, à l’étape « Miroir ouvert ». Ce bouton réactive le démarrage automatique et ouvre la page du miroir dans sa propre fenêtre, l’administration restant ouverte. Acceptez l’accès au micro quand le navigateur le demande (touchez « Activer la voix » sur le miroir s’il l’affiche), puis passez la fenêtre du miroir en plein écran avec F11. Si l’accès aux services IA est bloqué, le bouton s’appelle **Autoriser les services IA et ouvrir le miroir** et lève aussi le blocage.
 
 Tant que la clé OpenAI manque, le miroir affiche seulement l’orbe et « Cornelius n’est pas encore configuré : ouvrez l’administration sur cet ordinateur. », suivi de l’adresse de l’administration. C’est normal : l’étape « Miroir ouvert » est quand même validée.
 

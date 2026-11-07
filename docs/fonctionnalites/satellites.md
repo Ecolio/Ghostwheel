@@ -19,7 +19,7 @@ Matériel pris en charge : la carte **Waveshare ESP32-S3-AUDIO-Board**, avec le 
 - Le mot d’appel « Ghostwheel » doit être activé : **Quand il écoute → Ce qui l’ouvre → « Ghostwheel »** (voir [Le mot d’appel](mot-d-appel.md)).
 - L’accès depuis le réseau local doit être activé (il l’est par défaut, voir [Accès depuis le réseau local](../utilisation/reseau-local.md)).
 - Le satellite rejoint un Wi-Fi en **2,4 GHz**, sur le même réseau que l’ordinateur de Cornelius.
-- Le pare-feu de l’ordinateur doit laisser entrer le port `3443` (TCP) et l’annonce du réseau local (mDNS, port `5353` en UDP) pour Node.js.
+- Le pare-feu de l’ordinateur doit laisser entrer le port `3443` (TCP) et l’annonce du réseau local (mDNS, port `5353` en UDP) pour Node.js. Rien n’est à ouvrir avec l’[application Home Assistant](../installation/home-assistant.md#les-satellites).
 
 ## Installer un satellite
 
@@ -75,7 +75,7 @@ N’appuyez pas sur **RST** en tenant **BOOT** : la carte passerait en mode de p
 ## Où va le son
 
 - **En veille**, le satellite envoie le son de son micro à l’ordinateur de Cornelius, par le réseau local et chiffré, seulement quand le micro est activé et que le mode d’écoute du mot d’appel « Ghostwheel » est en veille. C’est l’ordinateur qui cherche le mot, avec le même modèle que pour le miroir. Rien ne part sur Internet.
-- **Pendant la conversation**, le son passe par l’ordinateur de Cornelius, qui le transmet à OpenAI, comme pour le miroir. La voix de Cornelius revient par le même chemin.
+- **Pendant la conversation**, le son passe par l’ordinateur de Cornelius, qui le transmet au fournisseur vocal choisi, comme pour le miroir. La voix de Cornelius revient par le même chemin.
 - **Micro coupé** (bouton BOOT), le satellite n’envoie rien.
 
 Voir aussi [Confidentialité](../reference/confidentialite.md).

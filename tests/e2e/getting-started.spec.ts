@@ -129,7 +129,7 @@ test('sans clé OpenAI, l’administration s’ouvre sur la mise en route', asyn
     'data-compact',
     'true',
   );
-  await expect(page.getByText(/OPENAI_API_KEY/)).toHaveCount(1);
+  await expect(page.getByText('OPENAI_API_KEY', { exact: true })).toHaveCount(1);
   await expect(page.getByRole('button', { name: /ouvrir le miroir/i })).toHaveCount(1);
   await expect(
     steps
@@ -157,7 +157,7 @@ test('l’accès à OpenAI bloqué s’autorise depuis son étape', async ({ pag
     const step = page
       .getByRole('list', { name: 'Étapes de la mise en route' })
       .getByRole('listitem')
-      .filter({ hasText: 'Accès à OpenAI' });
+      .filter({ hasText: 'Accès aux services IA' });
     await step.getByRole('button', { name: 'Autoriser OpenAI', exact: true }).click();
     await expect(step).toContainText('Fait');
     await expect

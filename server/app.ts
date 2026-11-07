@@ -1,3 +1,12 @@
+import { validCustomProviderSettings, type MemoryFallback } from '../shared/custom-provider.js';
+import {
+  CustomProviderRepository,
+  createCompatibleMemoryExtractor,
+  withMemoryFallback,
+} from './custom-provider.js';
+import { isVoiceProvider } from '../shared/voice-provider.js';
+import { createVoiceGateway } from './voice/live-bridge.js';
+import { createMistralMemoryExtractor } from './voice/memory-extractor.js';
 import { isCardSettings } from '../shared/cards.js';
 import { isLiveVoice } from '../shared/voices.js';
 import { isOrbScale, ORB_SCALE_MAX, ORB_SCALE_MIN } from '../shared/display.js';
@@ -47,6 +56,7 @@ import { createLiveGateway } from './live/gateway.js';
 import { PerceptionBridge } from './perception.js';
 import { ModelDownloads, type ModelLauncher } from './model-downloads.js';
 import { VisionBridge } from './vision.js';
+import { SMALL_MACHINE_DETECTION_WIDTH, smallMachineReason } from './machine.js';
 import { registerHardware } from './hardware.js';
 import { WakeArbiter } from './wake-arbiter.js';
 import { SatelliteStore } from './satellites-store.js';
@@ -165,6 +175,7 @@ export async function createApp(
     console: options.timers !== false,
     secrets: [
       config.openaiKey ?? '',
+      process.env.MISTRAL_API_KEY ?? '',
       config.adminPassword,
       config.perceptionToken ?? '',
       imageGenerationToken,
@@ -180,6 +191,7 @@ export async function createApp(
     logs.write('error', 'local', 'Ouverture de SQLite impossible', { error });
     throw error;
   }
+  const customProvider = new CustomProviderRepository(db);
   const profiles = new ProfileRepository(db);
   const trustedDevices = new TrustedDevices(db, now);
   const adminPassword = new AdminPassword(db, config.adminPassword, DEFAULT_ADMIN_PASSWORD, now);
@@ -188,9 +200,10 @@ export async function createApp(
     logs.write('warn', 'local', 'Mot de passe administrateur par défaut', {
       conseil: 'Le changer dans l’administration, Mise en route.',
     });
-  // Clé OpenAI et jetons des modules : saisis dans l’administration, sinon lus dans .env.
+  // Clés des fournisseurs et jetons des modules : administration prioritaire sur .env.
   const envSecrets: Record<string, string | undefined> = {
     OPENAI_API_KEY: config.openaiKey,
+    CUSTOM_OPENAI_API_KEY: process.env.CUSTOM_OPENAI_API_KEY,
     CORNELIUS_METEO_CONCEPT_TOKEN: config.meteoConceptToken,
     CORNELIUS_PRIM_API_KEY: config.primApiKey,
   };
@@ -201,6 +214,7 @@ export async function createApp(
   );
   for (const value of secretStore.values()) logs.addSecret(value);
   const openaiKey = () => secretStore.get('OPENAI_API_KEY');
+  const customKey = () => secretStore.get('CUSTOM_OPENAI_API_KEY');
   const eraser = new PersonalDataEraser(db, config.databasePath, logs);
   const preferences = new SessionPreferences(db);
   normalizeOpening(preferences);
@@ -217,6 +231,8 @@ export async function createApp(
   // Les secrets du cœur ne sont jamais prêtés à un module.
   const reservedSecrets = new Set([
     'OPENAI_API_KEY',
+    'MISTRAL_API_KEY',
+    'CUSTOM_OPENAI_API_KEY',
     'CORNELIUS_ADMIN_PASSWORD',
     'CORNELIUS_PERCEPTION_TOKEN',
     'CORNELIUS_IMAGE_GENERATION_TOKEN',
@@ -269,6 +285,8 @@ export async function createApp(
       ? mkdtempSync(join(tmpdir(), 'cornelius-images-'))
       : resolve('data', 'generated-images'),
   );
+  // Raspberry Pi : pas de générateur local, les images passent par OpenAI.
+  if (config.machine?.small) imageGeneration.restrictToOpenAI(smallMachineReason(config.machine));
   const mailRepository = new MailRepository(db, now);
   const mailer = new Mailer(
     mailRepository,
@@ -280,6 +298,43 @@ export async function createApp(
   );
   const agents = new Agents(new AgentRepository(db, now), new HermesClient(http, now), now);
   const initialKey = openaiKey();
+  const selectedVoiceKey = () =>
+    secretStore.get(
+      preferences.getVoiceProvider() === 'mistral' ? 'MISTRAL_API_KEY' : 'OPENAI_API_KEY',
+    );
+  const voiceGateway = () => {
+    const key = selectedVoiceKey();
+    return !key
+      ? null
+      : preferences.getVoiceProvider() === 'mistral'
+        ? createVoiceGateway({
+            async connect(config, emit) {
+              const { createMistralVoiceAdapter } = await import('./voice/mistral.js');
+              return createMistralVoiceAdapter(key).connect(config, emit);
+            },
+          })
+        : createLiveGateway(key, logs);
+  };
+  const plainMemoryExtractor = (provider: MemoryFallback) => {
+    if (provider === 'none') return null;
+    const key = secretStore.get(provider === 'mistral' ? 'MISTRAL_API_KEY' : 'OPENAI_API_KEY');
+    return !key
+      ? null
+      : provider === 'mistral'
+        ? createMistralMemoryExtractor(key)
+        : createMemoryExtractor(key);
+  };
+  const configuredMemoryExtractor = () => {
+    const settings = customProvider.get();
+    if (settings.memoryProvider !== 'custom') return plainMemoryExtractor(settings.memoryProvider);
+    const fallback = plainMemoryExtractor(settings.memoryFallback);
+    const key = customKey();
+    if (!key || !settings.baseUrl || !settings.memoryModel) return fallback;
+    return withMemoryFallback(
+      createCompatibleMemoryExtractor(key, settings.baseUrl, settings.memoryModel),
+      fallback,
+    );
+  };
   const makeImageCreator = options.openaiImageCreator ?? createOpenAIImageCreator;
   let openaiImageCreator = initialKey ? makeImageCreator(initialKey) : null;
   imageGeneration.useOpenAI({
@@ -287,7 +342,7 @@ export async function createApp(
     blocked: () => preferences.getOpenAIBlocked(),
   });
   const live = new LiveTransport(
-    initialKey ? createLiveGateway(initialKey, logs) : null,
+    voiceGateway(),
     () => preferences.getOpenAIBlocked(),
     logs,
     {
@@ -301,19 +356,25 @@ export async function createApp(
     },
     now,
   );
+  const initialProvider = preferences.getVoiceProvider();
+  const initialVoiceKey = selectedVoiceKey();
   logs.write(
-    !initialKey ? 'warn' : 'info',
-    'openai',
+    !initialVoiceKey ? 'warn' : 'info',
+    initialProvider,
     preferences.getOpenAIBlocked()
-      ? 'Connexions OpenAI bloquées par l’administration'
-      : initialKey
-        ? 'Clé configurée ; connexion uniquement au démarrage d’une session'
-        : 'Clé OpenAI absente',
+      ? 'Connexions IA bloquées par l’administration'
+      : initialVoiceKey
+        ? 'Clé vocale configurée ; connexion uniquement au démarrage d’une session'
+        : `Clé ${initialProvider === 'mistral' ? 'Mistral' : 'OpenAI'} absente`,
   );
   const controller = new SessionController(profiles, live, now, preferences, (name, details) =>
     logs.write('info', 'mesure', name, details),
   );
-  controller.setSetup({ openaiKey: !!initialKey });
+  controller.setSetup({
+    openaiKey: !!initialKey,
+    mistralKey: !!secretStore.get('MISTRAL_API_KEY'),
+    voiceKey: !!selectedVoiceKey(),
+  });
   const screensaver = new ScreensaverLibrary(
     db,
     options.screensaverRoot ??
@@ -341,7 +402,7 @@ export async function createApp(
   const memory = new PersonalMemory(
     new MemoryRepository(db, now),
     controller,
-    options.memoryExtractor ?? (initialKey ? createMemoryExtractor(initialKey) : null),
+    options.memoryExtractor ?? configuredMemoryExtractor(),
     now,
     logs,
   );
@@ -350,11 +411,18 @@ export async function createApp(
     const value = secretStore.get(name);
     logs.addSecret(value);
     if (name === 'OPENAI_API_KEY') {
-      live.setGateway(value ? createLiveGateway(value, logs) : null);
       openaiImageCreator = value ? makeImageCreator(value) : null;
-      if (!options.memoryExtractor)
-        memory.setExtractor(value ? createMemoryExtractor(value) : null);
       controller.setSetup({ openaiKey: !!value });
+    }
+    if (name === 'CUSTOM_OPENAI_API_KEY' && !options.memoryExtractor)
+      memory.setExtractor(configuredMemoryExtractor());
+    if (name === 'OPENAI_API_KEY' || name === 'MISTRAL_API_KEY') {
+      live.setGateway(voiceGateway());
+      if (!options.memoryExtractor) memory.setExtractor(configuredMemoryExtractor());
+      controller.setSetup({
+        mistralKey: !!secretStore.get('MISTRAL_API_KEY'),
+        voiceKey: !!selectedVoiceKey(),
+      });
     }
     logs.write('info', 'local', value ? 'Clé enregistrée' : 'Clé retirée', {
       name,
@@ -389,6 +457,8 @@ export async function createApp(
         kiosk.socket.send(JSON.stringify(perception.browserCameraConfig()));
     },
     now,
+    // Raspberry Pi : les visages sont cherchés sur une image réduite, reconnus sur l’image entière.
+    config.machine?.small ? SMALL_MACHINE_DETECTION_WIDTH : null,
   );
   // Miroir et satellites entendent parfois le même « Ghostwheel » : le meilleur score l’emporte.
   const wakeArbiter = new WakeArbiter(() => perception.wakeStreamCount());
@@ -407,7 +477,8 @@ export async function createApp(
     const local = perception.snapshot();
     return {
       presenceTimings: controller.getPresenceTimings(),
-      apiConfigured: !!openaiKey(),
+      machine: config.machine,
+      apiConfigured: !!selectedVoiceKey(),
       perceptionConfigured: !!config.perceptionToken,
       defaultPassword: defaultPassword(),
       enrolledFaces: local.enrolledProfileIds.length,
@@ -441,6 +512,8 @@ export async function createApp(
     (name, details) =>
       logs.write(name === 'vision_echec' ? 'warn' : 'info', 'mesure', name, details),
   );
+  // Raspberry Pi : la description de la scène est trop lourde, seule la reconnaissance reste.
+  if (config.machine?.small) vision.restrict(smallMachineReason(config.machine));
   const downloads = new ModelDownloads(
     () => broadcast({ schemaVersion: 1, type: 'devices', status: devices() }, true),
     (model) => vision.modelInstalled(model),
@@ -555,12 +628,20 @@ export async function createApp(
   };
 
   /**
-   * La requête vient de l'ordinateur lui-même. Une requête sans socket ne vient pas du réseau :
+   * La requête vient de la boucle locale. Une requête sans socket ne vient pas du réseau :
    * elle est injectée dans le processus (tests, WebSocket simulés).
    */
-  function fromMachine(request: FastifyRequest): boolean {
+  function fromLoopback(request: FastifyRequest): boolean {
     const socket = request.raw.socket as { remoteAddress?: string } | undefined;
     return !socket || isLoopback(socket.remoteAddress);
+  }
+  /**
+   * La requête vient de l'ordinateur du miroir, qui n'a besoin d'aucune autorisation. Sans
+   * confiance dans la boucle locale (CORNELIUS_TRUST_LOOPBACK=0), elle est traitée comme un
+   * appareil du réseau local.
+   */
+  function fromMachine(request: FastifyRequest): boolean {
+    return config.trustLoopback !== false && fromLoopback(request);
   }
   const lanPairingMessage =
     'Appareil non autorisé : connectez-vous une fois avec le mot de passe administrateur pour en faire un miroir.';
@@ -592,14 +673,14 @@ export async function createApp(
     // Clients : la machine elle-même, et le réseau local quand il est ouvert. Une adresse
     // publique (port redirigé par un routeur) est toujours refusée.
     const lan = config.lan === true;
-    if (!fromMachine(request) && !(lan && isPrivateAddress(request.raw.socket?.remoteAddress)))
+    if (!fromLoopback(request) && !(lan && isPrivateAddress(request.raw.socket?.remoteAddress)))
       return reply.code(403).send({ error: 'Accès réservé au réseau local.' });
     if (!allowedHostname(request.hostname, lan, config.allowedHosts ?? []))
       return reply.code(403).send({ error: 'Hôte non autorisé.' });
     // La perception et le générateur d'images tournent sur la machine : jamais par le réseau.
     if (
       (request.url.startsWith('/perception') || request.url.startsWith('/image-generation')) &&
-      !fromMachine(request)
+      !fromLoopback(request)
     )
       return reply.code(403).send({ error: 'Réservé à cet ordinateur.' });
     // Le miroir n'a pas de mot de passe sur la machine. Depuis un autre appareil, ses données
@@ -898,7 +979,7 @@ export async function createApp(
       if (defaultPassword() && !fromMachine(request))
         return reply.code(403).send({
           error:
-            'Mot de passe par défaut : changez-le d’abord dans l’administration, sur l’ordinateur du miroir (Mise en route).',
+            'Mot de passe par défaut : changez-le d’abord dans l’administration, sur l’ordinateur du miroir (Mise en route), ou dans un terminal de cet ordinateur avec npm run password.',
         });
       purgeSessions();
       const existing = request.cookies[adminCookie];
@@ -949,7 +1030,7 @@ export async function createApp(
     setTimeout(options.restart, 300).unref?.();
     return { ok: true };
   });
-  /** Clés connues : OpenAI, puis les jetons des modules. Jamais leur valeur. */
+  /** Clés connues des fournisseurs, puis jetons des modules. Jamais leur valeur. */
   function secretViews() {
     const describe = (env: string) => ({
       env,
@@ -962,9 +1043,25 @@ export async function createApp(
         ...describe('OPENAI_API_KEY'),
         group: 'providers' as const,
         label: 'Clé OpenAI',
-        usedBy: 'Conversation et mémoire',
+        usedBy: 'GPT Live, mémoire et images OpenAI',
         url: 'https://platform.openai.com/api-keys',
         note: null,
+      },
+      {
+        ...describe('MISTRAL_API_KEY'),
+        group: 'providers' as const,
+        label: 'Clé Mistral',
+        usedBy: 'Voxtral 3, réponses et mémoire',
+        url: 'https://console.mistral.ai/api-keys',
+        note: 'Accès Voice Agents nécessaire',
+      },
+      {
+        ...describe('CUSTOM_OPENAI_API_KEY'),
+        group: 'providers' as const,
+        label: 'Clé mémoire personnalisée',
+        usedBy: 'Extraction de la mémoire personnelle',
+        url: null,
+        note: 'API compatible OpenAI',
       },
       {
         ...describe(MAIL_PASSWORD_SECRET),
@@ -987,6 +1084,30 @@ export async function createApp(
       })),
     ];
   }
+  app.get('/api/admin/custom-provider', { preHandler: requireAdmin }, async () =>
+    customProvider.view(!!customKey()),
+  );
+  app.patch('/api/admin/custom-provider', { preHandler: requireAdmin }, async (request, reply) => {
+    if (!validCustomProviderSettings(request.body))
+      return reply.code(400).send({ error: 'Configuration du fournisseur invalide.' });
+    customProvider.set(request.body);
+    if (!options.memoryExtractor) memory.setExtractor(configuredMemoryExtractor());
+    return customProvider.view(!!customKey());
+  });
+  app.post(
+    '/api/admin/custom-provider/models',
+    { preHandler: requireAdmin },
+    async (_request, reply) => {
+      const key = customKey();
+      if (!key) return reply.code(400).send({ error: 'Ajoutez d’abord la clé personnalisée.' });
+      try {
+        await customProvider.discover(key);
+        return customProvider.view(true);
+      } catch {
+        return reply.code(502).send({ error: 'Impossible de lire les modèles du fournisseur.' });
+      }
+    },
+  );
   const knownSecret = (env: string) => secretViews().some((secret) => secret.env === env);
   app.get('/api/admin/secrets', { preHandler: requireAdmin }, async () => ({
     secrets: secretViews(),
@@ -1306,6 +1427,31 @@ export async function createApp(
     controller.setCardSettings(request.body);
     return controller.snapshot();
   });
+  app.patch<{ Body: { provider?: unknown } }>(
+    '/api/admin/voice-provider',
+    { preHandler: requireAdmin },
+    async (request, reply) => {
+      const provider = request.body?.provider;
+      if (!isVoiceProvider(provider))
+        return reply.code(400).send({ error: 'Fournisseur vocal inconnu.' });
+      if (
+        controller.sessionState().phase !== 'idle' &&
+        controller.sessionState().phase !== 'blocked'
+      )
+        return reply
+          .code(409)
+          .send({ error: 'Terminez la conversation avant de changer de fournisseur.' });
+      if (!secretStore.get(provider === 'mistral' ? 'MISTRAL_API_KEY' : 'OPENAI_API_KEY'))
+        return reply.code(400).send({
+          error: 'Ajoutez d’abord la clé de ce fournisseur dans Mise en route → Clés et jetons.',
+        });
+      controller.setVoiceProvider(provider);
+      live.setGateway(voiceGateway());
+      controller.setSetup({ voiceKey: !!selectedVoiceKey() });
+      broadcast({ schemaVersion: 1, type: 'devices', status: devices() }, true);
+      return controller.snapshot();
+    },
+  );
   app.patch<{ Body: { voice?: unknown } }>(
     '/api/admin/voice',
     { preHandler: requireAdmin },
