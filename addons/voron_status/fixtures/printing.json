@@ -1,0 +1,30 @@
+{
+  "result": {
+    "status": {
+      "webhooks": {
+        "state": "ready",
+        "state_message": "Printer is ready"
+      },
+      "print_stats": {
+        "info": { "total_layer": null, "current_layer": null },
+        "print_duration": 3739.38,
+        "total_duration": 3873.54,
+        "filament_used": 13954.54,
+        "filename": "/home/pi/printer_data/gcodes/Ball - bottom part with thick rim shell 1.2mm_PLA_20m49s.gcode",
+        "state": "printing",
+        "message": ""
+      },
+      "virtual_sdcard": {
+        "progress": 0.96,
+        "file_position": 3846009,
+        "is_active": true,
+        "file_path": "/home/pi/printer_data/gcodes/Ball - bottom part with thick rim shell 1.2mm_PLA_20m49s.gcode",
+        "file_size": 4006228
+      },
+      "toolhead": { "homed_axes": "xyz" },
+      "extruder": { "temperature": 230.87, "target": 230.0 },
+      "heater_bed": { "temperature": 65.16, "target": 65.0 }
+    },
+    "eventtime": 162766.74
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VoronStatusData v1",
+  "description": "État normalisé d'une imprimante Klipper, lu par printer.objects.query. Les champs optionnels sont null quand l'objet est absent de la configuration de l'imprimante.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "klipperState",
+    "klipperMessage",
+    "printState",
+    "filename",
+    "progress",
+    "printDurationS",
+    "filamentUsedM",
+    "homedAxes",
+    "nozzleTemp",
+    "nozzleTarget",
+    "bedTemp",
+    "bedTarget"
+  ],
+  "properties": {
+    "klipperState": {
+      "description": "webhooks.state : ready, startup, shutdown, error…",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "klipperMessage": {
+      "description": "webhooks.state_message, texte brut de Klipper, affiché sur la carte seulement.",
+      "type": ["string", "null"],
+      "maxLength": 300
+    },
+    "printState": {
+      "description": "print_stats.state : printing, paused, complete, cancelled, error, standby…",
+      "type": ["string", "null"],
+      "maxLength": 40
+    },
+    "filename": {
+      "description": "print_stats.filename, vide quand aucune impression.",
+      "type": ["string", "null"],
+      "maxLength": 200
+    },
+    "progress": {
+      "description": "virtual_sdcard.progress, entre 0 et 1.",
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "printDurationS": {
+      "description": "print_stats.print_duration en secondes.",
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 604800
+    },
+    "filamentUsedM": {
+      "description": "print_stats.filament_used converti en mètres.",
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 100000
+    },
+    "homedAxes": {
+      "description": "toolhead.homed_axes, par exemple « xyz ».",
+      "type": ["string", "null"],
+      "maxLength": 10
+    },
+    "nozzleTemp": { "type": ["number", "null"], "minimum": -20, "maximum": 400 },
+    "nozzleTarget": { "type": ["number", "null"], "minimum": 0, "maximum": 400 },
+    "bedTemp": { "type": ["number", "null"], "minimum": -20, "maximum": 200 },
+    "bedTarget": { "type": ["number", "null"], "minimum": 0, "maximum": 200 }
+  }
+}

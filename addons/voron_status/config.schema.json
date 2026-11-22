@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VoronStatusConfig v1",
+  "description": "Configuration d'une source imprimante : l'adresse de son API Moonraker (Klipper), hôte seul, sans chemin. La clé API éventuelle est un secret, hors de la base.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["baseUrl"],
+  "properties": {
+    "baseUrl": {
+      "title": "Adresse Moonraker",
+      "description": "Adresse de l'API Moonraker de l'imprimante, sans chemin (le port 7125 est celui de Moonraker par défaut). Exemple : http://192.168.1.106:7125. N'exposez jamais ce port sur Internet.",
+      "type": "string",
+      "maxLength": 200,
+      "pattern": "^https?://[^/?#@\\s]+$",
+      "examples": ["http://192.168.1.106:7125"]
+    }
+  }
+}

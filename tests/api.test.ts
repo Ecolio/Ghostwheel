@@ -914,6 +914,7 @@ test('les modules et les actions HTTP s’administrent sans accepter d’URL arb
     'clock',
     'ragator',
     'transit',
+    'voron_status',
     'weather',
   ]);
   assert.ok(definitions.every((definition) => definition.configSchema));

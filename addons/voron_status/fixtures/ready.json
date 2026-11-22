@@ -1,0 +1,23 @@
+{
+  "result": {
+    "status": {
+      "webhooks": {
+        "state": "ready",
+        "state_message": "Printer is ready"
+      },
+      "print_stats": {
+        "print_duration": 0,
+        "total_duration": 0,
+        "filament_used": 0,
+        "filename": "",
+        "state": "standby",
+        "message": ""
+      },
+      "virtual_sdcard": { "progress": 0, "is_active": false },
+      "toolhead": { "homed_axes": "xyz" },
+      "extruder": { "temperature": 21.4, "target": 0 },
+      "heater_bed": { "temperature": 20.9, "target": 0 }
+    },
+    "eventtime": 163100.2
+  }
+}
